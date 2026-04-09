@@ -10,7 +10,9 @@
       // Cloudflare Web Analytics
       // Cloudflareで発行したトークンを meta[name="cf-beacon-token"] に設定すると有効化される。
       (function () {
-        const tokenMeta = document.querySelector('meta[name="cf-beacon-token"]');
+        const tokenMeta = document.querySelector(
+          'meta[name="cf-beacon-token"]',
+        );
         const token = tokenMeta ? tokenMeta.getAttribute("content") : "";
         if (!token) {
           return;
