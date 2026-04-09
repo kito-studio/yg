@@ -4,27 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2b1a0c" />
-    <meta name="cf-beacon-token" content="" />
     <title>やること撃破！</title>
-    <script>
-      // Cloudflare Web Analytics
-      // Cloudflareで発行したトークンを meta[name="cf-beacon-token"] に設定すると有効化される。
-      (function () {
-        const tokenMeta = document.querySelector(
-          'meta[name="cf-beacon-token"]',
-        );
-        const token = tokenMeta ? tokenMeta.getAttribute("content") : "";
-        if (!token) {
-          return;
-        }
-
-        const s = document.createElement("script");
-        s.defer = true;
-        s.src = "https://static.cloudflareinsights.com/beacon.min.js";
-        s.setAttribute("data-cf-beacon", JSON.stringify({ token }));
-        document.head.appendChild(s);
-      })();
-    </script>
+    <!-- Cloudflare Web Analytics -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "5502b91eb7db4a55a5504a7d5c143ce3"}'
+    ></script>
+    <!-- End Cloudflare Web Analytics -->
     <style>
       :root {
         --bg-1: #120a05;
