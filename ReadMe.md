@@ -3,6 +3,7 @@
 きとスタ開発のやる気維持を目的にした、タスク管理ゲーミフィケーション用の独立プロジェクト。
 
 1. もし将来、親リポジトリで過去に [yg](vscode-file://vscode-app/c:/Users/user/AppData/Local/Programs/Microsoft%20VS%20Code/41dd792b5e/resources/app/out/vs/code/electron-browser/workbench/workbench.html) を追跡してしまった場合だけ、親で `git rm -r --cached yg` が必要です
+2. 公開予定：https://github.com/kito-studio/yg.git
 
 ## 1. プロジェクトの狙い
 
