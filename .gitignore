@@ -1,0 +1,7 @@
+# Internal documents (local-only)
+doc/internal/
+
+# Common local artifacts
+node_modules/
+dist/
+*.log
