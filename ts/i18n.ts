@@ -1,4 +1,5 @@
 type Lang = "ja" | "en";
+type LangPref = "auto" | Lang;
 
 type Vars = Record<string, string | number>;
 
@@ -9,7 +10,7 @@ const JA: Record<string, string> = {
   add_stage_aria: "ステージ追加",
   db_download_aria: "データベース全体をダウンロード",
   db_upload_aria: "データベースバックアップをアップロード",
-  db_maint_aria: "データメンテ画面へ移動",
+  settings_aria: "設定画面へ移動",
   stage_settings_title: "ステージ設定",
   stage_settings_sub: "ステージの状態と基本情報を編集できます。",
   stage_progress_label: "撃破状態（進捗）",
@@ -24,6 +25,13 @@ const JA: Record<string, string> = {
   stage_settings_suffix: "設定",
   restore_success: "YGデータベースをリストアしました。",
   restore_failed: "リストアに失敗しました。",
+
+  settings_title: "YG 設定",
+  settings_heading: "設定",
+  language_label: "言語設定",
+  language_auto: "ブラウザ設定に合わせる",
+  language_ja: "日本語",
+  language_en: "English",
 
   db_maint_title: "YG データメンテ",
   home: "ホーム",
@@ -51,7 +59,7 @@ const EN: Record<string, string> = {
   add_stage_aria: "Add stage",
   db_download_aria: "Download whole database",
   db_upload_aria: "Upload database backup",
-  db_maint_aria: "Go to data maintenance page",
+  settings_aria: "Go to settings page",
   stage_settings_title: "Stage Settings",
   stage_settings_sub: "Edit stage status and basic information.",
   stage_progress_label: "Defeat Progress",
@@ -66,6 +74,13 @@ const EN: Record<string, string> = {
   stage_settings_suffix: "Settings",
   restore_success: "YG database has been restored.",
   restore_failed: "Failed to restore backup.",
+
+  settings_title: "YG Settings",
+  settings_heading: "Settings",
+  language_label: "Language",
+  language_auto: "Use browser setting",
+  language_ja: "Japanese",
+  language_en: "English",
 
   db_maint_title: "YG Data Maintenance",
   home: "Home",
@@ -86,7 +101,23 @@ const EN: Record<string, string> = {
   bulk_delete_with_count: "🗑️ Delete Selected ({count})",
 };
 
-function detectLang(): Lang {
+const LANG_PREF_KEY = "yg.lang";
+
+function readLangPreference(): LangPref {
+  try {
+    const raw = String(
+      localStorage.getItem(LANG_PREF_KEY) || "auto",
+    ).toLowerCase();
+    if (raw === "ja" || raw === "en") {
+      return raw;
+    }
+  } catch {
+    // noop: fallback to browser language
+  }
+  return "auto";
+}
+
+function detectLangByBrowser(): Lang {
   const languages = [
     ...(navigator.languages || []),
     navigator.language || "",
@@ -102,11 +133,29 @@ function detectLang(): Lang {
   return "en";
 }
 
-const currentLang: Lang = detectLang();
+const langPref: LangPref = readLangPreference();
+const currentLang: Lang =
+  langPref === "auto" ? detectLangByBrowser() : langPref;
 const dict = currentLang === "ja" ? JA : EN;
 
 export function getLang(): Lang {
   return currentLang;
+}
+
+export function getLangPreference(): LangPref {
+  return langPref;
+}
+
+export function setLangPreference(lang: LangPref): void {
+  try {
+    if (lang === "auto") {
+      localStorage.removeItem(LANG_PREF_KEY);
+      return;
+    }
+    localStorage.setItem(LANG_PREF_KEY, lang);
+  } catch {
+    // noop: keep runtime behavior without persistence
+  }
 }
 
 export function t(key: string, vars?: Vars): string {

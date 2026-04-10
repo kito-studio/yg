@@ -97,7 +97,7 @@ async function initTopPage(): Promise<void> {
 
   if (dbMaintBtn instanceof HTMLButtonElement) {
     dbMaintBtn.addEventListener("click", () => {
-      window.location.href = "./db_maint.html";
+      window.location.href = "./settings.html";
     });
   }
 

@@ -12,9 +12,10 @@
 
 - 開発用HTML: `yg/index_ts.html`
 - 開発用HTML: `yg/db_maint.html`
+- 開発用HTML: `yg/settings.html`
 - 公開用HTML: `yg/index.html`
-- 開発用TS: `yg/ts/top-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/init-db.ts`
-- 公開用JS: `yg/js/top-page.js`, `yg/js/db-maint.js`, `yg/js/db-backup.js`, `yg/js/init-db.js`
+- 開発用TS: `yg/ts/top-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/settings.ts`, `yg/ts/i18n.ts`, `yg/ts/init-db.ts`
+- 公開用JS: `yg/js/top-page.js`, `yg/js/db-maint.js`, `yg/js/db-backup.js`, `yg/js/settings.js`, `yg/js/i18n.js`, `yg/js/init-db.js`
 
 ## AI作業ルール
 
@@ -32,6 +33,8 @@
 npx esbuild yg/ts/top-page.ts --bundle --format=esm --target=es2022 --outfile=yg/js/top-page.js
 npx esbuild yg/ts/db-maint.ts --bundle --format=esm --target=es2022 --outfile=yg/js/db-maint.js
 npx esbuild yg/ts/db-backup.ts --bundle --format=esm --target=es2022 --outfile=yg/js/db-backup.js
+npx esbuild yg/ts/settings.ts --bundle --format=esm --target=es2022 --outfile=yg/js/settings.js
+npx esbuild yg/ts/i18n.ts --bundle --format=esm --target=es2022 --outfile=yg/js/i18n.js
 npx esbuild yg/ts/init-db.ts --bundle --format=esm --target=es2022 --outfile=yg/js/init-db.js
 ```
 
