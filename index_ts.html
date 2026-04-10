@@ -204,6 +204,28 @@
           filter 180ms ease;
       }
 
+      .db-io-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .db-io-btn {
+        min-width: 72px;
+        height: 34px;
+        border: 0;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffefcf;
+        background: linear-gradient(180deg, #5c3b1d, #3a2310);
+        box-shadow: 0 6px 12px var(--ui-shadow);
+        cursor: pointer;
+      }
+
+      .db-io-btn:hover {
+        filter: brightness(1.08);
+      }
+
       body.ready.edit-mode .add-stage-btn {
         opacity: 1;
         transform: translateY(0);
@@ -504,6 +526,30 @@
       >
         +
       </button>
+      <div class="db-io-row">
+        <button
+          class="db-io-btn"
+          id="dbDownloadBtn"
+          type="button"
+          aria-label="データベース全体をダウンロード"
+        >
+          ⬇ DB
+        </button>
+        <button
+          class="db-io-btn"
+          id="dbUploadBtn"
+          type="button"
+          aria-label="データベースバックアップをアップロード"
+        >
+          ⬆ DB
+        </button>
+      </div>
+      <input
+        id="dbUploadInput"
+        type="file"
+        accept="application/json,.json"
+        hidden
+      />
     </div>
 
     <div class="stage-dialog-backdrop" id="stageDialogBackdrop" hidden></div>
