@@ -6,12 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2b1a0c" />
     <title data-i18n-title="app_title">やること撃破！</title>
-    <!-- Cloudflare Web Analytics -->
-    <script
-      defer
-      src="https://static.cloudflareinsights.com/beacon.min.js"
-      data-cf-beacon='{"token": "a00658942d21445fae2c9aec4fd031d2"}'
-    ></script>
+    <!-- Cloudflare Web Analytics (skip on local development hosts) -->
+    <script>
+      (() => {
+        const host = window.location.hostname;
+        const isLocalHost =
+          host === "localhost" ||
+          host === "127.0.0.1" ||
+          host === "::1" ||
+          host.endsWith(".local");
+        if (isLocalHost) {
+          return;
+        }
+        const analyticsScript = document.createElement("script");
+        analyticsScript.defer = true;
+        analyticsScript.src =
+          "https://static.cloudflareinsights.com/beacon.min.js";
+        analyticsScript.setAttribute(
+          "data-cf-beacon",
+          '{"token": "a00658942d21445fae2c9aec4fd031d2"}',
+        );
+        document.head.appendChild(analyticsScript);
+      })();
+    </script>
     <!-- End Cloudflare Web Analytics -->
     <style>
       :root {
@@ -82,6 +99,7 @@
         color: black;
         opacity: 0.9;
         border-radius: 30px;
+        display: none;
       }
 
       .logo-wrap {
