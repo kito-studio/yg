@@ -6,6 +6,7 @@ type StageRecord = {
   ord: number;
   nm: string;
   desc: string;
+  baseColor: string;
   progress: number;
   x: number;
   y: number;
@@ -39,6 +40,7 @@ const PROGRESS_BAR_FILL_ID = "stageProgressBarFill";
 const PROGRESS_VALUE_ID = "stageProgressValue";
 const NAME_INPUT_ID = "stageNameInput";
 const DESC_INPUT_ID = "stageDescInput";
+const COLOR_INPUT_ID = "stageColorInput";
 const CANCEL_BUTTON_ID = "stageDialogCancel";
 const SAVE_BUTTON_ID = "stageDialogSave";
 
@@ -61,6 +63,7 @@ const progressBarFill = document.getElementById(PROGRESS_BAR_FILL_ID);
 const progressValue = document.getElementById(PROGRESS_VALUE_ID);
 const nameInput = document.getElementById(NAME_INPUT_ID);
 const descInput = document.getElementById(DESC_INPUT_ID);
+const colorInput = document.getElementById(COLOR_INPUT_ID);
 const cancelButton = document.getElementById(CANCEL_BUTTON_ID);
 const saveButton = document.getElementById(SAVE_BUTTON_ID);
 
@@ -154,6 +157,7 @@ async function initTopPage(): Promise<void> {
       ord: stageCount,
       nm: `ST${stageCount}`,
       desc: "",
+      baseColor: "#ffc96b",
       progress: DEFAULT_PROGRESS,
       x: 0,
       y: 0,
@@ -222,8 +226,22 @@ function createStageObject(stage: StageRecord): HTMLButtonElement {
   el.dataset.stageLabel = stage.nm;
   el.dataset.stageOrd = String(stage.ord);
   el.dataset.stageDesc = stage.desc;
+  el.dataset.stageColor = normalizeHexColor(stage.baseColor);
   el.dataset.stageProgress = String(stage.progress);
+  el.title = stage.desc || "説明なし";
   el.setAttribute("aria-label", `ステージオブジェクト ${stage.nm}`);
+
+  const hp = document.createElement("span");
+  hp.className = "stage-object-hp";
+  hp.setAttribute("aria-hidden", "true");
+
+  const hpFill = document.createElement("span");
+  hpFill.className = "stage-object-hp-fill";
+  hp.append(hpFill);
+  el.append(hp);
+
+  applyStageVisuals(el);
+
   el.addEventListener("pointerdown", onPointerDown);
   el.addEventListener("dblclick", onStageDoubleClick);
   return el;
@@ -344,6 +362,7 @@ async function saveStageFromElement(
   const stgId = target.dataset.stageId;
   const stageName = target.dataset.stageLabel;
   const stageDesc = target.dataset.stageDesc || "";
+  const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
   const stageProgress = Number.parseInt(
     target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
     10,
@@ -368,6 +387,7 @@ async function saveStageFromElement(
     ord,
     nm: stageName,
     desc: stageDesc,
+    baseColor: stageColor,
     progress: clampProgress(stageProgress),
     x: pos.x,
     y: pos.y,
@@ -391,6 +411,9 @@ function normalizeStageRow(
   const safeName =
     typeof row.nm === "string" && row.nm.length > 0 ? row.nm : `ST${safeOrd}`;
   const safeDesc = typeof row.desc === "string" ? row.desc : "";
+  const safeColor = normalizeHexColor(
+    typeof row.baseColor === "string" ? row.baseColor : "#ffc96b",
+  );
   const safeProgress = clampProgress(
     Number.isFinite(row.progress) ? Number(row.progress) : DEFAULT_PROGRESS,
   );
@@ -400,6 +423,7 @@ function normalizeStageRow(
     ord: safeOrd,
     nm: safeName,
     desc: safeDesc,
+    baseColor: safeColor,
     progress: safeProgress,
     x: Number.isFinite(row.x) ? Number(row.x) : 0,
     y: Number.isFinite(row.y) ? Number(row.y) : 0,
@@ -420,6 +444,7 @@ function setupDialogEvents(): void {
     !(progressRange instanceof HTMLInputElement) ||
     !(nameInput instanceof HTMLInputElement) ||
     !(descInput instanceof HTMLTextAreaElement) ||
+    !(colorInput instanceof HTMLInputElement) ||
     !(cancelButton instanceof HTMLButtonElement) ||
     !(saveButton instanceof HTMLButtonElement)
   ) {
@@ -447,14 +472,18 @@ function setupDialogEvents(): void {
     const nextName =
       nameInput.value.trim() || editingStage.dataset.stageLabel || "ST";
     const nextDesc = descInput.value.trim();
+    const nextColor = normalizeHexColor(colorInput.value);
     const nextProgress = clampProgress(
       Number.parseInt(progressRange.value, 10),
     );
 
     editingStage.dataset.stageLabel = nextName;
     editingStage.dataset.stageDesc = nextDesc;
+    editingStage.dataset.stageColor = nextColor;
     editingStage.dataset.stageProgress = String(nextProgress);
+    editingStage.title = nextDesc || "説明なし";
     editingStage.setAttribute("aria-label", `ステージオブジェクト ${nextName}`);
+    applyStageVisuals(editingStage);
 
     await saveStageFromElement(editingStage);
     closeStageSettingsDialog();
@@ -467,6 +496,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
     !(progressRange instanceof HTMLInputElement) ||
     !(nameInput instanceof HTMLInputElement) ||
     !(descInput instanceof HTMLTextAreaElement) ||
+    !(colorInput instanceof HTMLInputElement) ||
     !(stageDialogBackdrop instanceof HTMLElement)
   ) {
     return;
@@ -476,6 +506,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
 
   const label = target.dataset.stageLabel || "ST";
   const desc = target.dataset.stageDesc || "";
+  const color = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
   const progress = clampProgress(
     Number.parseInt(target.dataset.stageProgress || `${DEFAULT_PROGRESS}`, 10),
   );
@@ -486,6 +517,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
 
   nameInput.value = label;
   descInput.value = desc;
+  colorInput.value = color;
   progressRange.value = String(progress);
   updateProgressPreview(progress);
 
@@ -525,6 +557,24 @@ function updateProgressPreview(value: number): void {
   }
 }
 
+function applyStageVisuals(target: HTMLButtonElement): void {
+  const color = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
+  const progress = clampProgress(
+    Number.parseInt(target.dataset.stageProgress || `${DEFAULT_PROGRESS}`, 10),
+  );
+  const hpColor = getHpColor(progress);
+
+  target.style.setProperty("--stage-base-color", color);
+
+  const hpFill = target.querySelector(
+    ".stage-object-hp-fill",
+  ) as HTMLElement | null;
+  if (hpFill) {
+    hpFill.style.width = `${progress}%`;
+    hpFill.style.backgroundColor = hpColor;
+  }
+}
+
 function clampProgress(value: number): number {
   if (!Number.isFinite(value)) {
     return DEFAULT_PROGRESS;
@@ -543,6 +593,25 @@ function getHpColor(value: number): string {
     return "#f39a3d";
   }
   return "#e84d43";
+}
+
+function normalizeHexColor(value: string): string {
+  const text = value.trim();
+  const shortHex = /^#[0-9a-fA-F]{3}$/;
+  const fullHex = /^#[0-9a-fA-F]{6}$/;
+
+  if (fullHex.test(text)) {
+    return text.toLowerCase();
+  }
+
+  if (shortHex.test(text)) {
+    const r = text[1];
+    const g = text[2];
+    const b = text[3];
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+
+  return "#ffc96b";
 }
 
 async function upsertStage(record: StageRecord): Promise<void> {

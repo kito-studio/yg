@@ -40,10 +40,10 @@ export const DB_DEF = {
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
   stages:
-    "stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+    "stgId, ord, cat, nm, desc, mode, isLocked, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // 🗺️ マップ（maps.html）
-  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // ⚔️ タスク（map.html）
   // parentTkId: 親タスクID（ルートは null/空）

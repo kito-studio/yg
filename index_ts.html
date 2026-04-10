@@ -254,14 +254,15 @@
         background: radial-gradient(
           circle at 32% 26%,
           #fff6cc 4%,
-          #ffc96b 46%,
-          #ee7f1d 100%
+          var(--stage-base-color, #ffc96b) 46%,
+          #7a4213 100%
         );
         box-shadow:
           0 12px 20px rgba(0, 0, 0, 0.35),
           inset 0 0 0 2px rgba(255, 255, 255, 0.16);
         cursor: grab;
         touch-action: none;
+        overflow: visible;
         z-index: 8;
       }
 
@@ -286,6 +287,31 @@
         box-shadow:
           0 15px 25px rgba(0, 0, 0, 0.42),
           inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+      }
+
+      .stage-object-hp {
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 6px);
+        transform: translateX(-50%);
+        width: 76px;
+        height: 11px;
+        border-radius: 999px;
+        background: rgba(21, 14, 8, 0.92);
+        border: 1px solid rgba(255, 220, 162, 0.55);
+        padding: 1px;
+        pointer-events: none;
+      }
+
+      .stage-object-hp-fill {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        background: #4dd26d;
+        transition:
+          width 180ms ease,
+          background-color 180ms ease;
       }
 
       .stage-dialog-backdrop {
@@ -591,6 +617,11 @@
           <div class="stage-field">
             <label for="stageNameInput">名称（nm）</label>
             <input id="stageNameInput" type="text" maxlength="40" />
+          </div>
+
+          <div class="stage-field">
+            <label for="stageColorInput">基本色</label>
+            <input id="stageColorInput" type="color" value="#ffc96b" />
           </div>
 
           <div class="stage-field">
