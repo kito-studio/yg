@@ -71,6 +71,20 @@ const saveButton = document.getElementById(SAVE_BUTTON_ID);
 let stageCount = 0;
 let editingStage: HTMLButtonElement | null = null;
 
+// ローカルならdiv#infoを非表示にする
+const host = window.location.hostname;
+const isLocalHost =
+  host === "localhost" ||
+  host === "127.0.0.1" ||
+  host === "::1" ||
+  host.endsWith(".local");
+if (isLocalHost) {
+  const infoEl = document.getElementById("info");
+  if (infoEl) {
+    infoEl.style.display = "none";
+  }
+}
+
 void initTopPage();
 
 async function initTopPage(): Promise<void> {

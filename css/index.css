@@ -66,7 +66,6 @@ body.map-visible.edit-mode .stage-map {
   color: black;
   opacity: 0.9;
   border-radius: 30px;
-  display: none;
 }
 
 .logo-wrap {
