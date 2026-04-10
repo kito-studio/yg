@@ -1,0 +1,1 @@
+JavaScriptはTypeScriptからの変換で作成する。
