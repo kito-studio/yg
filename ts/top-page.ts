@@ -49,10 +49,12 @@ const NAME_INPUT_ID = "stageNameInput";
 const DESC_INPUT_ID = "stageDescInput";
 const COLOR_INPUT_ID = "stageColorInput";
 const STAGE_IMAGE_FILE_INPUT_ID = "stageImageFileInput";
+const STAGE_IMAGE_PICK_BUTTON_ID = "stageImagePickBtn";
 const STAGE_IMAGE_CLEAR_BUTTON_ID = "stageImageClearBtn";
 const STAGE_IMAGE_SAVE_BUTTON_ID = "stageImageSaveBtn";
 const STAGE_IMAGE_CURRENT_ID = "stageImageCurrent";
 const MAP_IMAGE_FILE_INPUT_ID = "mapImageFileInput";
+const MAP_IMAGE_PICK_BUTTON_ID = "mapImagePickBtn";
 const MAP_IMAGE_CLEAR_BUTTON_ID = "mapImageClearBtn";
 const MAP_IMAGE_SAVE_BUTTON_ID = "mapImageSaveBtn";
 const MAP_IMAGE_CURRENT_ID = "mapImageCurrent";
@@ -84,6 +86,9 @@ const nameInput = document.getElementById(NAME_INPUT_ID);
 const descInput = document.getElementById(DESC_INPUT_ID);
 const colorInput = document.getElementById(COLOR_INPUT_ID);
 const stageImageFileInput = document.getElementById(STAGE_IMAGE_FILE_INPUT_ID);
+const stageImagePickButton = document.getElementById(
+  STAGE_IMAGE_PICK_BUTTON_ID,
+);
 const stageImageClearButton = document.getElementById(
   STAGE_IMAGE_CLEAR_BUTTON_ID,
 );
@@ -92,6 +97,7 @@ const stageImageSaveButton = document.getElementById(
 );
 const stageImageCurrent = document.getElementById(STAGE_IMAGE_CURRENT_ID);
 const mapImageFileInput = document.getElementById(MAP_IMAGE_FILE_INPUT_ID);
+const mapImagePickButton = document.getElementById(MAP_IMAGE_PICK_BUTTON_ID);
 const mapImageClearButton = document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID);
 const mapImageSaveButton = document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID);
 const mapImageCurrent = document.getElementById(MAP_IMAGE_CURRENT_ID);
@@ -566,12 +572,24 @@ function setupDialogEvents(): void {
     });
   }
 
+  if (stageImagePickButton instanceof HTMLButtonElement) {
+    stageImagePickButton.addEventListener("click", () => {
+      void openRegisteredImagePicker("stage");
+    });
+  }
+
   if (
     mapImageFileInput instanceof HTMLInputElement &&
     mapImageClearButton instanceof HTMLButtonElement
   ) {
     mapImageClearButton.addEventListener("click", () => {
       mapImageFileInput.value = "";
+    });
+  }
+
+  if (mapImagePickButton instanceof HTMLButtonElement) {
+    mapImagePickButton.addEventListener("click", () => {
+      void openRegisteredImagePicker("map");
     });
   }
 
@@ -757,6 +775,319 @@ async function saveImageTabSelection(kind: "stage" | "map"): Promise<void> {
 
   await saveStageFromElement(editingStage);
   input.value = "";
+}
+
+async function openRegisteredImagePicker(kind: "stage" | "map"): Promise<void> {
+  if (!editingStage) {
+    return;
+  }
+
+  const rows = await fetchRegisteredImageRows();
+
+  const oldBack = document.getElementById("yg_image_picker_back");
+  const oldPop = document.getElementById("yg_image_picker_popup");
+  oldBack?.remove();
+  oldPop?.remove();
+
+  const overlayRoot =
+    document.querySelector(".stage-dialog-shell") || document.body;
+
+  const createdUrls: string[] = [];
+  const close = () => {
+    for (const url of createdUrls) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        // noop
+      }
+    }
+    back.remove();
+    pop.remove();
+  };
+
+  const back = document.createElement("div");
+  back.id = "yg_image_picker_back";
+  back.style.position = "absolute";
+  back.style.left = "0";
+  back.style.top = "0";
+  back.style.width = "100%";
+  back.style.height = "100%";
+  back.style.background = "rgba(0,0,0,0.42)";
+  back.style.zIndex = "150";
+  overlayRoot.appendChild(back);
+
+  const pop = document.createElement("div");
+  pop.id = "yg_image_picker_popup";
+  pop.style.position = "absolute";
+  pop.style.left = "50%";
+  pop.style.top = "50%";
+  pop.style.transform = "translate(-50%, -50%)";
+  pop.style.width = "min(900px, calc(100% - 16px))";
+  pop.style.maxHeight = "calc(100% - 16px)";
+  pop.style.background = "#fff";
+  pop.style.border = "1px solid #ccc";
+  pop.style.borderRadius = "8px";
+  pop.style.padding = "10px";
+  pop.style.display = "flex";
+  pop.style.flexDirection = "column";
+  pop.style.gap = "8px";
+  pop.style.zIndex = "151";
+  overlayRoot.appendChild(pop);
+
+  const title = document.createElement("h3");
+  title.textContent = t("image_picker_title");
+  title.style.margin = "0";
+  pop.appendChild(title);
+
+  const toolRow = document.createElement("div");
+  toolRow.style.display = "flex";
+  toolRow.style.gap = "8px";
+  toolRow.style.flexWrap = "wrap";
+  pop.appendChild(toolRow);
+
+  const qInput = document.createElement("input");
+  qInput.type = "text";
+  qInput.placeholder = t("image_picker_filter_placeholder");
+  qInput.style.flex = "1 1 280px";
+  qInput.style.minWidth = "200px";
+  toolRow.appendChild(qInput);
+
+  const extSelect = document.createElement("select");
+  ["", "png", "jpg", "jpeg", "webp", "gif", "svg"].forEach((ext) => {
+    const opt = document.createElement("option");
+    opt.value = ext;
+    opt.textContent = ext ? `.${ext}` : t("image_picker_ext_all");
+    extSelect.appendChild(opt);
+  });
+  toolRow.appendChild(extSelect);
+
+  const count = document.createElement("span");
+  count.style.marginLeft = "auto";
+  count.style.fontSize = "12px";
+  count.style.color = "#666";
+  toolRow.appendChild(count);
+
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(130px, 1fr))";
+  grid.style.gap = "8px";
+  grid.style.overflow = "auto";
+  grid.style.minHeight = "220px";
+  grid.style.maxHeight = "54vh";
+  grid.style.border = "1px solid #eee";
+  grid.style.borderRadius = "6px";
+  grid.style.padding = "8px";
+  pop.appendChild(grid);
+
+  const footer = document.createElement("div");
+  footer.style.display = "flex";
+  footer.style.justifyContent = "flex-end";
+  footer.style.gap = "8px";
+  pop.appendChild(footer);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.textContent = t("image_picker_close");
+  footer.appendChild(closeBtn);
+
+  const renderGrid = () => {
+    grid.innerHTML = "";
+
+    const query = String(qInput.value || "")
+      .trim()
+      .toLowerCase();
+    const ext = String(extSelect.value || "")
+      .trim()
+      .toLowerCase();
+
+    const filtered = rows.filter((row) => {
+      if (ext && row.ext !== ext) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+      return (
+        row.nm.toLowerCase().includes(query) ||
+        row.fId.toLowerCase().includes(query)
+      );
+    });
+
+    count.textContent = t("image_picker_count", { count: filtered.length });
+
+    if (filtered.length === 0) {
+      const empty = document.createElement("div");
+      empty.textContent = t("image_picker_empty");
+      empty.style.color = "#777";
+      empty.style.fontSize = "13px";
+      grid.appendChild(empty);
+      return;
+    }
+
+    for (const row of filtered) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.style.display = "flex";
+      card.style.flexDirection = "column";
+      card.style.alignItems = "stretch";
+      card.style.gap = "6px";
+      card.style.padding = "6px";
+      card.style.border = "1px solid #ddd";
+      card.style.borderRadius = "6px";
+      card.style.background = "#fff";
+      card.style.cursor = "pointer";
+
+      const img = document.createElement("img");
+      img.alt = row.nm || row.fId;
+      img.style.width = "100%";
+      img.style.aspectRatio = "1 / 1";
+      img.style.objectFit = "cover";
+      img.style.background = "#f5f5f5";
+      img.style.borderRadius = "4px";
+      if (row.objectUrl) {
+        img.src = row.objectUrl;
+      }
+      card.appendChild(img);
+
+      const label = document.createElement("div");
+      label.textContent = row.nm || row.fId;
+      label.style.fontSize = "11px";
+      label.style.lineHeight = "1.3";
+      label.style.wordBreak = "break-all";
+      card.appendChild(label);
+
+      if (row.nm && row.nm !== row.fId) {
+        const sub = document.createElement("div");
+        sub.textContent = row.fId;
+        sub.style.fontSize = "10px";
+        sub.style.color = "#666";
+        sub.style.wordBreak = "break-all";
+        card.appendChild(sub);
+      }
+
+      card.addEventListener("click", async () => {
+        if (!editingStage) {
+          close();
+          return;
+        }
+
+        if (kind === "stage") {
+          editingStage.dataset.stageImgPath = row.fId;
+          if (stageImageCurrent instanceof HTMLElement) {
+            stageImageCurrent.textContent = row.fId;
+          }
+          await applyStageImageVisual(editingStage);
+        } else {
+          editingStage.dataset.stageMapImgPath = row.fId;
+          if (mapImageCurrent instanceof HTMLElement) {
+            mapImageCurrent.textContent = row.fId;
+          }
+        }
+
+        await saveStageFromElement(editingStage);
+        close();
+      });
+
+      grid.appendChild(card);
+
+      if (row.objectUrl) {
+        createdUrls.push(row.objectUrl);
+      }
+    }
+  };
+
+  qInput.addEventListener("input", renderGrid);
+  extSelect.addEventListener("change", renderGrid);
+  closeBtn.addEventListener("click", close);
+  back.addEventListener("click", close);
+
+  renderGrid();
+  qInput.focus();
+}
+
+type PickerImageRow = {
+  fId: string;
+  nm: string;
+  ext: string;
+  objectUrl: string;
+};
+
+async function fetchRegisteredImageRows(): Promise<PickerImageRow[]> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("files", "readonly");
+    const store = tx.objectStore("files");
+    const rows = (await requestToPromise(store.getAll())) as Array<{
+      fId?: string;
+      nm?: string;
+      ext?: string;
+      mime?: string;
+      body?: string;
+      bin?: Blob;
+      t_u?: number;
+    }>;
+
+    const images = rows
+      .filter((row) => {
+        const ext = String(row?.ext || "")
+          .trim()
+          .toLowerCase();
+        const mime = String(row?.mime || "")
+          .trim()
+          .toLowerCase();
+        const body = String(row?.body || "")
+          .trim()
+          .toLowerCase();
+        const imageExts = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
+        if (imageExts.has(ext)) {
+          return true;
+        }
+        if (mime.startsWith("image/")) {
+          return true;
+        }
+        return body.startsWith("data:image/");
+      })
+      .map((row) => {
+        const fId = String(row?.fId || "").trim();
+        const nm = String(row?.nm || fId).trim();
+        const ext = String(row?.ext || "")
+          .trim()
+          .toLowerCase();
+        let objectUrl = "";
+        if (row?.bin instanceof Blob) {
+          objectUrl = URL.createObjectURL(row.bin);
+        } else {
+          const body = String(row?.body || "").trim();
+          if (body.toLowerCase().startsWith("data:image/")) {
+            objectUrl = body;
+          }
+        }
+        return {
+          fId,
+          nm,
+          ext,
+          objectUrl,
+          t_u: Number(row?.t_u || 0),
+        };
+      })
+      .filter((row) => !!row.fId && !!row.objectUrl)
+      .sort((a, b) => {
+        if (a.t_u !== b.t_u) {
+          return b.t_u - a.t_u;
+        }
+        return a.fId.localeCompare(b.fId);
+      })
+      .map((row) => ({
+        fId: row.fId,
+        nm: row.nm,
+        ext: row.ext,
+        objectUrl: row.objectUrl,
+      }));
+
+    return images;
+  } finally {
+    db.close();
+  }
 }
 
 async function saveFileToStore(file: File): Promise<string | null> {

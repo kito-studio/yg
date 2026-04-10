@@ -360,6 +360,7 @@ body.view-mode .stage-object {
 }
 
 .stage-dialog-shell {
+  position: relative;
   padding: 20px 20px 16px;
 }
 
@@ -516,6 +517,11 @@ body.view-mode .stage-object {
 .stage-dialog-btn.save {
   color: #2d1806;
   background: linear-gradient(180deg, #ffd889, #f4b752);
+}
+
+.stage-image-actions .stage-dialog-btn:not(.cancel):not(.save) {
+  color: #f9e7c4;
+  background: rgba(66, 46, 25, 0.82);
 }
 
 @keyframes float-in {
