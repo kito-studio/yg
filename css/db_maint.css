@@ -1,0 +1,26 @@
+@import url("../../css/db_maint.css");
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: #111;
+  color: #ddd;
+  font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+}
+
+#db_maint_toolbar a {
+  color: #9fd2ff;
+}
+
+.db_maint_table td {
+  max-width: 300px;
+}
+
+.db_cell_display {
+  display: block;
+  min-width: 80px;
+}
