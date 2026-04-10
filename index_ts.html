@@ -72,6 +72,18 @@
         filter: saturate(1.08) contrast(1.02);
       }
 
+      #info {
+        position: absolute;
+        left: 30%;
+        top: 5%;
+        padding: 20px;
+        z-index: 11;
+        background-color: lightpink;
+        color: black;
+        opacity: 0.9;
+        border-radius: 30px;
+      }
+
       .logo-wrap {
         position: absolute;
         left: 50%;
@@ -534,6 +546,13 @@
         alt="ステージ選択地図"
         data-i18n-alt="stage_map_alt"
       />
+    </div>
+
+    <div id="info">
+      <pre>
+        このサイトは開発中です。m(_ _)m
+        データ設計など試行錯誤中ですので、保存されたデータはスグ消えます。
+      </pre>
     </div>
 
     <div class="logo-wrap" id="logoWrap">
