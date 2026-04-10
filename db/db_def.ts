@@ -40,10 +40,10 @@ export const DB_DEF = {
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
   stages:
-    "stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, memo, t_c, t_u",
+    "stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // 🗺️ マップ（maps.html）
-  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, memo, t_c, t_u",
+  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // ⚔️ タスク（map.html）
   // parentTkId: 親タスクID（ルートは null/空）
@@ -52,7 +52,7 @@ export const DB_DEF = {
   // state: todo | doing | done | sealed
   // requiresApproval: 第三者承認が必要なタスクに1
   tasks:
-    "tkId, mpId, parentTkId, [mpId+parentTkId], [mpId+layer+ord], [mpId+state], ord, layer, nodeType, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, x, y, w, h, rot, vis, isLocked, memo, t_c, t_u",
+    "tkId, mpId, parentTkId, [mpId+parentTkId], [mpId+layer+ord], [mpId+state], ord, layer, nodeType, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, x, y, w, h, rot, clr, vis, isLocked, memo, t_c, t_u",
 
   // ⛓️ 依存関係（同一tasks内の任意ノード間）
   // srcType/dstType: task 固定（将来拡張用に保持）

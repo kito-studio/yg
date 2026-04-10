@@ -49,7 +49,7 @@ function ensureStoreAndIndexes(
   }
 }
 
-function openYGDatabase(): Promise<IDBDatabase> {
+export function openYGDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NM, DB_VERSION);
 
@@ -88,7 +88,7 @@ async function hasYGDatabase(): Promise<boolean | null> {
   return dbs.some((db) => db.name === DB_NM);
 }
 
-async function ensureYGDatabase(): Promise<void> {
+export async function ensureYGDatabase(): Promise<void> {
   const existed = await hasYGDatabase();
   const db = await openYGDatabase();
   db.close();

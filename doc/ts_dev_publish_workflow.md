@@ -12,8 +12,8 @@
 
 - 開発用HTML: `yg/index_ts.html`
 - 公開用HTML: `yg/index.html`
-- 開発用TS: `yg/ts/init-db.ts`
-- 公開用JS: `yg/js/init-db.js`
+- 開発用TS: `yg/ts/top-page.ts`, `yg/ts/init-db.ts`
+- 公開用JS: `yg/js/top-page.js`, `yg/js/init-db.js`
 
 ## AI作業ルール
 
@@ -28,25 +28,26 @@
 プロジェクトルートで実行:
 
 ```powershell
+npx esbuild yg/ts/top-page.ts --bundle --format=esm --target=es2022 --outfile=yg/js/top-page.js
 npx esbuild yg/ts/init-db.ts --bundle --format=esm --target=es2022 --outfile=yg/js/init-db.js
 ```
 
 ### 2. 開発用HTMLを公開用HTMLへ同期
 
-`index_ts.html` を `index.html` に同期し、`./ts/init-db.ts` 参照を `./js/init-db.js` に置換する。
+`index_ts.html` を `index.html` に同期し、`./ts/top-page.ts` 参照を `./js/top-page.js` に置換する。
 
 PowerShell例:
 
 ```powershell
 $src = Get-Content yg/index_ts.html -Raw
-$dist = $src.Replace('./ts/init-db.ts', './js/init-db.js')
+$dist = $src.Replace('./ts/top-page.ts', './js/top-page.js')
 Set-Content yg/index.html $dist -Encoding UTF8
 ```
 
 ### 3. 反映確認
 
-- `yg/index.html` が `./js/init-db.js` を参照していること。
-- `yg/js/init-db.js` が最新のTS変更を含んでいること。
+- `yg/index.html` が `./js/top-page.js` を参照していること。
+- `yg/js/top-page.js` が最新のTS変更を含んでいること。
 - 必要に応じてブラウザで `yg/index.html` を開き動作確認すること。
 
 ## 備考
