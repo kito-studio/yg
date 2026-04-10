@@ -18,6 +18,7 @@
         --bg-2: #2b1a0c;
         --logo: #ffdf8f;
         --shadow: rgba(0, 0, 0, 0.45);
+        --ui-shadow: rgba(0, 0, 0, 0.28);
       }
 
       * {
@@ -31,8 +32,7 @@
 
       body {
         margin: 0;
-        display: grid;
-        place-items: center;
+        position: relative;
         background:
           radial-gradient(
             circle at 20% 18%,
@@ -48,12 +48,122 @@
         overflow: hidden;
       }
 
+      .stage-map {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 900ms ease;
+      }
+
+      body.map-visible .stage-map {
+        opacity: 1;
+      }
+
+      .stage-map img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(1.08) contrast(1.02);
+      }
+
+      .logo-wrap {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        z-index: 10;
+      }
+
+      body.ready .logo-wrap {
+        animation: logo-dock 1300ms cubic-bezier(0.25, 1, 0.35, 1) forwards;
+      }
+
       .logo {
         display: block;
         width: min(74vw, 680px);
+        min-width: 250px;
         height: auto;
         filter: drop-shadow(0 14px 24px var(--shadow));
         animation: float-in 780ms ease-out both;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      .add-stage-btn {
+        width: 52px;
+        height: 52px;
+        border: 0;
+        border-radius: 14px;
+        font-size: 34px;
+        line-height: 1;
+        color: #2b1a0c;
+        background: linear-gradient(180deg, #ffd778, #ffbb53);
+        box-shadow: 0 8px 18px var(--ui-shadow);
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(6px);
+        transition:
+          opacity 280ms ease,
+          transform 280ms ease,
+          filter 180ms ease;
+      }
+
+      body.ready .add-stage-btn {
+        opacity: 1;
+        transform: translateY(0);
+        transition-delay: 1320ms;
+      }
+
+      .add-stage-btn:hover {
+        filter: brightness(1.05);
+      }
+
+      .add-stage-btn:active {
+        transform: translateY(1px);
+      }
+
+      .stage-object {
+        position: absolute;
+        width: 74px;
+        height: 74px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.85);
+        background: radial-gradient(
+          circle at 32% 26%,
+          #fff6cc 4%,
+          #ffc96b 46%,
+          #ee7f1d 100%
+        );
+        box-shadow:
+          0 12px 20px rgba(0, 0, 0, 0.35),
+          inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+        cursor: grab;
+        touch-action: none;
+        z-index: 8;
+      }
+
+      .stage-object::before {
+        content: attr(data-stage-label);
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: 700;
+        font-size: 13px;
+        color: #3e1f06;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+      }
+
+      .stage-object.dragging {
+        cursor: grabbing;
+        box-shadow:
+          0 15px 25px rgba(0, 0, 0, 0.42),
+          inset 0 0 0 2px rgba(255, 255, 255, 0.18);
       }
 
       @keyframes float-in {
@@ -66,10 +176,153 @@
           transform: translateY(0) scale(1);
         }
       }
+
+      @keyframes logo-dock {
+        from {
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%) scale(1);
+        }
+        to {
+          left: 20px;
+          top: 16px;
+          transform: translate(0, 0) scale(0.42);
+          transform-origin: top left;
+        }
+      }
+
+      @media (max-width: 768px) {
+        @keyframes logo-dock {
+          from {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          to {
+            left: 10px;
+            top: 10px;
+            transform: translate(0, 0) scale(0.34);
+            transform-origin: top left;
+          }
+        }
+      }
     </style>
   </head>
   <body>
-    <img class="logo" src="./img/yg_logo.jpg" alt="やること撃破！" />
+    <div class="stage-map" id="stageMap" aria-hidden="true">
+      <img src="./img/stage_map0.jpg" alt="ステージ選択地図" />
+    </div>
+
+    <div class="logo-wrap" id="logoWrap">
+      <img class="logo" src="./img/yg_logo.jpg" alt="やること撃破！" />
+      <button
+        class="add-stage-btn"
+        id="addStageBtn"
+        type="button"
+        aria-label="ステージ追加"
+      >
+        +
+      </button>
+    </div>
+
     <script type="module" src="./js/init-db.js"></script>
+    <script>
+      (function () {
+        const BODY_READY_CLASS = "ready";
+        const ADD_BUTTON_ID = "addStageBtn";
+        const LOGO_WRAP_ID = "logoWrap";
+
+        const addBtn = document.getElementById(ADD_BUTTON_ID);
+        const logoWrap = document.getElementById(LOGO_WRAP_ID);
+        let stageCount = 0;
+
+        setTimeout(() => {
+          document.body.classList.add(BODY_READY_CLASS);
+        }, 420);
+
+        setTimeout(() => {
+          document.body.classList.add("map-visible");
+        }, 1800);
+
+        if (!addBtn || !logoWrap) {
+          return;
+        }
+
+        addBtn.addEventListener("click", () => {
+          stageCount += 1;
+          const stageObject = createStageObject(stageCount);
+          document.body.append(stageObject);
+
+          const rect = logoWrap.getBoundingClientRect();
+          placeStageObject(stageObject, rect.left + 22, rect.bottom + 22);
+          beginDrag(stageObject);
+        });
+
+        function createStageObject(index) {
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = "stage-object";
+          el.dataset.stageLabel = "ST" + index;
+          el.setAttribute("aria-label", "ステージオブジェクト " + index);
+          el.addEventListener("pointerdown", onPointerDown);
+          return el;
+        }
+
+        function onPointerDown(event) {
+          const target = event.currentTarget;
+          if (!(target instanceof HTMLElement)) {
+            return;
+          }
+          beginDrag(target, event);
+        }
+
+        function beginDrag(target, startEvent) {
+          target.classList.add("dragging");
+
+          const targetRect = target.getBoundingClientRect();
+          const offsetX = startEvent
+            ? startEvent.clientX - targetRect.left
+            : targetRect.width / 2;
+          const offsetY = startEvent
+            ? startEvent.clientY - targetRect.top
+            : targetRect.height / 2;
+
+          const move = (clientX, clientY) => {
+            placeStageObject(target, clientX - offsetX, clientY - offsetY);
+          };
+
+          const stopDragging = () => {
+            target.classList.remove("dragging");
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
+          };
+
+          const onMove = (event) => {
+            move(event.clientX, event.clientY);
+          };
+
+          const onUp = () => {
+            stopDragging();
+          };
+
+          if (startEvent && startEvent.pointerId != null) {
+            target.setPointerCapture(startEvent.pointerId);
+            move(startEvent.clientX, startEvent.clientY);
+          }
+
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp);
+          window.addEventListener("pointercancel", onUp);
+        }
+
+        function placeStageObject(target, left, top) {
+          const maxLeft = window.innerWidth - target.offsetWidth;
+          const maxTop = window.innerHeight - target.offsetHeight;
+          target.style.left = Math.max(0, Math.min(left, maxLeft)) + "px";
+          target.style.top = Math.max(0, Math.min(top, maxTop)) + "px";
+        }
+      })();
+    </script>
   </body>
 </html>
