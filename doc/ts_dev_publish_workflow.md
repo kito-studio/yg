@@ -1,62 +1,31 @@
 # YGトップページ TS開発/公開ワークフロー
 
-このドキュメントは、YGトップページの開発と公開をAI/開発者が同じ手順で扱うための運用定義です。
+このドキュメントは、YGトップページを Cloudflare ビルド前提で運用するための定義です。
 
 ## 目的
 
-- 開発時は TypeScript を使う。
-- 公開時は JavaScript に変換した成果物を使う。
-- AI が誤って公開用ファイルを直接編集しないようにする。
+- GitHub はソース保管場所として扱う。
+- 変換済み JS をリポジトリ管理しない。
+- HTML と TS を正本として Cloudflare 側でビルドする。
 
 ## 正本ファイル（Source of Truth）
 
-- 開発用HTML: `yg/index_ts.html`
-- 開発用HTML: `yg/db_maint.html`
-- 開発用HTML: `yg/settings.html`
-- 公開用HTML: `yg/index.html`
-- 開発用TS: `yg/ts/top-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/settings.ts`, `yg/ts/i18n.ts`, `yg/ts/init-db.ts`
-- 公開用JS: `yg/js/top-page.js`, `yg/js/db-maint.js`, `yg/js/db-backup.js`, `yg/js/settings.js`, `yg/js/i18n.js`, `yg/js/init-db.js`
+- HTML: `yg/index.html`, `yg/db_maint.html`, `yg/settings.html`
+- TypeScript: `yg/ts/top-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/settings.ts`, `yg/ts/i18n.ts`, `yg/ts/init-db.ts`
 
 ## AI作業ルール
 
-1. 機能追加・仕様変更は `yg/index_ts.html` と `yg/ts/*` を編集する。
-2. `yg/index.html` と `yg/js/*` は公開反映（同期）以外では直接編集しない。
-3. 公開反映が必要なタイミングでのみ、下記「公開反映手順」を実施する。
+1. 機能追加・仕様変更は `yg/*.html` と `yg/ts/*` を直接編集する。
+2. `yg/js/*` のような変換成果物は新規作成しない。
+3. 公開時の TS => JS 手動変換手順は実施しない。
 
-## 公開反映手順（TS => JS）
+## 確認手順
 
-### 1. TSをJSへ変換
-
-プロジェクトルートで実行:
-
-```powershell
-npx esbuild yg/ts/top-page.ts --bundle --format=esm --target=es2022 --outfile=yg/js/top-page.js
-npx esbuild yg/ts/db-maint.ts --bundle --format=esm --target=es2022 --outfile=yg/js/db-maint.js
-npx esbuild yg/ts/db-backup.ts --bundle --format=esm --target=es2022 --outfile=yg/js/db-backup.js
-npx esbuild yg/ts/settings.ts --bundle --format=esm --target=es2022 --outfile=yg/js/settings.js
-npx esbuild yg/ts/i18n.ts --bundle --format=esm --target=es2022 --outfile=yg/js/i18n.js
-npx esbuild yg/ts/init-db.ts --bundle --format=esm --target=es2022 --outfile=yg/js/init-db.js
-```
-
-### 2. 開発用HTMLを公開用HTMLへ同期
-
-`index_ts.html` を `index.html` に同期し、`./ts/top-page.ts` 参照を `./js/top-page.js` に置換する。
-
-PowerShell例:
-
-```powershell
-$src = Get-Content yg/index_ts.html -Raw
-$dist = $src.Replace('./ts/top-page.ts', './js/top-page.js')
-Set-Content yg/index.html $dist -Encoding UTF8
-```
-
-### 3. 反映確認
-
-- `yg/index.html` が `./js/top-page.js` を参照していること。
-- `yg/js/top-page.js` が最新のTS変更を含んでいること。
-- 必要に応じてブラウザで `yg/index.html` を開き動作確認すること。
+1. `yg/index.html` が `./ts/top-page.ts` を参照していること。
+2. `yg/db_maint.html` が `./ts/db-maint.ts` を参照していること。
+3. `yg/settings.html` が `./ts/settings.ts` を参照していること。
+4. 必要に応じてローカルで `npm run build` / `npm run typecheck` を実行すること。
 
 ## 備考
 
-- 将来 `yg/ts` 配下のエントリが増えた場合は、この手順に変換対象を追記する。
-- 自動化する場合は、同内容の npm script を追加してこのドキュメントを更新する。
+- Cloudflare のビルド設定変更時は、このドキュメントを先に更新する。

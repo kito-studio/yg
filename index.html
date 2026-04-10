@@ -1,11 +1,11 @@
 <!doctype html>
-<!-- YG公開用: 通常の機能修正は index_ts.html 側で行い、公開時に同期する。 -->
+<!-- YG正本: Cloudflareビルド前提。変更はこのファイルとTSを直接更新する。 -->
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2b1a0c" />
-    <title>やること撃破！</title>
+    <title data-i18n-title="app_title">やること撃破！</title>
     <!-- Cloudflare Web Analytics -->
     <script
       defer
@@ -57,8 +57,12 @@
         transition: opacity 900ms ease;
       }
 
-      body.map-visible .stage-map {
+      body.map-visible.view-mode .stage-map {
         opacity: 1;
+      }
+
+      body.map-visible.edit-mode .stage-map {
+        opacity: 0.5;
       }
 
       .stage-map img {
@@ -66,6 +70,18 @@
         height: 100%;
         object-fit: cover;
         filter: saturate(1.08) contrast(1.02);
+      }
+
+      #info {
+        position: absolute;
+        left: 30%;
+        top: 5%;
+        padding: 20px;
+        z-index: 11;
+        background-color: lightpink;
+        color: black;
+        opacity: 0.9;
+        border-radius: 30px;
       }
 
       .logo-wrap {
@@ -157,6 +173,7 @@
         top: 50%;
         transform: translateY(-50%);
         font-size: 18px;
+        color: lightgray;
         opacity: 0.72;
         transition: opacity 220ms ease;
         user-select: none;
@@ -200,6 +217,28 @@
           filter 180ms ease;
       }
 
+      .db-io-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .db-io-btn {
+        min-width: 72px;
+        height: 34px;
+        border: 0;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ffefcf;
+        background: linear-gradient(180deg, #5c3b1d, #3a2310);
+        box-shadow: 0 6px 12px var(--ui-shadow);
+        cursor: pointer;
+      }
+
+      .db-io-btn:hover {
+        filter: brightness(1.08);
+      }
+
       body.ready.edit-mode .add-stage-btn {
         opacity: 1;
         transform: translateY(0);
@@ -221,21 +260,22 @@
 
       .stage-object {
         position: absolute;
-        width: 74px;
+        width: 158px;
         height: 74px;
-        border-radius: 50%;
+        border-radius: 20%;
         border: 3px solid rgba(255, 255, 255, 0.85);
         background: radial-gradient(
           circle at 32% 26%,
           #fff6cc 4%,
-          #ffc96b 46%,
-          #ee7f1d 100%
+          var(--stage-base-color, #ffc96b) 46%,
+          #7a4213 100%
         );
         box-shadow:
           0 12px 20px rgba(0, 0, 0, 0.35),
           inset 0 0 0 2px rgba(255, 255, 255, 0.16);
         cursor: grab;
         touch-action: none;
+        overflow: visible;
         z-index: 8;
       }
 
@@ -260,6 +300,169 @@
         box-shadow:
           0 15px 25px rgba(0, 0, 0, 0.42),
           inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+      }
+
+      .stage-object-hp {
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 6px);
+        transform: translateX(-50%);
+        width: 76px;
+        height: 11px;
+        border-radius: 999px;
+        background: rgba(21, 14, 8, 0.92);
+        border: 1px solid rgba(255, 220, 162, 0.55);
+        padding: 1px;
+        pointer-events: none;
+      }
+
+      .stage-object-hp-fill {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        background: #4dd26d;
+        transition:
+          width 180ms ease,
+          background-color 180ms ease;
+      }
+
+      .stage-dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(
+          circle at 50% 42%,
+          rgba(0, 0, 0, 0.35),
+          rgba(0, 0, 0, 0.65)
+        );
+        z-index: 39;
+      }
+
+      .stage-settings-dialog {
+        width: min(92vw, 540px);
+        border: 1px solid rgba(255, 213, 142, 0.28);
+        border-radius: 20px;
+        padding: 0;
+        background: linear-gradient(160deg, #2a180b, #120d08 72%);
+        color: #ffe3b6;
+        box-shadow:
+          0 22px 42px rgba(0, 0, 0, 0.52),
+          inset 0 1px 0 rgba(255, 222, 163, 0.12);
+        z-index: 40;
+      }
+
+      .stage-settings-dialog::backdrop {
+        background: transparent;
+      }
+
+      .stage-dialog-shell {
+        padding: 20px 20px 16px;
+      }
+
+      .stage-dialog-title {
+        margin: 0;
+        font-size: 21px;
+        letter-spacing: 0.02em;
+      }
+
+      .stage-dialog-sub {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: rgba(255, 227, 182, 0.8);
+      }
+
+      .stage-dialog-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .stage-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .stage-field label {
+        font-size: 13px;
+        color: rgba(255, 227, 182, 0.86);
+      }
+
+      .stage-field input,
+      .stage-field textarea {
+        width: 100%;
+        border: 1px solid rgba(255, 215, 146, 0.32);
+        border-radius: 12px;
+        background: rgba(24, 16, 10, 0.9);
+        color: #fff3d9;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      .stage-field textarea {
+        min-height: 94px;
+        resize: vertical;
+      }
+
+      .hp-gauge {
+        border: 1px solid rgba(255, 215, 146, 0.34);
+        border-radius: 999px;
+        background: rgba(12, 8, 4, 0.9);
+        padding: 3px;
+      }
+
+      .hp-gauge-fill {
+        height: 16px;
+        width: 100%;
+        border-radius: 999px;
+        background: #4dd26d;
+        transition:
+          width 180ms ease,
+          background-color 180ms ease;
+      }
+
+      .hp-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 4px;
+        font-size: 12px;
+      }
+
+      .hp-value {
+        font-weight: 700;
+        color: #4dd26d;
+      }
+
+      .stage-progress-range {
+        width: 100%;
+      }
+
+      .stage-dialog-footer {
+        margin-top: 16px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .stage-dialog-btn {
+        border: 0;
+        border-radius: 11px;
+        font-size: 14px;
+        font-weight: 700;
+        padding: 9px 14px;
+        cursor: pointer;
+      }
+
+      .stage-dialog-btn.cancel {
+        color: #f4d9ab;
+        background: rgba(102, 73, 43, 0.78);
+      }
+
+      .stage-dialog-btn.save {
+        color: #2d1806;
+        background: linear-gradient(180deg, #ffd889, #f4b752);
       }
 
       @keyframes float-in {
@@ -338,7 +541,18 @@
   </head>
   <body>
     <div class="stage-map" id="stageMap" aria-hidden="true">
-      <img src="./img/stage_map0.jpg" alt="ステージ選択地図" />
+      <img
+        src="./img/world_map/world_map0.jpg"
+        alt="ステージ選択地図"
+        data-i18n-alt="stage_map_alt"
+      />
+    </div>
+
+    <div id="info">
+      <pre>
+        このサイトは開発中です。m(_ _)m
+        データ設計など試行錯誤中ですので、保存されたデータはスグ消えます。
+      </pre>
     </div>
 
     <div class="logo-wrap" id="logoWrap">
@@ -346,7 +560,11 @@
     </div>
 
     <div class="control-stack" id="controlStack">
-      <label class="mode-switch" aria-label="閲覧モードと編集モードの切り替え">
+      <label
+        class="mode-switch"
+        aria-label="閲覧モードと編集モードの切り替え"
+        data-i18n-aria-label="mode_toggle_aria"
+      >
         <input class="mode-switch-input" id="modeSwitch" type="checkbox" />
         <span class="mode-switch-track" aria-hidden="true">
           <span class="mode-switch-icon view">👁</span>
@@ -359,126 +577,126 @@
         id="addStageBtn"
         type="button"
         aria-label="ステージ追加"
+        data-i18n-aria-label="add_stage_aria"
       >
         +
       </button>
+      <div class="db-io-row">
+        <button
+          class="db-io-btn"
+          id="dbDownloadBtn"
+          type="button"
+          aria-label="データベース全体をダウンロード"
+          data-i18n-aria-label="db_download_aria"
+        >
+          ⬇ DB
+        </button>
+        <button
+          class="db-io-btn"
+          id="dbUploadBtn"
+          type="button"
+          aria-label="データベースバックアップをアップロード"
+          data-i18n-aria-label="db_upload_aria"
+        >
+          ⬆ DB
+        </button>
+        <button
+          class="db-io-btn"
+          id="dbMaintBtn"
+          type="button"
+          aria-label="データメンテ画面へ移動"
+          data-i18n-aria-label="settings_aria"
+        >
+          ⚙
+        </button>
+      </div>
+      <input
+        id="dbUploadInput"
+        type="file"
+        accept="application/json,.json"
+        hidden
+      />
     </div>
 
-    <script type="module" src="./js/init-db.js"></script>
-    <script>
-      (function () {
-        const BODY_READY_CLASS = "ready";
-        const ADD_BUTTON_ID = "addStageBtn";
-        const LOGO_WRAP_ID = "logoWrap";
-        const MODE_SWITCH_ID = "modeSwitch";
+    <div class="stage-dialog-backdrop" id="stageDialogBackdrop" hidden></div>
 
-        const addBtn = document.getElementById(ADD_BUTTON_ID);
-        const logoWrap = document.getElementById(LOGO_WRAP_ID);
-        const modeSwitch = document.getElementById(MODE_SWITCH_ID);
-        let stageCount = 0;
+    <dialog class="stage-settings-dialog" id="stageSettingsDialog">
+      <form method="dialog" class="stage-dialog-shell" onsubmit="return false;">
+        <h2
+          class="stage-dialog-title"
+          id="stageDialogTitle"
+          data-i18n="stage_settings_title"
+        >
+          ステージ設定
+        </h2>
+        <p class="stage-dialog-sub" data-i18n="stage_settings_sub">
+          ステージの状態と基本情報を編集できます。
+        </p>
 
-        document.body.classList.add("view-mode");
+        <div class="stage-dialog-body">
+          <div class="stage-field">
+            <label for="stageProgressRange" data-i18n="stage_progress_label"
+              >撃破状態（進捗）</label
+            >
+            <div class="hp-gauge" aria-hidden="true">
+              <div class="hp-gauge-fill" id="stageProgressBarFill"></div>
+            </div>
+            <div class="hp-meta">
+              <span data-i18n="hp_label">HP</span>
+              <span class="hp-value" id="stageProgressValue">100%</span>
+            </div>
+            <input
+              class="stage-progress-range"
+              id="stageProgressRange"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="100"
+            />
+          </div>
 
-        setTimeout(() => {
-          document.body.classList.add(BODY_READY_CLASS);
-        }, 420);
+          <div class="stage-field">
+            <label for="stageNameInput" data-i18n="stage_name_label"
+              >名称（nm）</label
+            >
+            <input id="stageNameInput" type="text" maxlength="40" />
+          </div>
 
-        setTimeout(() => {
-          document.body.classList.add("map-visible");
-        }, 1800);
+          <div class="stage-field">
+            <label for="stageColorInput" data-i18n="stage_color_label"
+              >基本色</label
+            >
+            <input id="stageColorInput" type="color" value="#ffc96b" />
+          </div>
 
-        if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
-          return;
-        }
+          <div class="stage-field">
+            <label for="stageDescInput" data-i18n="stage_desc_label"
+              >説明（desc）</label
+            >
+            <textarea id="stageDescInput"></textarea>
+          </div>
+        </div>
 
-        modeSwitch.checked = false;
-        modeSwitch.addEventListener("change", () => {
-          const editMode = modeSwitch.checked;
-          document.body.classList.toggle("edit-mode", editMode);
-          document.body.classList.toggle("view-mode", !editMode);
-        });
+        <div class="stage-dialog-footer">
+          <button
+            class="stage-dialog-btn cancel"
+            id="stageDialogCancel"
+            type="button"
+          >
+            <span data-i18n="cancel">キャンセル</span>
+          </button>
+          <button
+            class="stage-dialog-btn save"
+            id="stageDialogSave"
+            type="button"
+          >
+            <span data-i18n="save">保存</span>
+          </button>
+        </div>
+      </form>
+    </dialog>
 
-        addBtn.addEventListener("click", () => {
-          if (!document.body.classList.contains("edit-mode")) {
-            return;
-          }
-          stageCount += 1;
-          const stageObject = createStageObject(stageCount);
-          document.body.append(stageObject);
-
-          const rect = logoWrap.getBoundingClientRect();
-          placeStageObject(stageObject, rect.left + 22, rect.bottom + 22);
-          beginDrag(stageObject);
-        });
-
-        function createStageObject(index) {
-          const el = document.createElement("button");
-          el.type = "button";
-          el.className = "stage-object";
-          el.dataset.stageLabel = "ST" + index;
-          el.setAttribute("aria-label", "ステージオブジェクト " + index);
-          el.addEventListener("pointerdown", onPointerDown);
-          return el;
-        }
-
-        function onPointerDown(event) {
-          if (!document.body.classList.contains("edit-mode")) {
-            return;
-          }
-          const target = event.currentTarget;
-          if (!(target instanceof HTMLElement)) {
-            return;
-          }
-          beginDrag(target, event);
-        }
-
-        function beginDrag(target, startEvent) {
-          target.classList.add("dragging");
-
-          const targetRect = target.getBoundingClientRect();
-          const offsetX = startEvent
-            ? startEvent.clientX - targetRect.left
-            : targetRect.width / 2;
-          const offsetY = startEvent
-            ? startEvent.clientY - targetRect.top
-            : targetRect.height / 2;
-
-          const move = (clientX, clientY) => {
-            placeStageObject(target, clientX - offsetX, clientY - offsetY);
-          };
-
-          const stopDragging = () => {
-            target.classList.remove("dragging");
-            window.removeEventListener("pointermove", onMove);
-            window.removeEventListener("pointerup", onUp);
-            window.removeEventListener("pointercancel", onUp);
-          };
-
-          const onMove = (event) => {
-            move(event.clientX, event.clientY);
-          };
-
-          const onUp = () => {
-            stopDragging();
-          };
-
-          if (startEvent && startEvent.pointerId != null) {
-            target.setPointerCapture(startEvent.pointerId);
-            move(startEvent.clientX, startEvent.clientY);
-          }
-
-          window.addEventListener("pointermove", onMove);
-          window.addEventListener("pointerup", onUp);
-          window.addEventListener("pointercancel", onUp);
-        }
-
-        function placeStageObject(target, left, top) {
-          const maxLeft = window.innerWidth - target.offsetWidth;
-          const maxTop = window.innerHeight - target.offsetHeight;
-          target.style.left = Math.max(0, Math.min(left, maxLeft)) + "px";
-          target.style.top = Math.max(0, Math.min(top, maxTop)) + "px";
-        }
-      })();
-    </script>
+    <script type="module" src="./ts/top-page.ts"></script>
   </body>
 </html>
