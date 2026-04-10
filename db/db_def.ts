@@ -39,11 +39,17 @@ export const DB_DEF = {
   // 🗺️ ステージ（top.html）
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
+  worlds:
+    "wId, ord, cat, nm, desc, mode, isLocked, status, progress, mapImgPath, coverFId, bgFId, memo, t_c, t_u",
+
+  // 🗺️ ステージ（top.html）
+  // mode: edit | run
+  // isLocked: 配布マップなど編集不可時に1
   stages:
-    "stgId, ord, cat, nm, desc, mode, isLocked, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+    "stgId, ord, cat, nm, desc, mode, isLocked, status, progress, imgPath, mapImgPath, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // 🗺️ マップ（maps.html）
-  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, status, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // ⚔️ タスク（map.html）
   // parentTkId: 親タスクID（ルートは null/空）
