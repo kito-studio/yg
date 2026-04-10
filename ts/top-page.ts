@@ -9,6 +9,8 @@ type StageRecord = {
   desc: string;
   baseColor: string;
   progress: number;
+  imgPath: string;
+  mapImgPath: string;
   x: number;
   y: number;
   w: number;
@@ -36,12 +38,24 @@ const DB_MAINT_BUTTON_ID = "dbMaintBtn";
 const DIALOG_ID = "stageSettingsDialog";
 const DIALOG_BACKDROP_ID = "stageDialogBackdrop";
 const DIALOG_TITLE_ID = "stageDialogTitle";
+const DIALOG_TAB_BASIC_ID = "stageDialogTabBasic";
+const DIALOG_TAB_IMAGE_ID = "stageDialogTabImage";
+const DIALOG_PANEL_BASIC_ID = "stageDialogPanelBasic";
+const DIALOG_PANEL_IMAGE_ID = "stageDialogPanelImage";
 const PROGRESS_RANGE_ID = "stageProgressRange";
 const PROGRESS_BAR_FILL_ID = "stageProgressBarFill";
 const PROGRESS_VALUE_ID = "stageProgressValue";
 const NAME_INPUT_ID = "stageNameInput";
 const DESC_INPUT_ID = "stageDescInput";
 const COLOR_INPUT_ID = "stageColorInput";
+const STAGE_IMAGE_FILE_INPUT_ID = "stageImageFileInput";
+const STAGE_IMAGE_CLEAR_BUTTON_ID = "stageImageClearBtn";
+const STAGE_IMAGE_SAVE_BUTTON_ID = "stageImageSaveBtn";
+const STAGE_IMAGE_CURRENT_ID = "stageImageCurrent";
+const MAP_IMAGE_FILE_INPUT_ID = "mapImageFileInput";
+const MAP_IMAGE_CLEAR_BUTTON_ID = "mapImageClearBtn";
+const MAP_IMAGE_SAVE_BUTTON_ID = "mapImageSaveBtn";
+const MAP_IMAGE_CURRENT_ID = "mapImageCurrent";
 const CANCEL_BUTTON_ID = "stageDialogCancel";
 const SAVE_BUTTON_ID = "stageDialogSave";
 
@@ -59,17 +73,35 @@ const dbMaintBtn = document.getElementById(DB_MAINT_BUTTON_ID);
 const stageDialog = document.getElementById(DIALOG_ID);
 const stageDialogBackdrop = document.getElementById(DIALOG_BACKDROP_ID);
 const stageDialogTitle = document.getElementById(DIALOG_TITLE_ID);
+const stageDialogTabBasic = document.getElementById(DIALOG_TAB_BASIC_ID);
+const stageDialogTabImage = document.getElementById(DIALOG_TAB_IMAGE_ID);
+const stageDialogPanelBasic = document.getElementById(DIALOG_PANEL_BASIC_ID);
+const stageDialogPanelImage = document.getElementById(DIALOG_PANEL_IMAGE_ID);
 const progressRange = document.getElementById(PROGRESS_RANGE_ID);
 const progressBarFill = document.getElementById(PROGRESS_BAR_FILL_ID);
 const progressValue = document.getElementById(PROGRESS_VALUE_ID);
 const nameInput = document.getElementById(NAME_INPUT_ID);
 const descInput = document.getElementById(DESC_INPUT_ID);
 const colorInput = document.getElementById(COLOR_INPUT_ID);
+const stageImageFileInput = document.getElementById(STAGE_IMAGE_FILE_INPUT_ID);
+const stageImageClearButton = document.getElementById(
+  STAGE_IMAGE_CLEAR_BUTTON_ID,
+);
+const stageImageSaveButton = document.getElementById(
+  STAGE_IMAGE_SAVE_BUTTON_ID,
+);
+const stageImageCurrent = document.getElementById(STAGE_IMAGE_CURRENT_ID);
+const mapImageFileInput = document.getElementById(MAP_IMAGE_FILE_INPUT_ID);
+const mapImageClearButton = document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID);
+const mapImageSaveButton = document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID);
+const mapImageCurrent = document.getElementById(MAP_IMAGE_CURRENT_ID);
 const cancelButton = document.getElementById(CANCEL_BUTTON_ID);
 const saveButton = document.getElementById(SAVE_BUTTON_ID);
 
 let stageCount = 0;
 let editingStage: HTMLButtonElement | null = null;
+let stageMapDefaultSrc = "";
+const fileObjectUrlCache = new Map<string, string>();
 
 // ローカルならdiv#infoを非表示にする
 const host = window.location.hostname;
@@ -101,6 +133,11 @@ async function initTopPage(): Promise<void> {
 
   if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
     return;
+  }
+
+  const baseMapImg = getStageMapImageElement();
+  if (baseMapImg) {
+    stageMapDefaultSrc = baseMapImg.getAttribute("src") || baseMapImg.src || "";
   }
 
   if (dbDownloadBtn instanceof HTMLButtonElement) {
@@ -175,6 +212,8 @@ async function initTopPage(): Promise<void> {
       desc: "",
       baseColor: "#ffc96b",
       progress: DEFAULT_PROGRESS,
+      imgPath: "",
+      mapImgPath: "",
       x: 0,
       y: 0,
       w: STAGE_DEFAULT_SIZE,
@@ -244,8 +283,20 @@ function createStageObject(stage: StageRecord): HTMLButtonElement {
   el.dataset.stageDesc = stage.desc;
   el.dataset.stageColor = normalizeHexColor(stage.baseColor);
   el.dataset.stageProgress = String(stage.progress);
+  el.dataset.stageImgPath = stage.imgPath;
+  el.dataset.stageMapImgPath = stage.mapImgPath;
   el.title = stage.desc || t("stage_no_desc");
   el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
+
+  const sideImage = document.createElement("span");
+  sideImage.className = "stage-object-side-image";
+  sideImage.setAttribute("aria-hidden", "true");
+
+  const sideImageImg = document.createElement("img");
+  sideImageImg.className = "stage-object-side-image-img";
+  sideImageImg.alt = "";
+  sideImage.append(sideImageImg);
+  el.append(sideImage);
 
   const hp = document.createElement("span");
   hp.className = "stage-object-hp";
@@ -260,7 +311,21 @@ function createStageObject(stage: StageRecord): HTMLButtonElement {
 
   el.addEventListener("pointerdown", onPointerDown);
   el.addEventListener("dblclick", onStageDoubleClick);
+  el.addEventListener("click", onStageClick);
   return el;
+}
+
+function onStageClick(event: MouseEvent): void {
+  if (!document.body.classList.contains(VIEW_MODE_CLASS)) {
+    return;
+  }
+
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  void applyStageMapImage(target);
 }
 
 function onStageDoubleClick(event: MouseEvent): void {
@@ -383,6 +448,8 @@ async function saveStageFromElement(
     target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
     10,
   );
+  const stageImgPath = String(target.dataset.stageImgPath || "").trim();
+  const stageMapImgPath = String(target.dataset.stageMapImgPath || "").trim();
   if (!stgId || !stageName) {
     return;
   }
@@ -405,6 +472,8 @@ async function saveStageFromElement(
     desc: stageDesc,
     baseColor: stageColor,
     progress: clampProgress(stageProgress),
+    imgPath: stageImgPath,
+    mapImgPath: stageMapImgPath,
     x: pos.x,
     y: pos.y,
     w: STAGE_DEFAULT_SIZE,
@@ -441,6 +510,8 @@ function normalizeStageRow(
     desc: safeDesc,
     baseColor: safeColor,
     progress: safeProgress,
+    imgPath: typeof row.imgPath === "string" ? row.imgPath : "",
+    mapImgPath: typeof row.mapImgPath === "string" ? row.mapImgPath : "",
     x: Number.isFinite(row.x) ? Number(row.x) : 0,
     y: Number.isFinite(row.y) ? Number(row.y) : 0,
     w: Number.isFinite(row.w) ? Number(row.w) : STAGE_DEFAULT_SIZE,
@@ -467,9 +538,54 @@ function setupDialogEvents(): void {
     return;
   }
 
+  if (
+    stageDialogTabBasic instanceof HTMLButtonElement &&
+    stageDialogTabImage instanceof HTMLButtonElement &&
+    stageDialogPanelBasic instanceof HTMLElement &&
+    stageDialogPanelImage instanceof HTMLElement
+  ) {
+    stageDialogTabBasic.addEventListener("click", () => {
+      setDialogTab("basic");
+    });
+
+    stageDialogTabImage.addEventListener("click", () => {
+      setDialogTab("image");
+    });
+  }
+
   progressRange.addEventListener("input", () => {
     updateProgressPreview(Number.parseInt(progressRange.value, 10));
   });
+
+  if (
+    stageImageFileInput instanceof HTMLInputElement &&
+    stageImageClearButton instanceof HTMLButtonElement
+  ) {
+    stageImageClearButton.addEventListener("click", () => {
+      stageImageFileInput.value = "";
+    });
+  }
+
+  if (
+    mapImageFileInput instanceof HTMLInputElement &&
+    mapImageClearButton instanceof HTMLButtonElement
+  ) {
+    mapImageClearButton.addEventListener("click", () => {
+      mapImageFileInput.value = "";
+    });
+  }
+
+  if (stageImageSaveButton instanceof HTMLButtonElement) {
+    stageImageSaveButton.addEventListener("click", () => {
+      void saveImageTabSelection("stage");
+    });
+  }
+
+  if (mapImageSaveButton instanceof HTMLButtonElement) {
+    mapImageSaveButton.addEventListener("click", () => {
+      void saveImageTabSelection("map");
+    });
+  }
 
   cancelButton.addEventListener("click", () => {
     closeStageSettingsDialog();
@@ -539,6 +655,8 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
   colorInput.value = color;
   progressRange.value = String(progress);
   updateProgressPreview(progress);
+  setDialogTab("basic");
+  syncImageTabFromStage(target);
 
   stageDialogBackdrop.hidden = false;
   if (!stageDialog.open) {
@@ -559,6 +677,155 @@ function closeStageSettingsDialog(): void {
   if (stageDialog.open) {
     stageDialog.close();
   }
+}
+
+function setDialogTab(tab: "basic" | "image"): void {
+  if (
+    !(stageDialogTabBasic instanceof HTMLButtonElement) ||
+    !(stageDialogTabImage instanceof HTMLButtonElement) ||
+    !(stageDialogPanelBasic instanceof HTMLElement) ||
+    !(stageDialogPanelImage instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  const basicActive = tab === "basic";
+  stageDialogTabBasic.classList.toggle("active", basicActive);
+  stageDialogTabImage.classList.toggle("active", !basicActive);
+  stageDialogTabBasic.setAttribute("aria-selected", String(basicActive));
+  stageDialogTabImage.setAttribute("aria-selected", String(!basicActive));
+  stageDialogPanelBasic.classList.toggle("active", basicActive);
+  stageDialogPanelImage.classList.toggle("active", !basicActive);
+  stageDialogPanelBasic.hidden = !basicActive;
+  stageDialogPanelImage.hidden = basicActive;
+  stageDialogPanelBasic.setAttribute("aria-hidden", String(!basicActive));
+  stageDialogPanelImage.setAttribute("aria-hidden", String(basicActive));
+}
+
+function syncImageTabFromStage(target: HTMLButtonElement): void {
+  if (
+    !(stageImageCurrent instanceof HTMLElement) ||
+    !(mapImageCurrent instanceof HTMLElement) ||
+    !(stageImageFileInput instanceof HTMLInputElement) ||
+    !(mapImageFileInput instanceof HTMLInputElement)
+  ) {
+    return;
+  }
+
+  stageImageFileInput.value = "";
+  mapImageFileInput.value = "";
+
+  const stageImgPath = String(target.dataset.stageImgPath || "").trim();
+  const mapImgPath = String(target.dataset.stageMapImgPath || "").trim();
+  stageImageCurrent.textContent = stageImgPath || "-";
+  mapImageCurrent.textContent = mapImgPath || "-";
+}
+
+async function saveImageTabSelection(kind: "stage" | "map"): Promise<void> {
+  if (!editingStage) {
+    return;
+  }
+
+  if (
+    !(stageImageFileInput instanceof HTMLInputElement) ||
+    !(mapImageFileInput instanceof HTMLInputElement) ||
+    !(stageImageCurrent instanceof HTMLElement) ||
+    !(mapImageCurrent instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  const input = kind === "stage" ? stageImageFileInput : mapImageFileInput;
+  const file = input.files?.[0] || null;
+  if (!file) {
+    return;
+  }
+
+  const fId = await saveFileToStore(file);
+  if (!fId) {
+    return;
+  }
+
+  if (kind === "stage") {
+    editingStage.dataset.stageImgPath = fId;
+    stageImageCurrent.textContent = fId;
+    await applyStageImageVisual(editingStage);
+  } else {
+    editingStage.dataset.stageMapImgPath = fId;
+    mapImageCurrent.textContent = fId;
+  }
+
+  await saveStageFromElement(editingStage);
+  input.value = "";
+}
+
+async function saveFileToStore(file: File): Promise<string | null> {
+  const extByName = String(file.name || "")
+    .split(".")
+    .pop()
+    ?.toLowerCase();
+  const extByMime = String(file.type || "")
+    .split("/")
+    .pop()
+    ?.toLowerCase();
+  const ext = extByName || extByMime || "bin";
+  const rand = Math.random().toString(36).slice(2, 8);
+  const fId = `f_${Date.now()}_${rand}.${ext}`;
+
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("files", "readwrite");
+    const store = tx.objectStore("files");
+    await requestToPromise(
+      store.put({
+        fId,
+        ext,
+        nm: file.name || fId,
+        mime: file.type || "application/octet-stream",
+        size: file.size,
+        bin: file,
+        t_c: Date.now(),
+        t_u: Date.now(),
+      }),
+    );
+    await transactionDone(tx);
+    return fId;
+  } finally {
+    db.close();
+  }
+}
+
+async function applyStageMapImage(target: HTMLButtonElement): Promise<void> {
+  const mapImg = getStageMapImageElement();
+  if (!mapImg) {
+    return;
+  }
+
+  const mapFId = String(target.dataset.stageMapImgPath || "").trim();
+  if (!mapFId) {
+    if (stageMapDefaultSrc) {
+      mapImg.src = stageMapDefaultSrc;
+    }
+    return;
+  }
+
+  const objectUrl = await getObjectUrlForFile(mapFId);
+  if (!objectUrl) {
+    if (stageMapDefaultSrc) {
+      mapImg.src = stageMapDefaultSrc;
+    }
+    return;
+  }
+
+  mapImg.src = objectUrl;
+}
+
+function getStageMapImageElement(): HTMLImageElement | null {
+  if (!(stageMap instanceof HTMLElement)) {
+    return null;
+  }
+  const image = stageMap.querySelector("img");
+  return image instanceof HTMLImageElement ? image : null;
 }
 
 function updateProgressPreview(value: number): void {
@@ -591,6 +858,68 @@ function applyStageVisuals(target: HTMLButtonElement): void {
   if (hpFill) {
     hpFill.style.width = `${progress}%`;
     hpFill.style.backgroundColor = hpColor;
+  }
+
+  void applyStageImageVisual(target);
+}
+
+async function applyStageImageVisual(target: HTMLButtonElement): Promise<void> {
+  const sideImage = target.querySelector(
+    ".stage-object-side-image",
+  ) as HTMLElement | null;
+  const sideImageImg = target.querySelector(
+    ".stage-object-side-image-img",
+  ) as HTMLImageElement | null;
+  if (!sideImage || !sideImageImg) {
+    return;
+  }
+
+  const fId = String(target.dataset.stageImgPath || "").trim();
+  if (!fId) {
+    sideImage.hidden = true;
+    sideImageImg.removeAttribute("src");
+    return;
+  }
+
+  const objectUrl = await getObjectUrlForFile(fId);
+  if (!objectUrl) {
+    sideImage.hidden = true;
+    sideImageImg.removeAttribute("src");
+    return;
+  }
+
+  sideImage.hidden = false;
+  sideImageImg.src = objectUrl;
+}
+
+async function getObjectUrlForFile(fId: string): Promise<string | null> {
+  const cached = fileObjectUrlCache.get(fId);
+  if (cached) {
+    return cached;
+  }
+
+  const blob = await getFileBlobById(fId);
+  if (!blob) {
+    return null;
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  fileObjectUrlCache.set(fId, objectUrl);
+  return objectUrl;
+}
+
+async function getFileBlobById(fId: string): Promise<Blob | null> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("files", "readonly");
+    const store = tx.objectStore("files");
+    const row = (await requestToPromise(store.get(fId))) as
+      | { bin?: Blob }
+      | undefined;
+    const bin = row?.bin;
+    return bin instanceof Blob ? bin : null;
+  } finally {
+    db.close();
   }
 }
 

@@ -261,6 +261,28 @@ body.ready:not(.edit-mode) .add-stage-btn {
   z-index: 8;
 }
 
+.stage-object-side-image {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  transform: translateY(-50%);
+  border-radius: 10px;
+  border: 2px solid rgba(255, 240, 204, 0.8);
+  background: rgba(26, 18, 10, 0.85);
+  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stage-object-side-image-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 body.view-mode .stage-object {
   cursor: default;
 }
@@ -353,11 +375,41 @@ body.view-mode .stage-object {
   color: rgba(255, 227, 182, 0.8);
 }
 
-.stage-dialog-body {
+.stage-dialog-tabs {
+  margin-top: 14px;
   display: flex;
+  gap: 8px;
+}
+
+.stage-dialog-tab {
+  border: 1px solid rgba(255, 215, 146, 0.3);
+  border-radius: 999px;
+  background: rgba(31, 21, 12, 0.9);
+  color: rgba(255, 227, 182, 0.86);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.stage-dialog-tab.active {
+  border-color: rgba(255, 214, 137, 0.92);
+  color: #2d1806;
+  background: linear-gradient(180deg, #ffd889, #f4b752);
+}
+
+.stage-dialog-body {
+  margin-top: 16px;
+}
+
+.stage-dialog-panel {
+  display: none;
   flex-direction: column;
   gap: 12px;
-  margin-top: 16px;
+}
+
+.stage-dialog-panel.active {
+  display: flex;
 }
 
 .stage-field {
@@ -385,6 +437,25 @@ body.view-mode .stage-object {
 .stage-field textarea {
   min-height: 94px;
   resize: vertical;
+}
+
+.stage-image-group {
+  border: 1px solid rgba(255, 215, 146, 0.24);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(20, 12, 6, 0.55);
+}
+
+.stage-image-current {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255, 227, 182, 0.84);
+}
+
+.stage-image-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .hp-gauge {

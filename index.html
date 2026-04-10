@@ -126,49 +126,152 @@
           ステージの状態と基本情報を編集できます。
         </p>
 
+        <div
+          class="stage-dialog-tabs"
+          role="tablist"
+          aria-label="ステージ設定タブ"
+        >
+          <button
+            class="stage-dialog-tab active"
+            id="stageDialogTabBasic"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="stageDialogPanelBasic"
+            data-tab-target="stageDialogPanelBasic"
+            data-i18n="stage_tab_basic"
+          >
+            基本
+          </button>
+          <button
+            class="stage-dialog-tab"
+            id="stageDialogTabImage"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="stageDialogPanelImage"
+            data-tab-target="stageDialogPanelImage"
+            data-i18n="stage_tab_image"
+          >
+            画像
+          </button>
+        </div>
+
         <div class="stage-dialog-body">
-          <div class="stage-field">
-            <label for="stageProgressRange" data-i18n="stage_progress_label"
-              >撃破状態（進捗）</label
-            >
-            <div class="hp-gauge" aria-hidden="true">
-              <div class="hp-gauge-fill" id="stageProgressBarFill"></div>
+          <section
+            class="stage-dialog-panel active"
+            id="stageDialogPanelBasic"
+            role="tabpanel"
+            aria-labelledby="stageDialogTabBasic"
+          >
+            <div class="stage-field">
+              <label for="stageProgressRange" data-i18n="stage_progress_label"
+                >撃破状態（進捗）</label
+              >
+              <div class="hp-gauge" aria-hidden="true">
+                <div class="hp-gauge-fill" id="stageProgressBarFill"></div>
+              </div>
+              <div class="hp-meta">
+                <span data-i18n="hp_label">HP</span>
+                <span class="hp-value" id="stageProgressValue">100%</span>
+              </div>
+              <input
+                class="stage-progress-range"
+                id="stageProgressRange"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value="100"
+              />
             </div>
-            <div class="hp-meta">
-              <span data-i18n="hp_label">HP</span>
-              <span class="hp-value" id="stageProgressValue">100%</span>
+
+            <div class="stage-field">
+              <label for="stageNameInput" data-i18n="stage_name_label"
+                >名称（nm）</label
+              >
+              <input id="stageNameInput" type="text" maxlength="40" />
             </div>
-            <input
-              class="stage-progress-range"
-              id="stageProgressRange"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="100"
-            />
-          </div>
 
-          <div class="stage-field">
-            <label for="stageNameInput" data-i18n="stage_name_label"
-              >名称（nm）</label
-            >
-            <input id="stageNameInput" type="text" maxlength="40" />
-          </div>
+            <div class="stage-field">
+              <label for="stageColorInput" data-i18n="stage_color_label"
+                >基本色</label
+              >
+              <input id="stageColorInput" type="color" value="#ffc96b" />
+            </div>
 
-          <div class="stage-field">
-            <label for="stageColorInput" data-i18n="stage_color_label"
-              >基本色</label
-            >
-            <input id="stageColorInput" type="color" value="#ffc96b" />
-          </div>
+            <div class="stage-field">
+              <label for="stageDescInput" data-i18n="stage_desc_label"
+                >説明（desc）</label
+              >
+              <textarea id="stageDescInput"></textarea>
+            </div>
+          </section>
 
-          <div class="stage-field">
-            <label for="stageDescInput" data-i18n="stage_desc_label"
-              >説明（desc）</label
-            >
-            <textarea id="stageDescInput"></textarea>
-          </div>
+          <section
+            class="stage-dialog-panel"
+            id="stageDialogPanelImage"
+            role="tabpanel"
+            aria-labelledby="stageDialogTabImage"
+          >
+            <div class="stage-field stage-image-group">
+              <label for="stageImageFileInput" data-i18n="stage_image_label"
+                >ステージ画像</label
+              >
+              <input id="stageImageFileInput" type="file" accept="image/*" />
+              <p class="stage-image-current">
+                <span data-i18n="current_file_label">現在</span>
+                <span id="stageImageCurrent">-</span>
+              </p>
+              <div class="stage-image-actions">
+                <button
+                  class="stage-dialog-btn cancel"
+                  id="stageImageClearBtn"
+                  type="button"
+                  data-i18n="upload_cancel"
+                >
+                  キャンセル
+                </button>
+                <button
+                  class="stage-dialog-btn save"
+                  id="stageImageSaveBtn"
+                  type="button"
+                  data-i18n="upload_save"
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+
+            <div class="stage-field stage-image-group">
+              <label for="mapImageFileInput" data-i18n="map_image_label"
+                >マップ画像</label
+              >
+              <input id="mapImageFileInput" type="file" accept="image/*" />
+              <p class="stage-image-current">
+                <span data-i18n="current_file_label">現在</span>
+                <span id="mapImageCurrent">-</span>
+              </p>
+              <div class="stage-image-actions">
+                <button
+                  class="stage-dialog-btn cancel"
+                  id="mapImageClearBtn"
+                  type="button"
+                  data-i18n="upload_cancel"
+                >
+                  キャンセル
+                </button>
+                <button
+                  class="stage-dialog-btn save"
+                  id="mapImageSaveBtn"
+                  type="button"
+                  data-i18n="upload_save"
+                >
+                  保存
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div class="stage-dialog-footer">
