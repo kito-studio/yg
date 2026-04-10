@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YG データメンテ</title>
+    <title data-i18n-title="db_maint_title">YG データメンテ</title>
     <link rel="stylesheet" href="../css/db_maint.css" />
     <style>
       html,
@@ -36,10 +36,14 @@
   <body>
     <div id="db_maint">
       <div id="db_maint_toolbar">
-        <a href="./index_ts.html">ホーム</a>
-        <a href="./index_ts.html">ステージ選択</a>
-        <button id="db_export_btn" type="button">⬇️ バックアップ</button>
-        <button id="db_import_btn" type="button">⬆️ リストア</button>
+        <a href="./index_ts.html" data-i18n="home">ホーム</a>
+        <a href="./index_ts.html" data-i18n="stage_select">ステージ選択</a>
+        <button id="db_export_btn" type="button" data-i18n="backup">
+          ⬇️ バックアップ
+        </button>
+        <button id="db_import_btn" type="button" data-i18n="restore">
+          ⬆️ リストア
+        </button>
         <input
           id="db_import_input"
           type="file"
@@ -48,15 +52,17 @@
         />
       </div>
       <div id="db_maint_selector">
-        <label for="db_table_select">テーブル：</label>
+        <label for="db_table_select" data-i18n="table_label">テーブル：</label>
         <select id="db_table_select"></select>
         <button id="db_refresh_table_btn" type="button">♻</button>
         <span id="db_record_count"></span>
         <span id="db_table_usage"></span>
         <button id="db_bulk_delete_btn" type="button" disabled>
-          🗑️ 選択削除
+          <span data-i18n="bulk_delete">🗑️ 選択削除</span>
         </button>
-        <button id="db_clear_table_btn" type="button">🗑️ レコード全削除</button>
+        <button id="db_clear_table_btn" type="button" data-i18n="clear_records">
+          🗑️ レコード全削除
+        </button>
       </div>
       <div id="db_maint_grid"></div>
     </div>

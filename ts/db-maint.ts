@@ -1,5 +1,6 @@
 import { DB_DEF } from "../db/db_def";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
+import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
 
 const tableSelect = document.getElementById(
@@ -39,6 +40,8 @@ async function initDbMaint(): Promise<void> {
     return;
   }
 
+  applyI18n(document);
+
   await ensureYGDatabase();
 
   const tableNames = Object.keys(DB_DEF);
@@ -72,7 +75,7 @@ async function initDbMaint(): Promise<void> {
       return;
     }
     const ok = window.confirm(
-      `${tableSelect.value} の全レコードを削除しますか？`,
+      t("confirm_clear_table", { table: tableSelect.value }),
     );
     if (!ok) {
       return;
@@ -104,13 +107,13 @@ async function initDbMaint(): Promise<void> {
       void (async () => {
         try {
           await restoreYGBackupFromFile(file);
-          window.alert("YGデータベースをリストアしました。");
+          window.alert(t("restore_success"));
           if (tableSelect.value) {
             await renderTable(tableSelect.value);
           }
         } catch (error) {
           const message =
-            error instanceof Error ? error.message : "リストアに失敗しました。";
+            error instanceof Error ? error.message : t("restore_failed");
           window.alert(message);
         }
       })();
@@ -139,12 +142,12 @@ async function renderTable(tableName: string): Promise<void> {
 
   const selectHead = document.createElement("th");
   selectHead.className = "db_select_col";
-  selectHead.textContent = "選";
+  selectHead.textContent = t("select_header");
   headRow.append(selectHead);
 
   const delHead = document.createElement("th");
   delHead.className = "db_del_col";
-  delHead.textContent = "削";
+  delHead.textContent = t("delete_header");
   headRow.append(delHead);
 
   for (const col of columns) {
@@ -186,10 +189,10 @@ async function renderTable(tableName: string): Promise<void> {
     const delBtn = document.createElement("button");
     delBtn.type = "button";
     delBtn.textContent = "×";
-    delBtn.title = "行削除";
+    delBtn.title = t("row_delete_title");
     delBtn.addEventListener("click", () => {
       const ok = window.confirm(
-        `このレコードを削除しますか？ (${String(pkValue)})`,
+        t("confirm_delete_row", { pk: String(pkValue) }),
       );
       if (!ok) {
         return;
@@ -224,10 +227,12 @@ async function renderTable(tableName: string): Promise<void> {
   grid.append(table);
 
   if (recordCountEl) {
-    recordCountEl.textContent = `${rows.length}件`;
+    recordCountEl.textContent = t("record_count", { count: rows.length });
   }
   if (usageEl) {
-    usageEl.textContent = `容量(概算): ${formatBytes(estimateRowsBytes(rows))}`;
+    usageEl.textContent = t("usage_text", {
+      size: formatBytes(estimateRowsBytes(rows)),
+    });
   }
 
   syncBulkDeleteButton(tableName);
@@ -347,7 +352,7 @@ async function deleteSelectedRows(tableName: string): Promise<void> {
     return;
   }
 
-  const ok = window.confirm(`選択中 ${set.size} 件を削除しますか？`);
+  const ok = window.confirm(t("confirm_delete_selected", { count: set.size }));
   if (!ok) {
     return;
   }
@@ -537,7 +542,9 @@ function syncBulkDeleteButton(tableName: string): void {
   const set = getSelectedSet(tableName);
   bulkDeleteBtn.disabled = set.size === 0;
   bulkDeleteBtn.textContent =
-    set.size > 0 ? `🗑️ 選択削除 (${set.size})` : "🗑️ 選択削除";
+    set.size > 0
+      ? t("bulk_delete_with_count", { count: set.size })
+      : t("bulk_delete");
 }
 
 function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {

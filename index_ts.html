@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2b1a0c" />
-    <title>やること撃破！</title>
+    <title data-i18n-title="app_title">やること撃破！</title>
     <!-- Cloudflare Web Analytics -->
     <script
       defer
@@ -528,7 +528,11 @@
   </head>
   <body>
     <div class="stage-map" id="stageMap" aria-hidden="true">
-      <img src="./img/stage_map0.jpg" alt="ステージ選択地図" />
+      <img
+        src="./img/stage_map0.jpg"
+        alt="ステージ選択地図"
+        data-i18n-alt="stage_map_alt"
+      />
     </div>
 
     <div class="logo-wrap" id="logoWrap">
@@ -536,7 +540,11 @@
     </div>
 
     <div class="control-stack" id="controlStack">
-      <label class="mode-switch" aria-label="閲覧モードと編集モードの切り替え">
+      <label
+        class="mode-switch"
+        aria-label="閲覧モードと編集モードの切り替え"
+        data-i18n-aria-label="mode_toggle_aria"
+      >
         <input class="mode-switch-input" id="modeSwitch" type="checkbox" />
         <span class="mode-switch-track" aria-hidden="true">
           <span class="mode-switch-icon view">👁</span>
@@ -549,6 +557,7 @@
         id="addStageBtn"
         type="button"
         aria-label="ステージ追加"
+        data-i18n-aria-label="add_stage_aria"
       >
         +
       </button>
@@ -558,6 +567,7 @@
           id="dbDownloadBtn"
           type="button"
           aria-label="データベース全体をダウンロード"
+          data-i18n-aria-label="db_download_aria"
         >
           ⬇ DB
         </button>
@@ -566,6 +576,7 @@
           id="dbUploadBtn"
           type="button"
           aria-label="データベースバックアップをアップロード"
+          data-i18n-aria-label="db_upload_aria"
         >
           ⬆ DB
         </button>
@@ -574,6 +585,7 @@
           id="dbMaintBtn"
           type="button"
           aria-label="データメンテ画面へ移動"
+          data-i18n-aria-label="db_maint_aria"
         >
           ⚙
         </button>
@@ -590,17 +602,27 @@
 
     <dialog class="stage-settings-dialog" id="stageSettingsDialog">
       <form method="dialog" class="stage-dialog-shell" onsubmit="return false;">
-        <h2 class="stage-dialog-title" id="stageDialogTitle">ステージ設定</h2>
-        <p class="stage-dialog-sub">ステージの状態と基本情報を編集できます。</p>
+        <h2
+          class="stage-dialog-title"
+          id="stageDialogTitle"
+          data-i18n="stage_settings_title"
+        >
+          ステージ設定
+        </h2>
+        <p class="stage-dialog-sub" data-i18n="stage_settings_sub">
+          ステージの状態と基本情報を編集できます。
+        </p>
 
         <div class="stage-dialog-body">
           <div class="stage-field">
-            <label for="stageProgressRange">撃破状態（進捗）</label>
+            <label for="stageProgressRange" data-i18n="stage_progress_label"
+              >撃破状態（進捗）</label
+            >
             <div class="hp-gauge" aria-hidden="true">
               <div class="hp-gauge-fill" id="stageProgressBarFill"></div>
             </div>
             <div class="hp-meta">
-              <span>HP</span>
+              <span data-i18n="hp_label">HP</span>
               <span class="hp-value" id="stageProgressValue">100%</span>
             </div>
             <input
@@ -615,17 +637,23 @@
           </div>
 
           <div class="stage-field">
-            <label for="stageNameInput">名称（nm）</label>
+            <label for="stageNameInput" data-i18n="stage_name_label"
+              >名称（nm）</label
+            >
             <input id="stageNameInput" type="text" maxlength="40" />
           </div>
 
           <div class="stage-field">
-            <label for="stageColorInput">基本色</label>
+            <label for="stageColorInput" data-i18n="stage_color_label"
+              >基本色</label
+            >
             <input id="stageColorInput" type="color" value="#ffc96b" />
           </div>
 
           <div class="stage-field">
-            <label for="stageDescInput">説明（desc）</label>
+            <label for="stageDescInput" data-i18n="stage_desc_label"
+              >説明（desc）</label
+            >
             <textarea id="stageDescInput"></textarea>
           </div>
         </div>
@@ -636,14 +664,14 @@
             id="stageDialogCancel"
             type="button"
           >
-            キャンセル
+            <span data-i18n="cancel">キャンセル</span>
           </button>
           <button
             class="stage-dialog-btn save"
             id="stageDialogSave"
             type="button"
           >
-            保存
+            <span data-i18n="save">保存</span>
           </button>
         </div>
       </form>

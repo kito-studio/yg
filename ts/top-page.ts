@@ -1,4 +1,5 @@
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
+import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
 
 type StageRecord = {
@@ -73,6 +74,7 @@ let editingStage: HTMLButtonElement | null = null;
 void initTopPage();
 
 async function initTopPage(): Promise<void> {
+  applyI18n(document);
   document.body.classList.add(VIEW_MODE_CLASS);
 
   setTimeout(() => {
@@ -115,10 +117,10 @@ async function initTopPage(): Promise<void> {
         try {
           await restoreYGBackupFromFile(file);
           await rerenderStagesFromDb();
-          window.alert("YGデータベースをリストアしました。");
+          window.alert(t("restore_success"));
         } catch (error) {
           const message =
-            error instanceof Error ? error.message : "リストアに失敗しました。";
+            error instanceof Error ? error.message : t("restore_failed");
           window.alert(message);
         }
       })();
@@ -228,8 +230,8 @@ function createStageObject(stage: StageRecord): HTMLButtonElement {
   el.dataset.stageDesc = stage.desc;
   el.dataset.stageColor = normalizeHexColor(stage.baseColor);
   el.dataset.stageProgress = String(stage.progress);
-  el.title = stage.desc || "説明なし";
-  el.setAttribute("aria-label", `ステージオブジェクト ${stage.nm}`);
+  el.title = stage.desc || t("stage_no_desc");
+  el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
 
   const hp = document.createElement("span");
   hp.className = "stage-object-hp";
@@ -481,8 +483,11 @@ function setupDialogEvents(): void {
     editingStage.dataset.stageDesc = nextDesc;
     editingStage.dataset.stageColor = nextColor;
     editingStage.dataset.stageProgress = String(nextProgress);
-    editingStage.title = nextDesc || "説明なし";
-    editingStage.setAttribute("aria-label", `ステージオブジェクト ${nextName}`);
+    editingStage.title = nextDesc || t("stage_no_desc");
+    editingStage.setAttribute(
+      "aria-label",
+      t("stage_object_aria", { name: nextName }),
+    );
     applyStageVisuals(editingStage);
 
     await saveStageFromElement(editingStage);
@@ -512,7 +517,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
   );
 
   if (stageDialogTitle instanceof HTMLElement) {
-    stageDialogTitle.textContent = `${label} 設定`;
+    stageDialogTitle.textContent = `${label} ${t("stage_settings_suffix")}`;
   }
 
   nameInput.value = label;
