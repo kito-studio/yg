@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- YG開発正本: 変更はこのファイルで実施。公開時は yg/doc/ts_dev_publish_workflow.md に従って同期する。 -->
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YG データメンテ</title>
+    <link rel="stylesheet" href="../css/db_maint.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+
+      body {
+        background: #111;
+        color: #ddd;
+        font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+      }
+
+      #db_maint_toolbar a {
+        color: #9fd2ff;
+      }
+
+      .db_maint_table td {
+        max-width: 300px;
+      }
+
+      .db_cell_display {
+        display: block;
+        min-width: 80px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="db_maint">
+      <div id="db_maint_toolbar">
+        <a href="./index_ts.html">ホーム</a>
+        <a href="./index_ts.html">ステージ選択</a>
+        <button id="db_export_btn" type="button">⬇️ バックアップ</button>
+        <button id="db_import_btn" type="button">⬆️ リストア</button>
+        <input
+          id="db_import_input"
+          type="file"
+          accept="application/json,.json"
+          hidden
+        />
+      </div>
+      <div id="db_maint_selector">
+        <label for="db_table_select">テーブル：</label>
+        <select id="db_table_select"></select>
+        <button id="db_refresh_table_btn" type="button">♻</button>
+        <span id="db_record_count"></span>
+        <span id="db_table_usage"></span>
+        <button id="db_bulk_delete_btn" type="button" disabled>
+          🗑️ 選択削除
+        </button>
+        <button id="db_clear_table_btn" type="button">🗑️ レコード全削除</button>
+      </div>
+      <div id="db_maint_grid"></div>
+    </div>
+
+    <script type="module" src="./ts/db-maint.ts"></script>
+  </body>
+</html>
