@@ -24,6 +24,8 @@ type StageRecord = {
 
 const BODY_READY_CLASS = "ready";
 const MAP_VISIBLE_CLASS = "map-visible";
+const INTRO_DONE_CLASS = "intro-done";
+const LOGO_FADE_OUT_CLASS = "logo-fade-out";
 const EDIT_MODE_CLASS = "edit-mode";
 const VIEW_MODE_CLASS = "view-mode";
 
@@ -63,6 +65,8 @@ const SAVE_BUTTON_ID = "stageDialogSave";
 
 const STAGE_DEFAULT_SIZE = 74;
 const DEFAULT_PROGRESS = 100;
+const LOGO_DISMISS_TIMEOUT_MS = 3000;
+const LOGO_FADE_DURATION_MS = 360;
 
 const addBtn = document.getElementById(ADD_BUTTON_ID);
 const logoWrap = document.getElementById(LOGO_WRAP_ID);
@@ -129,13 +133,9 @@ async function initTopPage(): Promise<void> {
   applyI18n(document);
   document.body.classList.add(VIEW_MODE_CLASS);
 
-  setTimeout(() => {
+  window.setTimeout(() => {
     document.body.classList.add(BODY_READY_CLASS);
-  }, 420);
-
-  setTimeout(() => {
-    document.body.classList.add(MAP_VISIBLE_CLASS);
-  }, 1800);
+  }, 120);
 
   if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
     return;
@@ -186,6 +186,9 @@ async function initTopPage(): Promise<void> {
   }
 
   await ensureYGDatabase();
+  await waitForLogoDismiss(logoWrap);
+  document.body.classList.add(INTRO_DONE_CLASS);
+  document.body.classList.add(MAP_VISIBLE_CLASS);
   await waitForMapRevealComplete();
 
   const stages = await loadStages();
@@ -242,15 +245,65 @@ async function initTopPage(): Promise<void> {
   setupDialogEvents();
 }
 
+async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    const timeoutId = window.setTimeout(startDismiss, LOGO_DISMISS_TIMEOUT_MS);
+
+    const onKeyDown = () => {
+      startDismiss();
+    };
+
+    const onMouseDown = () => {
+      startDismiss();
+    };
+
+    function cleanupListeners(): void {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("mousedown", onMouseDown);
+    }
+
+    function finish(): void {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      logoElement.removeEventListener("transitionend", onTransitionEnd);
+      cleanupListeners();
+      resolve();
+    }
+
+    function onTransitionEnd(event: TransitionEvent): void {
+      if (event.target === logoElement && event.propertyName === "opacity") {
+        finish();
+      }
+    }
+
+    function startDismiss(): void {
+      if (settled) {
+        return;
+      }
+      cleanupListeners();
+      document.body.classList.add(LOGO_FADE_OUT_CLASS);
+      logoElement.addEventListener("transitionend", onTransitionEnd, {
+        once: true,
+      });
+      window.setTimeout(finish, LOGO_FADE_DURATION_MS + 120);
+    }
+
+    window.addEventListener("keydown", onKeyDown, { once: true });
+    window.addEventListener("mousedown", onMouseDown, { once: true });
+  });
+}
+
 async function waitForMapRevealComplete(): Promise<void> {
   if (!(stageMap instanceof HTMLElement)) {
     return;
   }
 
   if (!document.body.classList.contains(MAP_VISIBLE_CLASS)) {
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 1850);
-    });
+    return;
   }
 
   await new Promise<void>((resolve) => {

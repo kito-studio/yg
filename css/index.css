@@ -41,11 +41,11 @@ body {
   transition: opacity 900ms ease;
 }
 
-body.map-visible.view-mode .stage-map {
+body.intro-done.map-visible.view-mode .stage-map {
   opacity: 1;
 }
 
-body.map-visible.edit-mode .stage-map {
+body.intro-done.map-visible.edit-mode .stage-map {
   opacity: 0.5;
 }
 
@@ -74,10 +74,13 @@ body.map-visible.edit-mode .stage-map {
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 10;
+  opacity: 1;
+  transition: opacity 320ms ease;
 }
 
-body.ready .logo-wrap {
-  animation: logo-dock 1300ms cubic-bezier(0.25, 1, 0.35, 1) forwards;
+body.logo-fade-out .logo-wrap {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .logo {
@@ -94,7 +97,7 @@ body.ready .logo-wrap {
 .control-stack {
   position: absolute;
   left: 22px;
-  top: 180px;
+  top: 10px;
   z-index: 12;
   display: flex;
   flex-direction: column;
@@ -107,10 +110,10 @@ body.ready .logo-wrap {
     transform 280ms ease;
 }
 
-body.ready .control-stack {
+body.ready.intro-done .control-stack {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 1320ms;
+  transition-delay: 120ms;
 }
 
 .mode-switch {
@@ -519,9 +522,15 @@ body.view-mode .stage-object {
   background: linear-gradient(180deg, #ffd889, #f4b752);
 }
 
-.stage-image-actions .stage-dialog-btn:not(.cancel):not(.save) {
-  color: #f9e7c4;
-  background: rgba(66, 46, 25, 0.82);
+body.ready.intro-done.edit-mode .add-stage-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body.ready.intro-done:not(.edit-mode) .add-stage-btn {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
 }
 
 @keyframes float-in {
@@ -529,23 +538,10 @@ body.view-mode .stage-object {
     opacity: 0;
     transform: translateY(16px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes logo-dock {
-  from {
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  to {
-    left: 20px;
-    top: 16px;
-    transform: translate(0, 0) scale(0.42);
-    transform-origin: top left;
   }
 }
 
@@ -580,19 +576,5 @@ body.view-mode .stage-object {
 
   .mode-switch-input:checked + .mode-switch-track .mode-switch-thumb {
     transform: translateX(38px);
-  }
-
-  @keyframes logo-dock {
-    from {
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    to {
-      left: 10px;
-      top: 10px;
-      transform: translate(0, 0) scale(0.34);
-      transform-origin: top left;
-    }
   }
 }
