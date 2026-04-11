@@ -2,10 +2,11 @@ import {
   fetchAllRows,
   getAppStateText,
   putRow,
+  requestToPromise,
   setAppStateText,
 } from "./data/yg-idb";
 import { applyI18n, t } from "./i18n";
-import { ensureYGDatabase } from "./init-db";
+import { ensureYGDatabase, openYGDatabase } from "./init-db";
 import { getCycledId, resolveSelectedId } from "./state/selection";
 import { setupModeSwitch } from "./ui/common-header";
 import { createEntityEditDialog } from "./ui/entity-edit-dialog";
@@ -15,6 +16,7 @@ type StageRecord = {
   ord: number;
   nm: string;
   desc?: string;
+  mapImgPath?: string;
 };
 
 type MapRecord = {
@@ -33,6 +35,7 @@ const addMapBtn = document.getElementById("addMapBtn");
 const selectedStageHeaderName = document.getElementById(
   "selectedStageHeaderName",
 );
+const stageMapImage = document.getElementById("stageMapImage");
 const mapList = document.getElementById("mapList");
 const prevStageBtn = document.getElementById("prevStageBtn");
 const nextStageBtn = document.getElementById("nextStageBtn");
@@ -51,6 +54,8 @@ const cancelButton = document.getElementById("entityDialogCancel");
 let stages: StageRecord[] = [];
 let maps: MapRecord[] = [];
 let selectedStageId = "";
+const DEFAULT_STAGE_BG = "./img/world_map/world_map0.jpg";
+const fileObjectUrlCache = new Map<string, string>();
 const entityDialog = createEntityEditDialog({
   dialog,
   backdrop: dialogBackdrop,
@@ -116,6 +121,7 @@ async function reload(): Promise<void> {
   if (stages.length === 0) {
     selectedStageId = "";
     renderSelectedStageHeader();
+    await applySelectedStageBackground();
     renderMapList();
     return;
   }
@@ -135,6 +141,7 @@ async function reload(): Promise<void> {
     .sort((a, b) => Number(a.ord || 0) - Number(b.ord || 0));
 
   renderSelectedStageHeader();
+  await applySelectedStageBackground();
   renderMapList();
 }
 
@@ -150,6 +157,63 @@ function renderSelectedStageHeader(): void {
   }
 
   selectedStageHeaderName.textContent = stage.nm || stage.stgId;
+}
+
+async function applySelectedStageBackground(): Promise<void> {
+  if (!(stageMapImage instanceof HTMLImageElement)) {
+    return;
+  }
+
+  const stage = stages.find((s) => s.stgId === selectedStageId) || null;
+  if (!stage) {
+    stageMapImage.src = DEFAULT_STAGE_BG;
+    return;
+  }
+
+  const mapImgPath = String(stage.mapImgPath || "").trim();
+  if (!mapImgPath) {
+    stageMapImage.src = DEFAULT_STAGE_BG;
+    return;
+  }
+
+  const objectUrl = await getObjectUrlForFile(mapImgPath);
+  if (objectUrl) {
+    stageMapImage.src = objectUrl;
+    return;
+  }
+
+  stageMapImage.src = mapImgPath;
+}
+
+async function getObjectUrlForFile(fId: string): Promise<string | null> {
+  const cached = fileObjectUrlCache.get(fId);
+  if (cached) {
+    return cached;
+  }
+
+  const blob = await getFileBlobById(fId);
+  if (!blob) {
+    return null;
+  }
+
+  const objectUrl = URL.createObjectURL(blob);
+  fileObjectUrlCache.set(fId, objectUrl);
+  return objectUrl;
+}
+
+async function getFileBlobById(fId: string): Promise<Blob | null> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("files", "readonly");
+    const store = tx.objectStore("files");
+    const row = (await requestToPromise(store.get(fId))) as
+      | { bin?: Blob }
+      | undefined;
+    const bin = row?.bin;
+    return bin instanceof Blob ? bin : null;
+  } finally {
+    db.close();
+  }
 }
 
 function renderMapList(): void {

@@ -1,0 +1,144 @@
+body {
+  overflow: hidden;
+}
+
+.maps-stage-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.maps-stage-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(6, 12, 26, 0.05),
+    rgba(6, 12, 26, 0.42)
+  );
+}
+
+.maps-stage-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.04) contrast(1.03);
+}
+
+.page-shell {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.page-header {
+  background: rgba(255, 251, 243, 0.9);
+  border-bottom: 1px solid rgba(66, 40, 12, 0.22);
+}
+
+.page-title {
+  color: #1f2430;
+}
+
+.page-selected-pill {
+  background: rgba(255, 246, 219, 0.9);
+  border-color: rgba(120, 82, 35, 0.35);
+  color: #3e2a12;
+}
+
+.maps-controls-row {
+  background: rgba(22, 14, 8, 0.78);
+  border: 1px solid rgba(255, 220, 162, 0.32);
+  border-radius: 14px;
+  padding: 8px;
+  width: fit-content;
+  margin-left: 16px;
+}
+
+.maps-controls-row .page-btn {
+  min-width: 48px;
+  height: 40px;
+  font-size: 1.05rem;
+  border-radius: 10px;
+}
+
+.mode-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mode-switch-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mode-switch-track {
+  width: 84px;
+  height: 40px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(
+    180deg,
+    rgba(32, 23, 12, 0.74),
+    rgba(14, 9, 5, 0.84)
+  );
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  position: relative;
+  cursor: pointer;
+}
+
+.mode-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff2be, #ffc95e);
+  box-shadow: 0 4px 9px rgba(0, 0, 0, 0.3);
+  transition: transform 220ms ease;
+}
+
+.mode-switch-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: #f3e0b8;
+  opacity: 0.72;
+  transition: opacity 220ms ease;
+  user-select: none;
+}
+
+.mode-switch-icon.view {
+  left: 13px;
+}
+
+.mode-switch-icon.edit {
+  right: 13px;
+}
+
+.mode-switch-input:checked + .mode-switch-track .mode-switch-thumb {
+  transform: translateX(42px);
+}
+
+.mode-switch-input:not(:checked) + .mode-switch-track .mode-switch-icon.view,
+.mode-switch-input:checked + .mode-switch-track .mode-switch-icon.edit {
+  opacity: 1;
+}
+
+.page-main {
+  margin-top: 10px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 233, 195, 0.45);
+  box-shadow: 0 16px 34px rgba(8, 12, 20, 0.22);
+  backdrop-filter: blur(4px);
+  max-height: calc(100vh - 170px);
+  overflow: auto;
+}

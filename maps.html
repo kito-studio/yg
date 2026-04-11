@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title data-i18n-title="stage_page_title">ステージ画面</title>
     <link rel="stylesheet" href="./css/page-common.css" />
+    <link rel="stylesheet" href="./css/maps.css" />
   </head>
   <body>
+    <div class="maps-stage-bg" aria-hidden="true">
+      <img id="stageMapImage" src="./img/world_map/world_map0.jpg" alt="" />
+    </div>
+
     <div class="page-shell view-mode">
       <header class="page-header">
         <div class="page-header-left">
@@ -37,18 +42,22 @@
         <div class="page-header-right"></div>
       </header>
 
-      <div class="page-controls-row">
+      <div class="page-controls-row maps-controls-row">
         <button
           class="page-btn primary"
           id="addMapBtn"
           type="button"
           data-i18n="add_map"
         >
-          + マップ追加
+          +
         </button>
         <label class="mode-switch" data-i18n="mode_toggle_aria">
-          <span data-i18n="edit_mode_label">編集</span>
-          <input id="modeSwitch" type="checkbox" />
+          <input class="mode-switch-input" id="modeSwitch" type="checkbox" />
+          <span class="mode-switch-track" aria-hidden="true">
+            <span class="mode-switch-icon view">●</span>
+            <span class="mode-switch-icon edit">○</span>
+            <span class="mode-switch-thumb"></span>
+          </span>
         </label>
         <button
           class="page-btn"
