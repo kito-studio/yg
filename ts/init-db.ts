@@ -75,6 +75,67 @@ export function openYGDatabase(): Promise<IDBDatabase> {
   });
 }
 
+function requestToPromise<T = unknown>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () =>
+      reject(req.error || new Error("IndexedDB request failed"));
+  });
+}
+
+function waitTransaction(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onabort = () =>
+      reject(tx.error || new Error("IndexedDB transaction aborted"));
+    tx.onerror = () =>
+      reject(tx.error || new Error("IndexedDB transaction failed"));
+  });
+}
+
+function buildWorldId(): string {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `w_${Date.now()}_${rand}`;
+}
+
+async function seedInitialWorldAndStateIfNeeded(
+  db: IDBDatabase,
+): Promise<void> {
+  const tx = db.transaction(["worlds", "app_state"], "readwrite");
+  const worldsStore = tx.objectStore("worlds");
+  const appStateStore = tx.objectStore("app_state");
+
+  const worldsCount = await requestToPromise<number>(worldsStore.count());
+  if (worldsCount > 0) {
+    await waitTransaction(tx);
+    return;
+  }
+
+  const now = Date.now();
+  const wId = buildWorldId();
+
+  worldsStore.add({
+    wId,
+    ord: 1,
+    nm: "最初の世界",
+    mapImgPath: "f_1775831884728_e6pwb9.jpg",
+    mode: "edit",
+    isLocked: 0,
+    progress: 0,
+    t_c: now,
+    t_u: now,
+  });
+
+  appStateStore.put({
+    key: "worlds",
+    vTxt: wId,
+    t_c: now,
+    t_u: now,
+  });
+
+  await waitTransaction(tx);
+}
+
 async function hasYGDatabase(): Promise<boolean | null> {
   const dbApi = indexedDB as IDBFactory & {
     databases?: () => Promise<Array<{ name?: string }>>;
@@ -91,6 +152,11 @@ async function hasYGDatabase(): Promise<boolean | null> {
 export async function ensureYGDatabase(): Promise<void> {
   const existed = await hasYGDatabase();
   const db = await openYGDatabase();
+
+  if (existed === false) {
+    await seedInitialWorldAndStateIfNeeded(db);
+  }
+
   db.close();
 
   if (existed === true) {
