@@ -33,6 +33,41 @@ body {
   overflow: hidden;
 }
 
+.top-page-header {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  z-index: 12;
+  min-width: min(74vw, 560px);
+  max-width: 88vw;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 239, 197, 0.45);
+  background: rgba(29, 19, 10, 0.68);
+  color: #ffe9b5;
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+}
+
+.top-page-header-label {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.top-page-header-value {
+  font-size: 18px;
+  letter-spacing: 0.03em;
+  max-width: 70vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stage-map {
   position: absolute;
   inset: 0;

@@ -1,6 +1,13 @@
+import { getAppStateText, setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
+import { createBasicImageDialogFrame } from "./ui/common-dialog";
+import {
+  hideElementOnLocalHost,
+  setupBackupToolbar,
+  setupModeSwitch,
+} from "./ui/common-header";
 
 type StageRecord = {
   stgId: string;
@@ -37,6 +44,7 @@ const DB_DOWNLOAD_BUTTON_ID = "dbDownloadBtn";
 const DB_UPLOAD_BUTTON_ID = "dbUploadBtn";
 const DB_UPLOAD_INPUT_ID = "dbUploadInput";
 const DB_MAINT_BUTTON_ID = "dbMaintBtn";
+const SELECTED_WORLD_NAME_ID = "selectedWorldName";
 const DIALOG_ID = "stageSettingsDialog";
 const DIALOG_BACKDROP_ID = "stageDialogBackdrop";
 const DIALOG_TITLE_ID = "stageDialogTitle";
@@ -76,6 +84,7 @@ const dbDownloadBtn = document.getElementById(DB_DOWNLOAD_BUTTON_ID);
 const dbUploadBtn = document.getElementById(DB_UPLOAD_BUTTON_ID);
 const dbUploadInput = document.getElementById(DB_UPLOAD_INPUT_ID);
 const dbMaintBtn = document.getElementById(DB_MAINT_BUTTON_ID);
+const selectedWorldNameEl = document.getElementById(SELECTED_WORLD_NAME_ID);
 const stageDialog = document.getElementById(DIALOG_ID);
 const stageDialogBackdrop = document.getElementById(DIALOG_BACKDROP_ID);
 const stageDialogTitle = document.getElementById(DIALOG_TITLE_ID);
@@ -112,20 +121,20 @@ let stageCount = 0;
 let editingStage: HTMLButtonElement | null = null;
 let stageMapDefaultSrc = "";
 const fileObjectUrlCache = new Map<string, string>();
+const stageDialogFrame = createBasicImageDialogFrame({
+  dialog: stageDialog,
+  backdrop: stageDialogBackdrop,
+  tabBasic: stageDialogTabBasic,
+  tabImage: stageDialogTabImage,
+  panelBasic: stageDialogPanelBasic,
+  panelImage: stageDialogPanelImage,
+  cancelButton,
+  onClose: () => {
+    editingStage = null;
+  },
+});
 
-// ローカルならdiv#infoを非表示にする
-const host = window.location.hostname;
-const isLocalHost =
-  host === "localhost" ||
-  host === "127.0.0.1" ||
-  host === "::1" ||
-  host.endsWith(".local");
-if (isLocalHost) {
-  const infoEl = document.getElementById("info");
-  if (infoEl) {
-    infoEl.style.display = "none";
-  }
-}
+hideElementOnLocalHost("info");
 
 void initTopPage();
 
@@ -146,46 +155,25 @@ async function initTopPage(): Promise<void> {
     stageMapDefaultSrc = baseMapImg.getAttribute("src") || baseMapImg.src || "";
   }
 
-  if (dbDownloadBtn instanceof HTMLButtonElement) {
-    dbDownloadBtn.addEventListener("click", () => {
-      void downloadYGBackupJson();
-    });
-  }
-
-  if (dbMaintBtn instanceof HTMLButtonElement) {
-    dbMaintBtn.addEventListener("click", () => {
-      window.location.href = "./settings.html";
-    });
-  }
-
-  if (
-    dbUploadBtn instanceof HTMLButtonElement &&
-    dbUploadInput instanceof HTMLInputElement
-  ) {
-    dbUploadBtn.addEventListener("click", () => {
-      dbUploadInput.click();
-    });
-    dbUploadInput.addEventListener("change", () => {
-      const file = dbUploadInput.files?.[0];
-      if (!file) {
-        return;
-      }
-      void (async () => {
-        try {
-          await restoreYGBackupFromFile(file);
-          await rerenderStagesFromDb();
-          window.alert(t("restore_success"));
-        } catch (error) {
-          const message =
-            error instanceof Error ? error.message : t("restore_failed");
-          window.alert(message);
-        }
-      })();
-      dbUploadInput.value = "";
-    });
-  }
+  setupBackupToolbar({
+    downloadButton: dbDownloadBtn,
+    uploadButton: dbUploadBtn,
+    uploadInput: dbUploadInput,
+    settingsButton: dbMaintBtn,
+    settingsPath: "./settings.html",
+    onDownload: async () => {
+      await downloadYGBackupJson();
+    },
+    onRestore: async (file: File) => {
+      await restoreYGBackupFromFile(file);
+      await rerenderStagesFromDb();
+    },
+    restoreSuccessMessage: t("restore_success"),
+    restoreFailedFallbackMessage: t("restore_failed"),
+  });
 
   await ensureYGDatabase();
+  await syncSelectedWorldHeader();
   await waitForLogoDismiss(logoWrap);
   document.body.classList.add(INTRO_DONE_CLASS);
   document.body.classList.add(MAP_VISIBLE_CLASS);
@@ -200,11 +188,11 @@ async function initTopPage(): Promise<void> {
     placeStageObject(stageObject, stage.x, stage.y);
   }
 
-  modeSwitch.checked = false;
-  modeSwitch.addEventListener("change", () => {
-    const editMode = modeSwitch.checked;
-    document.body.classList.toggle(EDIT_MODE_CLASS, editMode);
-    document.body.classList.toggle(VIEW_MODE_CLASS, !editMode);
+  setupModeSwitch({
+    modeSwitch,
+    editModeClass: EDIT_MODE_CLASS,
+    viewModeClass: VIEW_MODE_CLASS,
+    defaultEditMode: false,
   });
 
   addBtn.addEventListener("click", async () => {
@@ -243,6 +231,65 @@ async function initTopPage(): Promise<void> {
   });
 
   setupDialogEvents();
+}
+
+async function syncSelectedWorldHeader(): Promise<void> {
+  if (!(selectedWorldNameEl instanceof HTMLElement)) {
+    return;
+  }
+
+  const world = await loadSelectedWorld();
+  selectedWorldNameEl.textContent = world?.nm || t("no_world");
+}
+
+async function loadSelectedWorld(): Promise<{
+  wId: string;
+  nm: string;
+} | null> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction(["worlds", "app_state"], "readonly");
+    const worldsStore = tx.objectStore("worlds");
+    const appStateStore = tx.objectStore("app_state");
+
+    const appStateRow = (await requestToPromise(
+      appStateStore.get("worlds"),
+    )) as { vTxt?: string } | undefined;
+    const selectedWId = String(
+      appStateRow?.vTxt || (await getAppStateText("worlds")) || "",
+    ).trim();
+
+    const worlds = (await requestToPromise(worldsStore.getAll())) as Array<{
+      wId?: string;
+      nm?: string;
+      ord?: number;
+    }>;
+
+    const sorted = worlds
+      .filter((row) => typeof row?.wId === "string")
+      .sort((a, b) => Number(a?.ord || 0) - Number(b?.ord || 0));
+
+    if (sorted.length === 0) {
+      return null;
+    }
+
+    const selected =
+      sorted.find((row) => String(row.wId || "") === selectedWId) || sorted[0];
+
+    const wId = String(selected.wId || "").trim();
+    const nm = String(selected.nm || wId || "").trim();
+    if (!wId) {
+      return null;
+    }
+
+    if (wId !== selectedWId) {
+      await setAppStateText("worlds", wId);
+    }
+
+    return { wId, nm: nm || wId };
+  } finally {
+    db.close();
+  }
 }
 
 async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
@@ -384,7 +431,15 @@ function onStageClick(event: MouseEvent): void {
     return;
   }
 
-  void applyStageMapImage(target);
+  const stgId = String(target.dataset.stageId || "").trim();
+  if (!stgId) {
+    return;
+  }
+
+  void (async () => {
+    await setAppStateText("stages", stgId);
+    window.location.href = `./maps.html?stgId=${encodeURIComponent(stgId)}`;
+  })();
 }
 
 function onStageDoubleClick(event: MouseEvent): void {
@@ -586,30 +641,13 @@ function normalizeStageRow(
 function setupDialogEvents(): void {
   if (
     !(stageDialog instanceof HTMLDialogElement) ||
-    !(stageDialogBackdrop instanceof HTMLElement) ||
     !(progressRange instanceof HTMLInputElement) ||
     !(nameInput instanceof HTMLInputElement) ||
     !(descInput instanceof HTMLTextAreaElement) ||
     !(colorInput instanceof HTMLInputElement) ||
-    !(cancelButton instanceof HTMLButtonElement) ||
     !(saveButton instanceof HTMLButtonElement)
   ) {
     return;
-  }
-
-  if (
-    stageDialogTabBasic instanceof HTMLButtonElement &&
-    stageDialogTabImage instanceof HTMLButtonElement &&
-    stageDialogPanelBasic instanceof HTMLElement &&
-    stageDialogPanelImage instanceof HTMLElement
-  ) {
-    stageDialogTabBasic.addEventListener("click", () => {
-      setDialogTab("basic");
-    });
-
-    stageDialogTabImage.addEventListener("click", () => {
-      setDialogTab("image");
-    });
   }
 
   progressRange.addEventListener("input", () => {
@@ -658,14 +696,6 @@ function setupDialogEvents(): void {
     });
   }
 
-  cancelButton.addEventListener("click", () => {
-    closeStageSettingsDialog();
-  });
-
-  stageDialogBackdrop.addEventListener("click", () => {
-    closeStageSettingsDialog();
-  });
-
   saveButton.addEventListener("click", async () => {
     if (!editingStage) {
       closeStageSettingsDialog();
@@ -702,8 +732,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
     !(progressRange instanceof HTMLInputElement) ||
     !(nameInput instanceof HTMLInputElement) ||
     !(descInput instanceof HTMLTextAreaElement) ||
-    !(colorInput instanceof HTMLInputElement) ||
-    !(stageDialogBackdrop instanceof HTMLElement)
+    !(colorInput instanceof HTMLInputElement)
   ) {
     return;
   }
@@ -729,48 +758,15 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
   setDialogTab("basic");
   syncImageTabFromStage(target);
 
-  stageDialogBackdrop.hidden = false;
-  if (!stageDialog.open) {
-    stageDialog.showModal();
-  }
+  stageDialogFrame.open();
 }
 
 function closeStageSettingsDialog(): void {
-  if (
-    !(stageDialog instanceof HTMLDialogElement) ||
-    !(stageDialogBackdrop instanceof HTMLElement)
-  ) {
-    return;
-  }
-
-  editingStage = null;
-  stageDialogBackdrop.hidden = true;
-  if (stageDialog.open) {
-    stageDialog.close();
-  }
+  stageDialogFrame.close();
 }
 
 function setDialogTab(tab: "basic" | "image"): void {
-  if (
-    !(stageDialogTabBasic instanceof HTMLButtonElement) ||
-    !(stageDialogTabImage instanceof HTMLButtonElement) ||
-    !(stageDialogPanelBasic instanceof HTMLElement) ||
-    !(stageDialogPanelImage instanceof HTMLElement)
-  ) {
-    return;
-  }
-
-  const basicActive = tab === "basic";
-  stageDialogTabBasic.classList.toggle("active", basicActive);
-  stageDialogTabImage.classList.toggle("active", !basicActive);
-  stageDialogTabBasic.setAttribute("aria-selected", String(basicActive));
-  stageDialogTabImage.setAttribute("aria-selected", String(!basicActive));
-  stageDialogPanelBasic.classList.toggle("active", basicActive);
-  stageDialogPanelImage.classList.toggle("active", !basicActive);
-  stageDialogPanelBasic.hidden = !basicActive;
-  stageDialogPanelImage.hidden = basicActive;
-  stageDialogPanelBasic.setAttribute("aria-hidden", String(!basicActive));
-  stageDialogPanelImage.setAttribute("aria-hidden", String(basicActive));
+  stageDialogFrame.setTab(tab);
 }
 
 function syncImageTabFromStage(target: HTMLButtonElement): void {

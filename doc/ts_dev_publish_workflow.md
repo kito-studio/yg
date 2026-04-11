@@ -10,8 +10,8 @@
 
 ## 正本ファイル（Source of Truth）
 
-- HTML: `yg/index.html`, `yg/db_maint.html`, `yg/settings.html`
-- TypeScript: `yg/ts/top-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/settings.ts`, `yg/ts/i18n.ts`, `yg/ts/init-db.ts`
+- HTML: `yg/index.html`, `yg/maps.html`, `yg/map.html`, `yg/db_maint.html`, `yg/settings.html`
+- TypeScript: `yg/ts/top-page.ts`, `yg/ts/stage-page.ts`, `yg/ts/map-page.ts`, `yg/ts/db-maint.ts`, `yg/ts/db-backup.ts`, `yg/ts/settings.ts`, `yg/ts/i18n.ts`, `yg/ts/init-db.ts`, `yg/ts/data/yg-idb.ts`, `yg/ts/state/selection.ts`, `yg/ts/ui/common-header.ts`, `yg/ts/ui/common-dialog.ts`, `yg/ts/ui/entity-edit-dialog.ts`
 
 ## AI作業ルール
 
@@ -22,9 +22,11 @@
 ## 確認手順
 
 1. `yg/index.html` が `./ts/top-page.ts` を参照していること。
-2. `yg/db_maint.html` が `./ts/db-maint.ts` を参照していること。
-3. `yg/settings.html` が `./ts/settings.ts` を参照していること。
-4. 必要に応じてローカルで `npm run build` / `npm run typecheck` を実行すること。
+2. `yg/maps.html` が `./ts/stage-page.ts` を参照していること。
+3. `yg/map.html` が `./ts/map-page.ts` を参照していること。
+4. `yg/db_maint.html` が `./ts/db-maint.ts` を参照していること。
+5. `yg/settings.html` が `./ts/settings.ts` を参照していること。
+6. 必要に応じてローカルで `npm run build` / `npm run typecheck` を実行すること。
 
 ## 備考
 
