@@ -70,6 +70,10 @@ const MAP_IMAGE_SAVE_BUTTON_ID = "mapImageSaveBtn";
 const MAP_IMAGE_CURRENT_ID = "mapImageCurrent";
 const CANCEL_BUTTON_ID = "stageDialogCancel";
 const SAVE_BUTTON_ID = "stageDialogSave";
+const BGM_BUTTON_ID = "bgmBtn";
+
+const BGM_SRC = "./wav/gound003.wav";
+const BTN_SOUND_SRC = "./wav/hyu.wav";
 
 const STAGE_DEFAULT_SIZE = 74;
 const DEFAULT_PROGRESS = 100;
@@ -116,6 +120,15 @@ const mapImageSaveButton = document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID);
 const mapImageCurrent = document.getElementById(MAP_IMAGE_CURRENT_ID);
 const cancelButton = document.getElementById(CANCEL_BUTTON_ID);
 const saveButton = document.getElementById(SAVE_BUTTON_ID);
+const bgmBtn = document.getElementById(BGM_BUTTON_ID);
+
+const bgmAudio = new Audio(BGM_SRC);
+bgmAudio.loop = true;
+
+function playBtnSound(): void {
+  const audio = new Audio(BTN_SOUND_SRC);
+  audio.play().catch(() => {});
+}
 
 let stageCount = 0;
 let editingStage: HTMLButtonElement | null = null;
@@ -177,6 +190,20 @@ async function initTopPage(): Promise<void> {
   await waitForLogoDismiss(logoWrap);
   document.body.classList.add(INTRO_DONE_CLASS);
   document.body.classList.add(MAP_VISIBLE_CLASS);
+
+  bgmAudio.play().catch(() => {});
+  if (bgmBtn instanceof HTMLButtonElement) {
+    bgmBtn.addEventListener("click", () => {
+      if (bgmAudio.paused) {
+        bgmAudio.play().catch(() => {});
+        bgmBtn.textContent = "🔊";
+      } else {
+        bgmAudio.pause();
+        bgmBtn.textContent = "🔇";
+      }
+    });
+  }
+
   await waitForMapRevealComplete();
 
   const stages = await loadStages();
@@ -737,6 +764,7 @@ function openStageSettingsDialog(target: HTMLButtonElement): void {
     return;
   }
 
+  playBtnSound();
   editingStage = target;
 
   const label = target.dataset.stageLabel || "ST";
