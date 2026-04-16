@@ -2,32 +2,13 @@ import { getAppStateText, setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
+import { StageRecord } from "./obj";
 import { createBasicImageDialogFrame } from "./ui/common-dialog";
 import {
   hideElementOnLocalHost,
   setupBackupToolbar,
   setupModeSwitch,
 } from "./ui/common-header";
-
-type StageRecord = {
-  stgId: string;
-  ord: number;
-  nm: string;
-  desc: string;
-  baseColor: string;
-  progress: number;
-  imgPath: string;
-  mapImgPath: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rot: number;
-  mode: string;
-  isLocked: number;
-  t_c: number;
-  t_u: number;
-};
 
 const BODY_READY_CLASS = "ready";
 const MAP_VISIBLE_CLASS = "map-visible";
