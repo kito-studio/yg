@@ -80,6 +80,8 @@ const STAGE_DEFAULT_SIZE = 74;
 const DEFAULT_PROGRESS = 100;
 const LOGO_DISMISS_TIMEOUT_MS = 3000;
 const LOGO_FADE_DURATION_MS = 360;
+const STAGE_MAP_BASE_WIDTH = 1600;
+const STAGE_MAP_BASE_HEIGHT = 1600;
 const MIN_MAP_SCALE = 0.6;
 const MAX_MAP_SCALE = 3;
 const MAP_ZOOM_SENSITIVITY = 0.0014;
@@ -571,9 +573,9 @@ function placeStageObject(
   left: number,
   top: number,
 ): void {
-  const viewport = getStageMapViewportSize();
-  const maxLeft = viewport.width - target.offsetWidth;
-  const maxTop = viewport.height - target.offsetHeight;
+  const mapSize = getStageMapContentSize();
+  const maxLeft = mapSize.width - target.offsetWidth;
+  const maxTop = mapSize.height - target.offsetHeight;
   target.style.left = `${Math.max(0, Math.min(left, maxLeft))}px`;
   target.style.top = `${Math.max(0, Math.min(top, maxTop))}px`;
 }
@@ -606,9 +608,18 @@ function onStageMapWheel(event: WheelEvent): void {
   }
 
   event.preventDefault();
-  const zoomFactor = Math.exp(-event.deltaY * MAP_ZOOM_SENSITIVITY);
-  const nextScale = clampMapScale(mapViewState.scale * zoomFactor);
-  zoomStageMapToClientPoint(nextScale, event.clientX, event.clientY);
+  if (event.ctrlKey || event.metaKey) {
+    const zoomFactor = Math.exp(-event.deltaY * MAP_ZOOM_SENSITIVITY);
+    const nextScale = clampMapScale(mapViewState.scale * zoomFactor);
+    zoomStageMapToClientPoint(nextScale, event.clientX, event.clientY);
+    return;
+  }
+
+  setStageMapTransform(
+    mapViewState.scale,
+    mapViewState.offsetX - event.deltaX,
+    mapViewState.offsetY - event.deltaY,
+  );
 }
 
 function onStageMapPointerDown(event: PointerEvent): void {
@@ -750,8 +761,9 @@ function clampStageMapTransform(
 ): { scale: number; offsetX: number; offsetY: number } {
   const safeScale = clampMapScale(scale);
   const viewport = getStageMapViewportSize();
-  const scaledWidth = viewport.width * safeScale;
-  const scaledHeight = viewport.height * safeScale;
+  const mapSize = getStageMapContentSize();
+  const scaledWidth = mapSize.width * safeScale;
+  const scaledHeight = mapSize.height * safeScale;
 
   return {
     scale: safeScale,
@@ -793,6 +805,13 @@ function getStageMapViewportSize(): { width: number; height: number } {
   return {
     width: window.innerWidth,
     height: window.innerHeight,
+  };
+}
+
+function getStageMapContentSize(): { width: number; height: number } {
+  return {
+    width: STAGE_MAP_BASE_WIDTH,
+    height: STAGE_MAP_BASE_HEIGHT,
   };
 }
 
