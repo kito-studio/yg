@@ -1,74 +1,79 @@
-import { getAppStateText, setAppStateText } from "./data/yg-idb";
+import { createFileStoreGateway } from "./data/file-store";
+import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
-import { ensureYGDatabase, openYGDatabase } from "./init-db";
+import { ensureYGDatabase } from "./init-db";
 import { StageRecord } from "./obj";
-import { createBasicImageDialogFrame } from "./ui/common-dialog";
+import {
+  ADD_BUTTON_ID,
+  BGM_BUTTON_ID,
+  BGM_SRC,
+  BODY_READY_CLASS,
+  BTN_SOUND_SRC,
+  CANCEL_BUTTON_ID,
+  COLOR_INPUT_ID,
+  DB_DOWNLOAD_BUTTON_ID,
+  DB_MAINT_BUTTON_ID,
+  DB_UPLOAD_BUTTON_ID,
+  DB_UPLOAD_INPUT_ID,
+  DESC_INPUT_ID,
+  DIALOG_BACKDROP_ID,
+  DIALOG_ID,
+  DIALOG_PANEL_BASIC_ID,
+  DIALOG_PANEL_IMAGE_ID,
+  DIALOG_TAB_BASIC_ID,
+  DIALOG_TAB_IMAGE_ID,
+  DIALOG_TITLE_ID,
+  EDIT_MODE_CLASS,
+  INTRO_DONE_CLASS,
+  LOGO_DISMISS_TIMEOUT_MS,
+  LOGO_FADE_DURATION_MS,
+  LOGO_FADE_OUT_CLASS,
+  LOGO_WRAP_ID,
+  MAP_IMAGE_CLEAR_BUTTON_ID,
+  MAP_IMAGE_CURRENT_ID,
+  MAP_IMAGE_FILE_INPUT_ID,
+  MAP_IMAGE_PICK_BUTTON_ID,
+  MAP_IMAGE_SAVE_BUTTON_ID,
+  MAP_INERTIA_FRICTION,
+  MAP_INERTIA_MIN_SPEED,
+  MAP_PAN_THRESHOLD_PX,
+  MAP_VISIBLE_CLASS,
+  MAP_ZOOM_SENSITIVITY,
+  MAX_MAP_SCALE,
+  MIN_MAP_SCALE,
+  MODE_SWITCH_ID,
+  NAME_INPUT_ID,
+  PROGRESS_BAR_FILL_ID,
+  PROGRESS_RANGE_ID,
+  PROGRESS_VALUE_ID,
+  SAVE_BUTTON_ID,
+  SELECTED_WORLD_NAME_ID,
+  STAGE_DEFAULT_SIZE,
+  STAGE_IMAGE_CLEAR_BUTTON_ID,
+  STAGE_IMAGE_CURRENT_ID,
+  STAGE_IMAGE_FILE_INPUT_ID,
+  STAGE_IMAGE_PICK_BUTTON_ID,
+  STAGE_IMAGE_SAVE_BUTTON_ID,
+  STAGE_MAP_CONTENT_ID,
+  STAGE_MAP_CONTENT_SIZE,
+  STAGE_MAP_ID,
+  VIEW_MODE_CLASS,
+} from "./top-page/constants";
+import {
+  loadSelectedWorld,
+  loadStages,
+  saveStageFromElement,
+} from "./top-page/stage-db";
+import { createStageDialogController } from "./top-page/stage-dialog";
+import { buildStageId } from "./top-page/stage-model";
+import { applyStageVisuals, createStageObject } from "./top-page/stage-ui";
 import {
   hideElementOnLocalHost,
   setupBackupToolbar,
   setupModeSwitch,
 } from "./ui/common-header";
-
-const BODY_READY_CLASS = "ready";
-const MAP_VISIBLE_CLASS = "map-visible";
-const INTRO_DONE_CLASS = "intro-done";
-const LOGO_FADE_OUT_CLASS = "logo-fade-out";
-const EDIT_MODE_CLASS = "edit-mode";
-const VIEW_MODE_CLASS = "view-mode";
-
-const ADD_BUTTON_ID = "addStageBtn";
-const LOGO_WRAP_ID = "logoWrap";
-const MODE_SWITCH_ID = "modeSwitch";
-const STAGE_MAP_ID = "stageMap";
-const STAGE_MAP_CONTENT_ID = "stageMapContent";
-const DB_DOWNLOAD_BUTTON_ID = "dbDownloadBtn";
-const DB_UPLOAD_BUTTON_ID = "dbUploadBtn";
-const DB_UPLOAD_INPUT_ID = "dbUploadInput";
-const DB_MAINT_BUTTON_ID = "dbMaintBtn";
-const SELECTED_WORLD_NAME_ID = "selectedWorldName";
-const DIALOG_ID = "stageSettingsDialog";
-const DIALOG_BACKDROP_ID = "stageDialogBackdrop";
-const DIALOG_TITLE_ID = "stageDialogTitle";
-const DIALOG_TAB_BASIC_ID = "stageDialogTabBasic";
-const DIALOG_TAB_IMAGE_ID = "stageDialogTabImage";
-const DIALOG_PANEL_BASIC_ID = "stageDialogPanelBasic";
-const DIALOG_PANEL_IMAGE_ID = "stageDialogPanelImage";
-const PROGRESS_RANGE_ID = "stageProgressRange";
-const PROGRESS_BAR_FILL_ID = "stageProgressBarFill";
-const PROGRESS_VALUE_ID = "stageProgressValue";
-const NAME_INPUT_ID = "stageNameInput";
-const DESC_INPUT_ID = "stageDescInput";
-const COLOR_INPUT_ID = "stageColorInput";
-const STAGE_IMAGE_FILE_INPUT_ID = "stageImageFileInput";
-const STAGE_IMAGE_PICK_BUTTON_ID = "stageImagePickBtn";
-const STAGE_IMAGE_CLEAR_BUTTON_ID = "stageImageClearBtn";
-const STAGE_IMAGE_SAVE_BUTTON_ID = "stageImageSaveBtn";
-const STAGE_IMAGE_CURRENT_ID = "stageImageCurrent";
-const MAP_IMAGE_FILE_INPUT_ID = "mapImageFileInput";
-const MAP_IMAGE_PICK_BUTTON_ID = "mapImagePickBtn";
-const MAP_IMAGE_CLEAR_BUTTON_ID = "mapImageClearBtn";
-const MAP_IMAGE_SAVE_BUTTON_ID = "mapImageSaveBtn";
-const MAP_IMAGE_CURRENT_ID = "mapImageCurrent";
-const CANCEL_BUTTON_ID = "stageDialogCancel";
-const SAVE_BUTTON_ID = "stageDialogSave";
-const BGM_BUTTON_ID = "bgmBtn";
-
-const BGM_SRC = "./wav/gound003.wav";
-const BTN_SOUND_SRC = "./wav/hyu.wav";
-
-const STAGE_DEFAULT_SIZE = 74;
-const DEFAULT_PROGRESS = 100;
-const LOGO_DISMISS_TIMEOUT_MS = 3000;
-const LOGO_FADE_DURATION_MS = 360;
-const STAGE_MAP_BASE_WIDTH = 1600;
-const STAGE_MAP_BASE_HEIGHT = 1600;
-const MIN_MAP_SCALE = 0.6;
-const MAX_MAP_SCALE = 3;
-const MAP_ZOOM_SENSITIVITY = 0.0014;
-const MAP_PAN_THRESHOLD_PX = 6;
-const MAP_INERTIA_FRICTION = 0.92;
-const MAP_INERTIA_MIN_SPEED = 0.02;
+import { createMapViewportController } from "./ui/map-viewport";
 
 const addBtn = document.getElementById(ADD_BUTTON_ID);
 const logoWrap = document.getElementById(LOGO_WRAP_ID);
@@ -80,89 +85,78 @@ const dbUploadBtn = document.getElementById(DB_UPLOAD_BUTTON_ID);
 const dbUploadInput = document.getElementById(DB_UPLOAD_INPUT_ID);
 const dbMaintBtn = document.getElementById(DB_MAINT_BUTTON_ID);
 const selectedWorldNameEl = document.getElementById(SELECTED_WORLD_NAME_ID);
-const stageDialog = document.getElementById(DIALOG_ID);
-const stageDialogBackdrop = document.getElementById(DIALOG_BACKDROP_ID);
-const stageDialogTitle = document.getElementById(DIALOG_TITLE_ID);
-const stageDialogTabBasic = document.getElementById(DIALOG_TAB_BASIC_ID);
-const stageDialogTabImage = document.getElementById(DIALOG_TAB_IMAGE_ID);
-const stageDialogPanelBasic = document.getElementById(DIALOG_PANEL_BASIC_ID);
-const stageDialogPanelImage = document.getElementById(DIALOG_PANEL_IMAGE_ID);
-const progressRange = document.getElementById(PROGRESS_RANGE_ID);
-const progressBarFill = document.getElementById(PROGRESS_BAR_FILL_ID);
-const progressValue = document.getElementById(PROGRESS_VALUE_ID);
-const nameInput = document.getElementById(NAME_INPUT_ID);
-const descInput = document.getElementById(DESC_INPUT_ID);
-const colorInput = document.getElementById(COLOR_INPUT_ID);
-const stageImageFileInput = document.getElementById(STAGE_IMAGE_FILE_INPUT_ID);
-const stageImagePickButton = document.getElementById(
-  STAGE_IMAGE_PICK_BUTTON_ID,
-);
-const stageImageClearButton = document.getElementById(
-  STAGE_IMAGE_CLEAR_BUTTON_ID,
-);
-const stageImageSaveButton = document.getElementById(
-  STAGE_IMAGE_SAVE_BUTTON_ID,
-);
-const stageImageCurrent = document.getElementById(STAGE_IMAGE_CURRENT_ID);
-const mapImageFileInput = document.getElementById(MAP_IMAGE_FILE_INPUT_ID);
-const mapImagePickButton = document.getElementById(MAP_IMAGE_PICK_BUTTON_ID);
-const mapImageClearButton = document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID);
-const mapImageSaveButton = document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID);
-const mapImageCurrent = document.getElementById(MAP_IMAGE_CURRENT_ID);
-const cancelButton = document.getElementById(CANCEL_BUTTON_ID);
-const saveButton = document.getElementById(SAVE_BUTTON_ID);
 const bgmBtn = document.getElementById(BGM_BUTTON_ID);
 
 const bgmAudio = new Audio(BGM_SRC);
 bgmAudio.loop = true;
 
-function playBtnSound(): void {
-  const audio = new Audio(BTN_SOUND_SRC);
-  audio.play().catch(() => {});
-}
+const fileStore = createFileStoreGateway();
+const mapViewport = createMapViewportController({
+  viewport: stageMap,
+  content: stageMapContent,
+  contentSize: STAGE_MAP_CONTENT_SIZE,
+  minScale: MIN_MAP_SCALE,
+  maxScale: MAX_MAP_SCALE,
+  zoomSensitivity: MAP_ZOOM_SENSITIVITY,
+  panThresholdPx: MAP_PAN_THRESHOLD_PX,
+  inertiaFriction: MAP_INERTIA_FRICTION,
+  inertiaMinSpeed: MAP_INERTIA_MIN_SPEED,
+  ignorePanStart: (event) => {
+    if (!(event.target instanceof HTMLElement)) {
+      return false;
+    }
 
-let stageCount = 0;
-let editingStage: HTMLButtonElement | null = null;
-let stageMapDefaultSrc = "";
-let suppressStageClickUntil = 0;
-const fileObjectUrlCache = new Map<string, string>();
-const mapViewState = {
-  scale: 1,
-  offsetX: 0,
-  offsetY: 0,
-};
-let mapPanState: {
-  pointerId: number;
-  startClientX: number;
-  startClientY: number;
-  startOffsetX: number;
-  startOffsetY: number;
-  moved: boolean;
-  lastClientX: number;
-  lastClientY: number;
-  lastTimestamp: number;
-  velocityX: number;
-  velocityY: number;
-} | null = null;
-let mapInertiaFrameId: number | null = null;
-let mapInertiaVelocityX = 0;
-let mapInertiaVelocityY = 0;
-const stageDialogFrame = createBasicImageDialogFrame({
-  dialog: stageDialog,
-  backdrop: stageDialogBackdrop,
-  tabBasic: stageDialogTabBasic,
-  tabImage: stageDialogTabImage,
-  panelBasic: stageDialogPanelBasic,
-  panelImage: stageDialogPanelImage,
-  cancelButton,
-  onClose: () => {
-    editingStage = null;
+    return (
+      document.body.classList.contains(EDIT_MODE_CLASS) &&
+      !!event.target.closest(".stage-object")
+    );
   },
 });
+const stageDialog = createStageDialogController({
+  elements: {
+    dialog: document.getElementById(DIALOG_ID),
+    backdrop: document.getElementById(DIALOG_BACKDROP_ID),
+    title: document.getElementById(DIALOG_TITLE_ID),
+    tabBasic: document.getElementById(DIALOG_TAB_BASIC_ID),
+    tabImage: document.getElementById(DIALOG_TAB_IMAGE_ID),
+    panelBasic: document.getElementById(DIALOG_PANEL_BASIC_ID),
+    panelImage: document.getElementById(DIALOG_PANEL_IMAGE_ID),
+    progressRange: document.getElementById(PROGRESS_RANGE_ID),
+    progressBarFill: document.getElementById(PROGRESS_BAR_FILL_ID),
+    progressValue: document.getElementById(PROGRESS_VALUE_ID),
+    nameInput: document.getElementById(NAME_INPUT_ID),
+    descInput: document.getElementById(DESC_INPUT_ID),
+    colorInput: document.getElementById(COLOR_INPUT_ID),
+    stageImageFileInput: document.getElementById(STAGE_IMAGE_FILE_INPUT_ID),
+    stageImagePickButton: document.getElementById(STAGE_IMAGE_PICK_BUTTON_ID),
+    stageImageClearButton: document.getElementById(STAGE_IMAGE_CLEAR_BUTTON_ID),
+    stageImageSaveButton: document.getElementById(STAGE_IMAGE_SAVE_BUTTON_ID),
+    stageImageCurrent: document.getElementById(STAGE_IMAGE_CURRENT_ID),
+    mapImageFileInput: document.getElementById(MAP_IMAGE_FILE_INPUT_ID),
+    mapImagePickButton: document.getElementById(MAP_IMAGE_PICK_BUTTON_ID),
+    mapImageClearButton: document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID),
+    mapImageSaveButton: document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID),
+    mapImageCurrent: document.getElementById(MAP_IMAGE_CURRENT_ID),
+    cancelButton: document.getElementById(CANCEL_BUTTON_ID),
+    saveButton: document.getElementById(SAVE_BUTTON_ID),
+  },
+  fileStore,
+  saveStageFromElement: async (target) => {
+    await saveStageFromElement(target);
+  },
+  playButtonSound,
+});
+
+let stageCount = 0;
 
 hideElementOnLocalHost("info");
 
 void initTopPage();
+
+function playButtonSound(): void {
+  const audio = new Audio(BTN_SOUND_SRC);
+  audio.play().catch(() => {});
+}
 
 async function initTopPage(): Promise<void> {
   applyI18n(document);
@@ -176,12 +170,8 @@ async function initTopPage(): Promise<void> {
     return;
   }
 
-  const baseMapImg = getStageMapImageElement();
-  if (baseMapImg) {
-    stageMapDefaultSrc = baseMapImg.getAttribute("src") || baseMapImg.src || "";
-  }
-
-  setupStageMapInteractions();
+  mapViewport.setup();
+  stageDialog.bindEvents();
 
   setupBackupToolbar({
     downloadButton: dbDownloadBtn,
@@ -220,15 +210,7 @@ async function initTopPage(): Promise<void> {
   }
 
   await waitForMapRevealComplete();
-
-  const stages = await loadStages();
-  stageCount = stages.length;
-
-  for (const stage of stages) {
-    const stageObject = createStageObject(stage);
-    appendStageObject(stageObject);
-    placeStageObject(stageObject, stage.x, stage.y);
-  }
+  await rerenderStagesFromDb();
 
   setupModeSwitch({
     modeSwitch,
@@ -243,14 +225,13 @@ async function initTopPage(): Promise<void> {
     }
 
     stageCount += 1;
-    const stgId = buildStageId();
-    const stageObject = createStageObject({
-      stgId,
+    const stageObject = createStageButton({
+      stgId: buildStageId(),
       ord: stageCount,
       nm: `ST${stageCount}`,
       desc: "",
       baseColor: "#ffc96b",
-      progress: DEFAULT_PROGRESS,
+      progress: 100,
       imgPath: "",
       mapImgPath: "",
       x: 0,
@@ -263,17 +244,19 @@ async function initTopPage(): Promise<void> {
       t_c: Date.now(),
       t_u: Date.now(),
     });
+
     appendStageObject(stageObject);
 
     const rect = logoWrap.getBoundingClientRect();
-    const point = viewportPointToMapPoint(rect.left + 22, rect.bottom + 22);
-    placeStageObject(stageObject, point.x, point.y);
+    const point = mapViewport.viewportPointToContentPoint(
+      rect.left + 22,
+      rect.bottom + 22,
+    );
+    mapViewport.placeElementWithinContent(stageObject, point.x, point.y);
 
     await saveStageFromElement(stageObject, stageCount);
     beginDrag(stageObject);
   });
-
-  setupDialogEvents();
 }
 
 async function syncSelectedWorldHeader(): Promise<void> {
@@ -283,56 +266,6 @@ async function syncSelectedWorldHeader(): Promise<void> {
 
   const world = await loadSelectedWorld();
   selectedWorldNameEl.textContent = world?.nm || t("no_world");
-}
-
-async function loadSelectedWorld(): Promise<{
-  wId: string;
-  nm: string;
-} | null> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction(["worlds", "app_state"], "readonly");
-    const worldsStore = tx.objectStore("worlds");
-    const appStateStore = tx.objectStore("app_state");
-
-    const appStateRow = (await requestToPromise(
-      appStateStore.get("worlds"),
-    )) as { vTxt?: string } | undefined;
-    const selectedWId = String(
-      appStateRow?.vTxt || (await getAppStateText("worlds")) || "",
-    ).trim();
-
-    const worlds = (await requestToPromise(worldsStore.getAll())) as Array<{
-      wId?: string;
-      nm?: string;
-      ord?: number;
-    }>;
-
-    const sorted = worlds
-      .filter((row) => typeof row?.wId === "string")
-      .sort((a, b) => Number(a?.ord || 0) - Number(b?.ord || 0));
-
-    if (sorted.length === 0) {
-      return null;
-    }
-
-    const selected =
-      sorted.find((row) => String(row.wId || "") === selectedWId) || sorted[0];
-
-    const wId = String(selected.wId || "").trim();
-    const nm = String(selected.nm || wId || "").trim();
-    if (!wId) {
-      return null;
-    }
-
-    if (wId !== selectedWId) {
-      await setAppStateText("worlds", wId);
-    }
-
-    return { wId, nm: nm || wId };
-  } finally {
-    db.close();
-  }
 }
 
 async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
@@ -422,46 +355,22 @@ async function waitForMapRevealComplete(): Promise<void> {
   });
 }
 
-function createStageObject(stage: StageRecord): HTMLButtonElement {
-  const el = document.createElement("button");
-  el.type = "button";
-  el.className = "stage-object";
-  el.dataset.stageId = stage.stgId;
-  el.dataset.stageLabel = stage.nm;
-  el.dataset.stageOrd = String(stage.ord);
-  el.dataset.stageDesc = stage.desc;
-  el.dataset.stageColor = normalizeHexColor(stage.baseColor);
-  el.dataset.stageProgress = String(stage.progress);
-  el.dataset.stageImgPath = stage.imgPath;
-  el.dataset.stageMapImgPath = stage.mapImgPath;
-  el.title = stage.desc || t("stage_no_desc");
-  el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
+function createStageButton(stage: StageRecord): HTMLButtonElement {
+  const stageObject = createStageObject(stage, {
+    onPointerDown,
+    onDoubleClick: onStageDoubleClick,
+    onClick: onStageClick,
+  });
+  applyStageVisuals(stageObject, fileStore);
+  return stageObject;
+}
 
-  const sideImage = document.createElement("span");
-  sideImage.className = "stage-object-side-image";
-  sideImage.setAttribute("aria-hidden", "true");
-
-  const sideImageImg = document.createElement("img");
-  sideImageImg.className = "stage-object-side-image-img";
-  sideImageImg.alt = "";
-  sideImage.append(sideImageImg);
-  el.append(sideImage);
-
-  const hp = document.createElement("span");
-  hp.className = "stage-object-hp";
-  hp.setAttribute("aria-hidden", "true");
-
-  const hpFill = document.createElement("span");
-  hpFill.className = "stage-object-hp-fill";
-  hp.append(hpFill);
-  el.append(hp);
-
-  applyStageVisuals(el);
-
-  el.addEventListener("pointerdown", onPointerDown);
-  el.addEventListener("dblclick", onStageDoubleClick);
-  el.addEventListener("click", onStageClick);
-  return el;
+function appendStageObject(target: HTMLButtonElement): void {
+  if (stageMapContent instanceof HTMLElement) {
+    stageMapContent.append(target);
+    return;
+  }
+  document.body.append(target);
 }
 
 function onStageClick(event: MouseEvent): void {
@@ -469,7 +378,7 @@ function onStageClick(event: MouseEvent): void {
     return;
   }
 
-  if (performance.now() < suppressStageClickUntil) {
+  if (mapViewport.isClickSuppressed()) {
     event.preventDefault();
     event.stopPropagation();
     return;
@@ -501,7 +410,7 @@ function onStageDoubleClick(event: MouseEvent): void {
     return;
   }
 
-  openStageSettingsDialog(target);
+  stageDialog.open(target);
 }
 
 function onPointerDown(event: PointerEvent): void {
@@ -521,20 +430,34 @@ function onPointerDown(event: PointerEvent): void {
 function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
   target.classList.add("dragging");
 
-  const targetPosition = getElementPosition(target);
+  const left = Number.parseFloat(target.style.left);
+  const top = Number.parseFloat(target.style.top);
+  const targetPosition = {
+    x: Number.isFinite(left) ? left : 0,
+    y: Number.isFinite(top) ? top : 0,
+  };
   const initialPointerPoint = startEvent
-    ? viewportPointToMapPoint(startEvent.clientX, startEvent.clientY)
+    ? mapViewport.viewportPointToContentPoint(
+        startEvent.clientX,
+        startEvent.clientY,
+      )
     : null;
-  const offsetX = startEvent
-    ? initialPointerPoint.x - targetPosition.x
-    : target.offsetWidth / 2;
-  const offsetY = startEvent
-    ? initialPointerPoint.y - targetPosition.y
-    : target.offsetHeight / 2;
+  const offsetX =
+    startEvent && initialPointerPoint
+      ? initialPointerPoint.x - targetPosition.x
+      : target.offsetWidth / 2;
+  const offsetY =
+    startEvent && initialPointerPoint
+      ? initialPointerPoint.y - targetPosition.y
+      : target.offsetHeight / 2;
 
   const move = (clientX: number, clientY: number) => {
-    const point = viewportPointToMapPoint(clientX, clientY);
-    placeStageObject(target, point.x - offsetX, point.y - offsetY);
+    const point = mapViewport.viewportPointToContentPoint(clientX, clientY);
+    mapViewport.placeElementWithinContent(
+      target,
+      point.x - offsetX,
+      point.y - offsetY,
+    );
   };
 
   const onMove = (event: PointerEvent) => {
@@ -559,1213 +482,6 @@ function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
   window.addEventListener("pointercancel", onUp);
 }
 
-function placeStageObject(
-  target: HTMLElement,
-  left: number,
-  top: number,
-): void {
-  const mapSize = getStageMapContentSize();
-  const maxLeft = mapSize.width - target.offsetWidth;
-  const maxTop = mapSize.height - target.offsetHeight;
-  target.style.left = `${Math.max(0, Math.min(left, maxLeft))}px`;
-  target.style.top = `${Math.max(0, Math.min(top, maxTop))}px`;
-}
-
-function appendStageObject(target: HTMLButtonElement): void {
-  if (stageMapContent instanceof HTMLElement) {
-    stageMapContent.append(target);
-    return;
-  }
-  document.body.append(target);
-}
-
-function setupStageMapInteractions(): void {
-  if (
-    !(stageMap instanceof HTMLElement) ||
-    !(stageMapContent instanceof HTMLElement)
-  ) {
-    return;
-  }
-
-  stageMap.addEventListener("wheel", onStageMapWheel, { passive: false });
-  stageMap.addEventListener("pointerdown", onStageMapPointerDown);
-  window.addEventListener("resize", onStageMapResize);
-  applyStageMapTransform();
-}
-
-function onStageMapWheel(event: WheelEvent): void {
-  if (!(stageMap instanceof HTMLElement)) {
-    return;
-  }
-
-  stopStageMapInertia();
-  event.preventDefault();
-  if (event.ctrlKey || event.metaKey) {
-    const zoomFactor = Math.exp(-event.deltaY * MAP_ZOOM_SENSITIVITY);
-    const nextScale = clampMapScale(mapViewState.scale * zoomFactor);
-    zoomStageMapToClientPoint(nextScale, event.clientX, event.clientY);
-    return;
-  }
-
-  setStageMapTransform(
-    mapViewState.scale,
-    mapViewState.offsetX - event.deltaX,
-    mapViewState.offsetY - event.deltaY,
-  );
-}
-
-function onStageMapPointerDown(event: PointerEvent): void {
-  if (!(stageMap instanceof HTMLElement)) {
-    return;
-  }
-
-  if (shouldIgnoreMapPanStart(event)) {
-    return;
-  }
-
-  stopStageMapInertia();
-
-  const timestamp = performance.now();
-
-  mapPanState = {
-    pointerId: event.pointerId,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    startOffsetX: mapViewState.offsetX,
-    startOffsetY: mapViewState.offsetY,
-    moved: false,
-    lastClientX: event.clientX,
-    lastClientY: event.clientY,
-    lastTimestamp: timestamp,
-    velocityX: 0,
-    velocityY: 0,
-  };
-
-  stageMap.classList.add("is-panning");
-  window.addEventListener("pointermove", onStageMapPointerMove);
-  window.addEventListener("pointerup", onStageMapPointerUp);
-  window.addEventListener("pointercancel", onStageMapPointerUp);
-}
-
-function onStageMapPointerMove(event: PointerEvent): void {
-  if (!(stageMap instanceof HTMLElement) || !mapPanState) {
-    return;
-  }
-
-  if (event.pointerId !== mapPanState.pointerId) {
-    return;
-  }
-
-  const deltaX = event.clientX - mapPanState.startClientX;
-  const deltaY = event.clientY - mapPanState.startClientY;
-  const now = performance.now();
-  const elapsed = Math.max(now - mapPanState.lastTimestamp, 1);
-  const velocityX = (event.clientX - mapPanState.lastClientX) / elapsed;
-  const velocityY = (event.clientY - mapPanState.lastClientY) / elapsed;
-  if (
-    !mapPanState.moved &&
-    Math.hypot(deltaX, deltaY) >= MAP_PAN_THRESHOLD_PX
-  ) {
-    mapPanState.moved = true;
-  }
-
-  mapPanState.velocityX = velocityX * 0.35 + mapPanState.velocityX * 0.65;
-  mapPanState.velocityY = velocityY * 0.35 + mapPanState.velocityY * 0.65;
-  mapPanState.lastClientX = event.clientX;
-  mapPanState.lastClientY = event.clientY;
-  mapPanState.lastTimestamp = now;
-
-  setStageMapTransform(
-    mapViewState.scale,
-    mapPanState.startOffsetX + deltaX,
-    mapPanState.startOffsetY + deltaY,
-  );
-  event.preventDefault();
-}
-
-function onStageMapPointerUp(event: PointerEvent): void {
-  if (!(stageMap instanceof HTMLElement) || !mapPanState) {
-    return;
-  }
-
-  if (event.pointerId !== mapPanState.pointerId) {
-    return;
-  }
-
-  if (mapPanState.moved) {
-    suppressStageClickUntil = performance.now() + 250;
-  }
-
-  const inertiaVelocityX = mapPanState.velocityX;
-  const inertiaVelocityY = mapPanState.velocityY;
-
-  stageMap.classList.remove("is-panning");
-  window.removeEventListener("pointermove", onStageMapPointerMove);
-  window.removeEventListener("pointerup", onStageMapPointerUp);
-  window.removeEventListener("pointercancel", onStageMapPointerUp);
-  mapPanState = null;
-
-  startStageMapInertia(inertiaVelocityX, inertiaVelocityY);
-}
-
-function onStageMapResize(): void {
-  stopStageMapInertia();
-  setStageMapTransform(
-    mapViewState.scale,
-    mapViewState.offsetX,
-    mapViewState.offsetY,
-  );
-}
-
-function shouldIgnoreMapPanStart(event: PointerEvent): boolean {
-  if (!(event.target instanceof HTMLElement)) {
-    return false;
-  }
-
-  if (
-    document.body.classList.contains(EDIT_MODE_CLASS) &&
-    event.target.closest(".stage-object")
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-function zoomStageMapToClientPoint(
-  nextScale: number,
-  clientX: number,
-  clientY: number,
-): void {
-  if (!(stageMap instanceof HTMLElement)) {
-    return;
-  }
-
-  const safeScale = clampMapScale(nextScale);
-  const rect = stageMap.getBoundingClientRect();
-  const viewportX = clientX - rect.left;
-  const viewportY = clientY - rect.top;
-  const mapX = (viewportX - mapViewState.offsetX) / mapViewState.scale;
-  const mapY = (viewportY - mapViewState.offsetY) / mapViewState.scale;
-
-  setStageMapTransform(
-    safeScale,
-    viewportX - mapX * safeScale,
-    viewportY - mapY * safeScale,
-  );
-}
-
-function clampMapScale(value: number): number {
-  return Math.max(MIN_MAP_SCALE, Math.min(value, MAX_MAP_SCALE));
-}
-
-function startStageMapInertia(velocityX: number, velocityY: number): void {
-  if (!(stageMap instanceof HTMLElement)) {
-    return;
-  }
-
-  stopStageMapInertia();
-
-  if (Math.hypot(velocityX, velocityY) < MAP_INERTIA_MIN_SPEED) {
-    return;
-  }
-
-  mapInertiaVelocityX = velocityX;
-  mapInertiaVelocityY = velocityY;
-
-  let lastTimestamp = performance.now();
-
-  const step = (timestamp: number) => {
-    const elapsed = Math.max(timestamp - lastTimestamp, 1);
-    lastTimestamp = timestamp;
-
-    mapInertiaVelocityX *= MAP_INERTIA_FRICTION;
-    mapInertiaVelocityY *= MAP_INERTIA_FRICTION;
-
-    const nextOffsetX = mapViewState.offsetX + mapInertiaVelocityX * elapsed;
-    const nextOffsetY = mapViewState.offsetY + mapInertiaVelocityY * elapsed;
-    const previousOffsetX = mapViewState.offsetX;
-    const previousOffsetY = mapViewState.offsetY;
-
-    setStageMapTransform(mapViewState.scale, nextOffsetX, nextOffsetY);
-
-    const hitBoundaryX =
-      Math.abs(mapViewState.offsetX - previousOffsetX) < 0.01;
-    const hitBoundaryY =
-      Math.abs(mapViewState.offsetY - previousOffsetY) < 0.01;
-    const slowEnough =
-      Math.abs(mapInertiaVelocityX) < MAP_INERTIA_MIN_SPEED &&
-      Math.abs(mapInertiaVelocityY) < MAP_INERTIA_MIN_SPEED;
-
-    if (hitBoundaryX) {
-      mapInertiaVelocityX = 0;
-    }
-    if (hitBoundaryY) {
-      mapInertiaVelocityY = 0;
-    }
-
-    if (
-      slowEnough ||
-      (Math.abs(mapInertiaVelocityX) < MAP_INERTIA_MIN_SPEED &&
-        Math.abs(mapInertiaVelocityY) < MAP_INERTIA_MIN_SPEED)
-    ) {
-      stopStageMapInertia();
-      return;
-    }
-
-    mapInertiaFrameId = window.requestAnimationFrame(step);
-  };
-
-  mapInertiaFrameId = window.requestAnimationFrame(step);
-}
-
-function stopStageMapInertia(): void {
-  if (mapInertiaFrameId != null) {
-    window.cancelAnimationFrame(mapInertiaFrameId);
-    mapInertiaFrameId = null;
-  }
-
-  mapInertiaVelocityX = 0;
-  mapInertiaVelocityY = 0;
-}
-
-function setStageMapTransform(
-  scale: number,
-  offsetX: number,
-  offsetY: number,
-): void {
-  const clamped = clampStageMapTransform(scale, offsetX, offsetY);
-  mapViewState.scale = clamped.scale;
-  mapViewState.offsetX = clamped.offsetX;
-  mapViewState.offsetY = clamped.offsetY;
-  applyStageMapTransform();
-}
-
-function clampStageMapTransform(
-  scale: number,
-  offsetX: number,
-  offsetY: number,
-): { scale: number; offsetX: number; offsetY: number } {
-  const safeScale = clampMapScale(scale);
-  const viewport = getStageMapViewportSize();
-  const mapSize = getStageMapContentSize();
-  const scaledWidth = mapSize.width * safeScale;
-  const scaledHeight = mapSize.height * safeScale;
-
-  return {
-    scale: safeScale,
-    offsetX: clampStageMapOffset(offsetX, viewport.width, scaledWidth),
-    offsetY: clampStageMapOffset(offsetY, viewport.height, scaledHeight),
-  };
-}
-
-function clampStageMapOffset(
-  offset: number,
-  viewportSize: number,
-  scaledSize: number,
-): number {
-  if (scaledSize <= viewportSize) {
-    return (viewportSize - scaledSize) / 2;
-  }
-
-  const minOffset = viewportSize - scaledSize;
-  return Math.max(minOffset, Math.min(offset, 0));
-}
-
-function applyStageMapTransform(): void {
-  if (!(stageMapContent instanceof HTMLElement)) {
-    return;
-  }
-
-  stageMapContent.style.transform = `translate(${mapViewState.offsetX}px, ${mapViewState.offsetY}px) scale(${mapViewState.scale})`;
-}
-
-function getStageMapViewportSize(): { width: number; height: number } {
-  if (stageMap instanceof HTMLElement) {
-    const width = stageMap.clientWidth;
-    const height = stageMap.clientHeight;
-    if (width > 0 && height > 0) {
-      return { width, height };
-    }
-  }
-
-  return {
-    width: window.innerWidth,
-    height: window.innerHeight,
-  };
-}
-
-function getStageMapContentSize(): { width: number; height: number } {
-  return {
-    width: STAGE_MAP_BASE_WIDTH,
-    height: STAGE_MAP_BASE_HEIGHT,
-  };
-}
-
-function viewportPointToMapPoint(
-  clientX: number,
-  clientY: number,
-): { x: number; y: number } {
-  if (!(stageMap instanceof HTMLElement)) {
-    return { x: clientX, y: clientY };
-  }
-
-  const rect = stageMap.getBoundingClientRect();
-  return {
-    x: (clientX - rect.left - mapViewState.offsetX) / mapViewState.scale,
-    y: (clientY - rect.top - mapViewState.offsetY) / mapViewState.scale,
-  };
-}
-
-function buildStageId(): string {
-  const rand = Math.random().toString(36).slice(2, 8);
-  return `stg_${Date.now()}_${rand}`;
-}
-
-function getElementPosition(target: HTMLElement): { x: number; y: number } {
-  const left = Number.parseFloat(target.style.left);
-  const top = Number.parseFloat(target.style.top);
-  return {
-    x: Number.isFinite(left) ? left : 0,
-    y: Number.isFinite(top) ? top : 0,
-  };
-}
-
-async function loadStages(): Promise<StageRecord[]> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("stages", "readonly");
-    const store = tx.objectStore("stages");
-    const rows = (await requestToPromise(
-      store.getAll(),
-    )) as Partial<StageRecord>[];
-
-    const normalized = rows
-      .filter((row) => typeof row.stgId === "string")
-      .map((row, index) => normalizeStageRow(row, index));
-
-    normalized.sort((a, b) => a.ord - b.ord);
-    return normalized;
-  } finally {
-    db.close();
-  }
-}
-
-async function saveStageFromElement(
-  target: HTMLButtonElement,
-  ordOverride?: number,
-): Promise<void> {
-  const stgId = target.dataset.stageId;
-  const stageName = target.dataset.stageLabel;
-  const stageDesc = target.dataset.stageDesc || "";
-  const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
-  const stageProgress = Number.parseInt(
-    target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
-    10,
-  );
-  const stageImgPath = String(target.dataset.stageImgPath || "").trim();
-  const stageMapImgPath = String(target.dataset.stageMapImgPath || "").trim();
-  if (!stgId || !stageName) {
-    return;
-  }
-
-  const pos = getElementPosition(target);
-  const ordFromData = Number.parseInt(target.dataset.stageOrd || "", 10);
-  const ord = Number.isFinite(ordOverride)
-    ? Number(ordOverride)
-    : Number.isFinite(ordFromData)
-      ? ordFromData
-      : 0;
-
-  target.dataset.stageOrd = String(ord);
-
-  const now = Date.now();
-  const record: StageRecord = {
-    stgId,
-    ord,
-    nm: stageName,
-    desc: stageDesc,
-    baseColor: stageColor,
-    progress: clampProgress(stageProgress),
-    imgPath: stageImgPath,
-    mapImgPath: stageMapImgPath,
-    x: pos.x,
-    y: pos.y,
-    w: STAGE_DEFAULT_SIZE,
-    h: STAGE_DEFAULT_SIZE,
-    rot: 0,
-    mode: "edit",
-    isLocked: 0,
-    t_c: now,
-    t_u: now,
-  };
-
-  await upsertStage(record);
-}
-
-function normalizeStageRow(
-  row: Partial<StageRecord>,
-  index: number,
-): StageRecord {
-  const safeOrd = Number.isFinite(row.ord) ? Number(row.ord) : index + 1;
-  const safeName =
-    typeof row.nm === "string" && row.nm.length > 0 ? row.nm : `ST${safeOrd}`;
-  const safeDesc = typeof row.desc === "string" ? row.desc : "";
-  const safeColor = normalizeHexColor(
-    typeof row.baseColor === "string" ? row.baseColor : "#ffc96b",
-  );
-  const safeProgress = clampProgress(
-    Number.isFinite(row.progress) ? Number(row.progress) : DEFAULT_PROGRESS,
-  );
-
-  return {
-    stgId: row.stgId as string,
-    ord: safeOrd,
-    nm: safeName,
-    desc: safeDesc,
-    baseColor: safeColor,
-    progress: safeProgress,
-    imgPath: typeof row.imgPath === "string" ? row.imgPath : "",
-    mapImgPath: typeof row.mapImgPath === "string" ? row.mapImgPath : "",
-    x: Number.isFinite(row.x) ? Number(row.x) : 0,
-    y: Number.isFinite(row.y) ? Number(row.y) : 0,
-    w: Number.isFinite(row.w) ? Number(row.w) : STAGE_DEFAULT_SIZE,
-    h: Number.isFinite(row.h) ? Number(row.h) : STAGE_DEFAULT_SIZE,
-    rot: Number.isFinite(row.rot) ? Number(row.rot) : 0,
-    mode: typeof row.mode === "string" ? row.mode : "edit",
-    isLocked: Number.isFinite(row.isLocked) ? Number(row.isLocked) : 0,
-    t_c: Number.isFinite(row.t_c) ? Number(row.t_c) : Date.now(),
-    t_u: Number.isFinite(row.t_u) ? Number(row.t_u) : Date.now(),
-  };
-}
-
-function setupDialogEvents(): void {
-  if (
-    !(stageDialog instanceof HTMLDialogElement) ||
-    !(progressRange instanceof HTMLInputElement) ||
-    !(nameInput instanceof HTMLInputElement) ||
-    !(descInput instanceof HTMLTextAreaElement) ||
-    !(colorInput instanceof HTMLInputElement) ||
-    !(saveButton instanceof HTMLButtonElement)
-  ) {
-    return;
-  }
-
-  progressRange.addEventListener("input", () => {
-    updateProgressPreview(Number.parseInt(progressRange.value, 10));
-  });
-
-  if (
-    stageImageFileInput instanceof HTMLInputElement &&
-    stageImageClearButton instanceof HTMLButtonElement
-  ) {
-    stageImageClearButton.addEventListener("click", () => {
-      stageImageFileInput.value = "";
-    });
-  }
-
-  if (stageImagePickButton instanceof HTMLButtonElement) {
-    stageImagePickButton.addEventListener("click", () => {
-      void openRegisteredImagePicker("stage");
-    });
-  }
-
-  if (
-    mapImageFileInput instanceof HTMLInputElement &&
-    mapImageClearButton instanceof HTMLButtonElement
-  ) {
-    mapImageClearButton.addEventListener("click", () => {
-      mapImageFileInput.value = "";
-    });
-  }
-
-  if (mapImagePickButton instanceof HTMLButtonElement) {
-    mapImagePickButton.addEventListener("click", () => {
-      void openRegisteredImagePicker("map");
-    });
-  }
-
-  if (stageImageSaveButton instanceof HTMLButtonElement) {
-    stageImageSaveButton.addEventListener("click", () => {
-      void saveImageTabSelection("stage");
-    });
-  }
-
-  if (mapImageSaveButton instanceof HTMLButtonElement) {
-    mapImageSaveButton.addEventListener("click", () => {
-      void saveImageTabSelection("map");
-    });
-  }
-
-  saveButton.addEventListener("click", async () => {
-    if (!editingStage) {
-      closeStageSettingsDialog();
-      return;
-    }
-
-    const nextName =
-      nameInput.value.trim() || editingStage.dataset.stageLabel || "ST";
-    const nextDesc = descInput.value.trim();
-    const nextColor = normalizeHexColor(colorInput.value);
-    const nextProgress = clampProgress(
-      Number.parseInt(progressRange.value, 10),
-    );
-
-    editingStage.dataset.stageLabel = nextName;
-    editingStage.dataset.stageDesc = nextDesc;
-    editingStage.dataset.stageColor = nextColor;
-    editingStage.dataset.stageProgress = String(nextProgress);
-    editingStage.title = nextDesc || t("stage_no_desc");
-    editingStage.setAttribute(
-      "aria-label",
-      t("stage_object_aria", { name: nextName }),
-    );
-    applyStageVisuals(editingStage);
-
-    await saveStageFromElement(editingStage);
-    closeStageSettingsDialog();
-  });
-}
-
-function openStageSettingsDialog(target: HTMLButtonElement): void {
-  if (
-    !(stageDialog instanceof HTMLDialogElement) ||
-    !(progressRange instanceof HTMLInputElement) ||
-    !(nameInput instanceof HTMLInputElement) ||
-    !(descInput instanceof HTMLTextAreaElement) ||
-    !(colorInput instanceof HTMLInputElement)
-  ) {
-    return;
-  }
-
-  playBtnSound();
-  editingStage = target;
-
-  const label = target.dataset.stageLabel || "ST";
-  const desc = target.dataset.stageDesc || "";
-  const color = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
-  const progress = clampProgress(
-    Number.parseInt(target.dataset.stageProgress || `${DEFAULT_PROGRESS}`, 10),
-  );
-
-  if (stageDialogTitle instanceof HTMLElement) {
-    stageDialogTitle.textContent = `${label} ${t("stage_settings_suffix")}`;
-  }
-
-  nameInput.value = label;
-  descInput.value = desc;
-  colorInput.value = color;
-  progressRange.value = String(progress);
-  updateProgressPreview(progress);
-  setDialogTab("basic");
-  syncImageTabFromStage(target);
-
-  stageDialogFrame.open();
-}
-
-function closeStageSettingsDialog(): void {
-  stageDialogFrame.close();
-}
-
-function setDialogTab(tab: "basic" | "image"): void {
-  stageDialogFrame.setTab(tab);
-}
-
-function syncImageTabFromStage(target: HTMLButtonElement): void {
-  if (
-    !(stageImageCurrent instanceof HTMLElement) ||
-    !(mapImageCurrent instanceof HTMLElement) ||
-    !(stageImageFileInput instanceof HTMLInputElement) ||
-    !(mapImageFileInput instanceof HTMLInputElement)
-  ) {
-    return;
-  }
-
-  stageImageFileInput.value = "";
-  mapImageFileInput.value = "";
-
-  const stageImgPath = String(target.dataset.stageImgPath || "").trim();
-  const mapImgPath = String(target.dataset.stageMapImgPath || "").trim();
-  stageImageCurrent.textContent = stageImgPath || "-";
-  mapImageCurrent.textContent = mapImgPath || "-";
-}
-
-async function saveImageTabSelection(kind: "stage" | "map"): Promise<void> {
-  if (!editingStage) {
-    return;
-  }
-
-  if (
-    !(stageImageFileInput instanceof HTMLInputElement) ||
-    !(mapImageFileInput instanceof HTMLInputElement) ||
-    !(stageImageCurrent instanceof HTMLElement) ||
-    !(mapImageCurrent instanceof HTMLElement)
-  ) {
-    return;
-  }
-
-  const input = kind === "stage" ? stageImageFileInput : mapImageFileInput;
-  const file = input.files?.[0] || null;
-  if (!file) {
-    return;
-  }
-
-  const fId = await saveFileToStore(file);
-  if (!fId) {
-    return;
-  }
-
-  if (kind === "stage") {
-    editingStage.dataset.stageImgPath = fId;
-    stageImageCurrent.textContent = fId;
-    await applyStageImageVisual(editingStage);
-  } else {
-    editingStage.dataset.stageMapImgPath = fId;
-    mapImageCurrent.textContent = fId;
-  }
-
-  await saveStageFromElement(editingStage);
-  input.value = "";
-}
-
-async function openRegisteredImagePicker(kind: "stage" | "map"): Promise<void> {
-  if (!editingStage) {
-    return;
-  }
-
-  const rows = await fetchRegisteredImageRows();
-
-  const oldBack = document.getElementById("yg_image_picker_back");
-  const oldPop = document.getElementById("yg_image_picker_popup");
-  oldBack?.remove();
-  oldPop?.remove();
-
-  const overlayRoot =
-    document.querySelector(".stage-dialog-shell") || document.body;
-
-  const createdUrls: string[] = [];
-  const close = () => {
-    for (const url of createdUrls) {
-      try {
-        URL.revokeObjectURL(url);
-      } catch {
-        // noop
-      }
-    }
-    back.remove();
-    pop.remove();
-  };
-
-  const back = document.createElement("div");
-  back.id = "yg_image_picker_back";
-  back.style.position = "absolute";
-  back.style.left = "0";
-  back.style.top = "0";
-  back.style.width = "100%";
-  back.style.height = "100%";
-  back.style.background = "rgba(0,0,0,0.42)";
-  back.style.zIndex = "150";
-  overlayRoot.appendChild(back);
-
-  const pop = document.createElement("div");
-  pop.id = "yg_image_picker_popup";
-  pop.style.position = "absolute";
-  pop.style.left = "50%";
-  pop.style.top = "50%";
-  pop.style.transform = "translate(-50%, -50%)";
-  pop.style.width = "min(900px, calc(100% - 16px))";
-  pop.style.maxHeight = "calc(100% - 16px)";
-  pop.style.background = "#fff";
-  pop.style.border = "1px solid #ccc";
-  pop.style.borderRadius = "8px";
-  pop.style.padding = "10px";
-  pop.style.display = "flex";
-  pop.style.flexDirection = "column";
-  pop.style.gap = "8px";
-  pop.style.zIndex = "151";
-  overlayRoot.appendChild(pop);
-
-  const title = document.createElement("h3");
-  title.textContent = t("image_picker_title");
-  title.style.margin = "0";
-  pop.appendChild(title);
-
-  const toolRow = document.createElement("div");
-  toolRow.style.display = "flex";
-  toolRow.style.gap = "8px";
-  toolRow.style.flexWrap = "wrap";
-  pop.appendChild(toolRow);
-
-  const qInput = document.createElement("input");
-  qInput.type = "text";
-  qInput.placeholder = t("image_picker_filter_placeholder");
-  qInput.style.flex = "1 1 280px";
-  qInput.style.minWidth = "200px";
-  toolRow.appendChild(qInput);
-
-  const extSelect = document.createElement("select");
-  ["", "png", "jpg", "jpeg", "webp", "gif", "svg"].forEach((ext) => {
-    const opt = document.createElement("option");
-    opt.value = ext;
-    opt.textContent = ext ? `.${ext}` : t("image_picker_ext_all");
-    extSelect.appendChild(opt);
-  });
-  toolRow.appendChild(extSelect);
-
-  const count = document.createElement("span");
-  count.style.marginLeft = "auto";
-  count.style.fontSize = "12px";
-  count.style.color = "#666";
-  toolRow.appendChild(count);
-
-  const grid = document.createElement("div");
-  grid.style.display = "grid";
-  grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(130px, 1fr))";
-  grid.style.gap = "8px";
-  grid.style.overflow = "auto";
-  grid.style.minHeight = "220px";
-  grid.style.maxHeight = "54vh";
-  grid.style.border = "1px solid #eee";
-  grid.style.borderRadius = "6px";
-  grid.style.padding = "8px";
-  pop.appendChild(grid);
-
-  const footer = document.createElement("div");
-  footer.style.display = "flex";
-  footer.style.justifyContent = "flex-end";
-  footer.style.gap = "8px";
-  pop.appendChild(footer);
-
-  const closeBtn = document.createElement("button");
-  closeBtn.type = "button";
-  closeBtn.textContent = t("image_picker_close");
-  footer.appendChild(closeBtn);
-
-  const renderGrid = () => {
-    grid.innerHTML = "";
-
-    const query = String(qInput.value || "")
-      .trim()
-      .toLowerCase();
-    const ext = String(extSelect.value || "")
-      .trim()
-      .toLowerCase();
-
-    const filtered = rows.filter((row) => {
-      if (ext && row.ext !== ext) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      return (
-        row.nm.toLowerCase().includes(query) ||
-        row.fId.toLowerCase().includes(query)
-      );
-    });
-
-    count.textContent = t("image_picker_count", { count: filtered.length });
-
-    if (filtered.length === 0) {
-      const empty = document.createElement("div");
-      empty.textContent = t("image_picker_empty");
-      empty.style.color = "#777";
-      empty.style.fontSize = "13px";
-      grid.appendChild(empty);
-      return;
-    }
-
-    for (const row of filtered) {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.style.display = "flex";
-      card.style.flexDirection = "column";
-      card.style.alignItems = "stretch";
-      card.style.gap = "6px";
-      card.style.padding = "6px";
-      card.style.border = "1px solid #ddd";
-      card.style.borderRadius = "6px";
-      card.style.background = "#fff";
-      card.style.cursor = "pointer";
-
-      const img = document.createElement("img");
-      img.alt = row.nm || row.fId;
-      img.style.width = "100%";
-      img.style.aspectRatio = "1 / 1";
-      img.style.objectFit = "cover";
-      img.style.background = "#f5f5f5";
-      img.style.borderRadius = "4px";
-      if (row.objectUrl) {
-        img.src = row.objectUrl;
-      }
-      card.appendChild(img);
-
-      const label = document.createElement("div");
-      label.textContent = row.nm || row.fId;
-      label.style.fontSize = "11px";
-      label.style.lineHeight = "1.3";
-      label.style.wordBreak = "break-all";
-      card.appendChild(label);
-
-      if (row.nm && row.nm !== row.fId) {
-        const sub = document.createElement("div");
-        sub.textContent = row.fId;
-        sub.style.fontSize = "10px";
-        sub.style.color = "#666";
-        sub.style.wordBreak = "break-all";
-        card.appendChild(sub);
-      }
-
-      card.addEventListener("click", async () => {
-        if (!editingStage) {
-          close();
-          return;
-        }
-
-        if (kind === "stage") {
-          editingStage.dataset.stageImgPath = row.fId;
-          if (stageImageCurrent instanceof HTMLElement) {
-            stageImageCurrent.textContent = row.fId;
-          }
-          await applyStageImageVisual(editingStage);
-        } else {
-          editingStage.dataset.stageMapImgPath = row.fId;
-          if (mapImageCurrent instanceof HTMLElement) {
-            mapImageCurrent.textContent = row.fId;
-          }
-        }
-
-        await saveStageFromElement(editingStage);
-        close();
-      });
-
-      grid.appendChild(card);
-
-      if (row.objectUrl) {
-        createdUrls.push(row.objectUrl);
-      }
-    }
-  };
-
-  qInput.addEventListener("input", renderGrid);
-  extSelect.addEventListener("change", renderGrid);
-  closeBtn.addEventListener("click", close);
-  back.addEventListener("click", close);
-
-  renderGrid();
-  qInput.focus();
-}
-
-type PickerImageRow = {
-  fId: string;
-  nm: string;
-  ext: string;
-  objectUrl: string;
-};
-
-async function fetchRegisteredImageRows(): Promise<PickerImageRow[]> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("files", "readonly");
-    const store = tx.objectStore("files");
-    const rows = (await requestToPromise(store.getAll())) as Array<{
-      fId?: string;
-      nm?: string;
-      ext?: string;
-      mime?: string;
-      body?: string;
-      bin?: Blob;
-      t_u?: number;
-    }>;
-
-    const images = rows
-      .filter((row) => {
-        const ext = String(row?.ext || "")
-          .trim()
-          .toLowerCase();
-        const mime = String(row?.mime || "")
-          .trim()
-          .toLowerCase();
-        const body = String(row?.body || "")
-          .trim()
-          .toLowerCase();
-        const imageExts = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
-        if (imageExts.has(ext)) {
-          return true;
-        }
-        if (mime.startsWith("image/")) {
-          return true;
-        }
-        return body.startsWith("data:image/");
-      })
-      .map((row) => {
-        const fId = String(row?.fId || "").trim();
-        const nm = String(row?.nm || fId).trim();
-        const ext = String(row?.ext || "")
-          .trim()
-          .toLowerCase();
-        let objectUrl = "";
-        if (row?.bin instanceof Blob) {
-          objectUrl = URL.createObjectURL(row.bin);
-        } else {
-          const body = String(row?.body || "").trim();
-          if (body.toLowerCase().startsWith("data:image/")) {
-            objectUrl = body;
-          }
-        }
-        return {
-          fId,
-          nm,
-          ext,
-          objectUrl,
-          t_u: Number(row?.t_u || 0),
-        };
-      })
-      .filter((row) => !!row.fId && !!row.objectUrl)
-      .sort((a, b) => {
-        if (a.t_u !== b.t_u) {
-          return b.t_u - a.t_u;
-        }
-        return a.fId.localeCompare(b.fId);
-      })
-      .map((row) => ({
-        fId: row.fId,
-        nm: row.nm,
-        ext: row.ext,
-        objectUrl: row.objectUrl,
-      }));
-
-    return images;
-  } finally {
-    db.close();
-  }
-}
-
-async function saveFileToStore(file: File): Promise<string | null> {
-  const extByName = String(file.name || "")
-    .split(".")
-    .pop()
-    ?.toLowerCase();
-  const extByMime = String(file.type || "")
-    .split("/")
-    .pop()
-    ?.toLowerCase();
-  const ext = extByName || extByMime || "bin";
-  const rand = Math.random().toString(36).slice(2, 8);
-  const fId = `f_${Date.now()}_${rand}.${ext}`;
-
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("files", "readwrite");
-    const store = tx.objectStore("files");
-    await requestToPromise(
-      store.put({
-        fId,
-        ext,
-        nm: file.name || fId,
-        mime: file.type || "application/octet-stream",
-        size: file.size,
-        bin: file,
-        t_c: Date.now(),
-        t_u: Date.now(),
-      }),
-    );
-    await transactionDone(tx);
-    return fId;
-  } finally {
-    db.close();
-  }
-}
-
-async function applyStageMapImage(target: HTMLButtonElement): Promise<void> {
-  const mapImg = getStageMapImageElement();
-  if (!mapImg) {
-    return;
-  }
-
-  const mapFId = String(target.dataset.stageMapImgPath || "").trim();
-  if (!mapFId) {
-    if (stageMapDefaultSrc) {
-      mapImg.src = stageMapDefaultSrc;
-    }
-    return;
-  }
-
-  const objectUrl = await getObjectUrlForFile(mapFId);
-  if (!objectUrl) {
-    if (stageMapDefaultSrc) {
-      mapImg.src = stageMapDefaultSrc;
-    }
-    return;
-  }
-
-  mapImg.src = objectUrl;
-}
-
-function getStageMapImageElement(): HTMLImageElement | null {
-  if (!(stageMap instanceof HTMLElement)) {
-    return null;
-  }
-  const image = stageMap.querySelector("img");
-  return image instanceof HTMLImageElement ? image : null;
-}
-
-function updateProgressPreview(value: number): void {
-  const safeValue = clampProgress(value);
-  const hpColor = getHpColor(safeValue);
-
-  if (progressBarFill instanceof HTMLElement) {
-    progressBarFill.style.width = `${safeValue}%`;
-    progressBarFill.style.background = hpColor;
-  }
-
-  if (progressValue instanceof HTMLElement) {
-    progressValue.textContent = `${safeValue}%`;
-    progressValue.style.color = hpColor;
-  }
-}
-
-function applyStageVisuals(target: HTMLButtonElement): void {
-  const color = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
-  const progress = clampProgress(
-    Number.parseInt(target.dataset.stageProgress || `${DEFAULT_PROGRESS}`, 10),
-  );
-  const hpColor = getHpColor(progress);
-
-  target.style.setProperty("--stage-base-color", color);
-
-  const hpFill = target.querySelector(
-    ".stage-object-hp-fill",
-  ) as HTMLElement | null;
-  if (hpFill) {
-    hpFill.style.width = `${progress}%`;
-    hpFill.style.backgroundColor = hpColor;
-  }
-
-  void applyStageImageVisual(target);
-}
-
-async function applyStageImageVisual(target: HTMLButtonElement): Promise<void> {
-  const sideImage = target.querySelector(
-    ".stage-object-side-image",
-  ) as HTMLElement | null;
-  const sideImageImg = target.querySelector(
-    ".stage-object-side-image-img",
-  ) as HTMLImageElement | null;
-  if (!sideImage || !sideImageImg) {
-    return;
-  }
-
-  const fId = String(target.dataset.stageImgPath || "").trim();
-  if (!fId) {
-    sideImage.hidden = true;
-    sideImageImg.removeAttribute("src");
-    return;
-  }
-
-  const objectUrl = await getObjectUrlForFile(fId);
-  if (!objectUrl) {
-    sideImage.hidden = true;
-    sideImageImg.removeAttribute("src");
-    return;
-  }
-
-  sideImage.hidden = false;
-  sideImageImg.src = objectUrl;
-}
-
-async function getObjectUrlForFile(fId: string): Promise<string | null> {
-  const cached = fileObjectUrlCache.get(fId);
-  if (cached) {
-    return cached;
-  }
-
-  const blob = await getFileBlobById(fId);
-  if (!blob) {
-    return null;
-  }
-
-  const objectUrl = URL.createObjectURL(blob);
-  fileObjectUrlCache.set(fId, objectUrl);
-  return objectUrl;
-}
-
-async function getFileBlobById(fId: string): Promise<Blob | null> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("files", "readonly");
-    const store = tx.objectStore("files");
-    const row = (await requestToPromise(store.get(fId))) as
-      | { bin?: Blob }
-      | undefined;
-    const bin = row?.bin;
-    return bin instanceof Blob ? bin : null;
-  } finally {
-    db.close();
-  }
-}
-
-function clampProgress(value: number): number {
-  if (!Number.isFinite(value)) {
-    return DEFAULT_PROGRESS;
-  }
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function getHpColor(value: number): string {
-  if (value > 75) {
-    return "#4dd26d";
-  }
-  if (value > 50) {
-    return "#dbd34f";
-  }
-  if (value > 25) {
-    return "#f39a3d";
-  }
-  return "#e84d43";
-}
-
-function normalizeHexColor(value: string): string {
-  const text = value.trim();
-  const shortHex = /^#[0-9a-fA-F]{3}$/;
-  const fullHex = /^#[0-9a-fA-F]{6}$/;
-
-  if (fullHex.test(text)) {
-    return text.toLowerCase();
-  }
-
-  if (shortHex.test(text)) {
-    const r = text[1];
-    const g = text[2];
-    const b = text[3];
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-  }
-
-  return "#ffc96b";
-}
-
-async function upsertStage(record: StageRecord): Promise<void> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("stages", "readwrite");
-    const store = tx.objectStore("stages");
-    const existing = (await requestToPromise(store.get(record.stgId))) as
-      | Partial<StageRecord>
-      | undefined;
-
-    const merged: StageRecord = {
-      ...record,
-      t_c: existing?.t_c ?? record.t_c,
-      t_u: Date.now(),
-    };
-
-    await requestToPromise(store.put(merged));
-    await transactionDone(tx);
-  } finally {
-    db.close();
-  }
-}
-
 async function rerenderStagesFromDb(): Promise<void> {
   const current = Array.from(document.querySelectorAll(".stage-object"));
   for (const el of current) {
@@ -1776,33 +492,8 @@ async function rerenderStagesFromDb(): Promise<void> {
   stageCount = stages.length;
 
   for (const stage of stages) {
-    const stageObject = createStageObject(stage);
+    const stageObject = createStageButton(stage);
     appendStageObject(stageObject);
-    placeStageObject(stageObject, stage.x, stage.y);
+    mapViewport.placeElementWithinContent(stageObject, stage.x, stage.y);
   }
-}
-
-function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-    request.onerror = () => {
-      reject(request.error ?? new Error("IndexedDB request failed"));
-    };
-  });
-}
-
-function transactionDone(tx: IDBTransaction): Promise<void> {
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = () => {
-      resolve();
-    };
-    tx.onerror = () => {
-      reject(tx.error ?? new Error("IndexedDB transaction failed"));
-    };
-    tx.onabort = () => {
-      reject(tx.error ?? new Error("IndexedDB transaction aborted"));
-    };
-  });
 }

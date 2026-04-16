@@ -1,3 +1,4 @@
+import { createFileStoreGateway } from "./data/file-store";
 import {
   fetchAllRows,
   getAppStateText,
@@ -55,7 +56,7 @@ let stages: StageRecord[] = [];
 let maps: MapRecord[] = [];
 let selectedStageId = "";
 const DEFAULT_STAGE_BG = "./img/world_map/world_map0.jpg";
-const fileObjectUrlCache = new Map<string, string>();
+const fileStore = createFileStoreGateway();
 const entityDialog = createEntityEditDialog({
   dialog,
   backdrop: dialogBackdrop,
@@ -186,19 +187,7 @@ async function applySelectedStageBackground(): Promise<void> {
 }
 
 async function getObjectUrlForFile(fId: string): Promise<string | null> {
-  const cached = fileObjectUrlCache.get(fId);
-  if (cached) {
-    return cached;
-  }
-
-  const blob = await getFileBlobById(fId);
-  if (!blob) {
-    return null;
-  }
-
-  const objectUrl = URL.createObjectURL(blob);
-  fileObjectUrlCache.set(fId, objectUrl);
-  return objectUrl;
+  return fileStore.getObjectUrlForFile(fId);
 }
 
 async function getFileBlobById(fId: string): Promise<Blob | null> {
