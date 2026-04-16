@@ -6,7 +6,6 @@ type Vars = Record<string, string | number>;
 const JA: Record<string, string> = {
   app_title: "やること撃破！",
   stage_map_alt: "ステージ選択地図",
-  selected_world_label: "選択世界",
   mode_toggle_aria: "閲覧モードと編集モードの切り替え",
   add_stage_aria: "ステージ追加",
   db_download_aria: "データベース全体をダウンロード",
@@ -94,7 +93,6 @@ const JA: Record<string, string> = {
 const EN: Record<string, string> = {
   app_title: "Task Buster!",
   stage_map_alt: "Stage Selection Map",
-  selected_world_label: "Selected World",
   mode_toggle_aria: "Toggle view mode and edit mode",
   add_stage_aria: "Add stage",
   db_download_aria: "Download whole database",
