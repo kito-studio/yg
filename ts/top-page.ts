@@ -40,6 +40,7 @@ const ADD_BUTTON_ID = "addStageBtn";
 const LOGO_WRAP_ID = "logoWrap";
 const MODE_SWITCH_ID = "modeSwitch";
 const STAGE_MAP_ID = "stageMap";
+const STAGE_MAP_CONTENT_ID = "stageMapContent";
 const DB_DOWNLOAD_BUTTON_ID = "dbDownloadBtn";
 const DB_UPLOAD_BUTTON_ID = "dbUploadBtn";
 const DB_UPLOAD_INPUT_ID = "dbUploadInput";
@@ -79,11 +80,16 @@ const STAGE_DEFAULT_SIZE = 74;
 const DEFAULT_PROGRESS = 100;
 const LOGO_DISMISS_TIMEOUT_MS = 3000;
 const LOGO_FADE_DURATION_MS = 360;
+const MIN_MAP_SCALE = 0.6;
+const MAX_MAP_SCALE = 3;
+const MAP_ZOOM_SENSITIVITY = 0.0014;
+const MAP_PAN_THRESHOLD_PX = 6;
 
 const addBtn = document.getElementById(ADD_BUTTON_ID);
 const logoWrap = document.getElementById(LOGO_WRAP_ID);
 const modeSwitch = document.getElementById(MODE_SWITCH_ID);
 const stageMap = document.getElementById(STAGE_MAP_ID);
+const stageMapContent = document.getElementById(STAGE_MAP_CONTENT_ID);
 const dbDownloadBtn = document.getElementById(DB_DOWNLOAD_BUTTON_ID);
 const dbUploadBtn = document.getElementById(DB_UPLOAD_BUTTON_ID);
 const dbUploadInput = document.getElementById(DB_UPLOAD_INPUT_ID);
@@ -133,7 +139,21 @@ function playBtnSound(): void {
 let stageCount = 0;
 let editingStage: HTMLButtonElement | null = null;
 let stageMapDefaultSrc = "";
+let suppressStageClickUntil = 0;
 const fileObjectUrlCache = new Map<string, string>();
+const mapViewState = {
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+};
+let mapPanState: {
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  startOffsetX: number;
+  startOffsetY: number;
+  moved: boolean;
+} | null = null;
 const stageDialogFrame = createBasicImageDialogFrame({
   dialog: stageDialog,
   backdrop: stageDialogBackdrop,
@@ -167,6 +187,8 @@ async function initTopPage(): Promise<void> {
   if (baseMapImg) {
     stageMapDefaultSrc = baseMapImg.getAttribute("src") || baseMapImg.src || "";
   }
+
+  setupStageMapInteractions();
 
   setupBackupToolbar({
     downloadButton: dbDownloadBtn,
@@ -211,7 +233,7 @@ async function initTopPage(): Promise<void> {
 
   for (const stage of stages) {
     const stageObject = createStageObject(stage);
-    document.body.append(stageObject);
+    appendStageObject(stageObject);
     placeStageObject(stageObject, stage.x, stage.y);
   }
 
@@ -248,10 +270,11 @@ async function initTopPage(): Promise<void> {
       t_c: Date.now(),
       t_u: Date.now(),
     });
-    document.body.append(stageObject);
+    appendStageObject(stageObject);
 
     const rect = logoWrap.getBoundingClientRect();
-    placeStageObject(stageObject, rect.left + 22, rect.bottom + 22);
+    const point = viewportPointToMapPoint(rect.left + 22, rect.bottom + 22);
+    placeStageObject(stageObject, point.x, point.y);
 
     await saveStageFromElement(stageObject, stageCount);
     beginDrag(stageObject);
@@ -453,6 +476,12 @@ function onStageClick(event: MouseEvent): void {
     return;
   }
 
+  if (performance.now() < suppressStageClickUntil) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
   const target = event.currentTarget;
   if (!(target instanceof HTMLButtonElement)) {
     return;
@@ -492,22 +521,27 @@ function onPointerDown(event: PointerEvent): void {
     return;
   }
 
+  event.stopPropagation();
   beginDrag(target, event);
 }
 
 function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
   target.classList.add("dragging");
 
-  const targetRect = target.getBoundingClientRect();
+  const targetPosition = getElementPosition(target);
+  const initialPointerPoint = startEvent
+    ? viewportPointToMapPoint(startEvent.clientX, startEvent.clientY)
+    : null;
   const offsetX = startEvent
-    ? startEvent.clientX - targetRect.left
-    : targetRect.width / 2;
+    ? initialPointerPoint.x - targetPosition.x
+    : target.offsetWidth / 2;
   const offsetY = startEvent
-    ? startEvent.clientY - targetRect.top
-    : targetRect.height / 2;
+    ? initialPointerPoint.y - targetPosition.y
+    : target.offsetHeight / 2;
 
   const move = (clientX: number, clientY: number) => {
-    placeStageObject(target, clientX - offsetX, clientY - offsetY);
+    const point = viewportPointToMapPoint(clientX, clientY);
+    placeStageObject(target, point.x - offsetX, point.y - offsetY);
   };
 
   const onMove = (event: PointerEvent) => {
@@ -537,10 +571,244 @@ function placeStageObject(
   left: number,
   top: number,
 ): void {
-  const maxLeft = window.innerWidth - target.offsetWidth;
-  const maxTop = window.innerHeight - target.offsetHeight;
+  const viewport = getStageMapViewportSize();
+  const maxLeft = viewport.width - target.offsetWidth;
+  const maxTop = viewport.height - target.offsetHeight;
   target.style.left = `${Math.max(0, Math.min(left, maxLeft))}px`;
   target.style.top = `${Math.max(0, Math.min(top, maxTop))}px`;
+}
+
+function appendStageObject(target: HTMLButtonElement): void {
+  if (stageMapContent instanceof HTMLElement) {
+    stageMapContent.append(target);
+    return;
+  }
+  document.body.append(target);
+}
+
+function setupStageMapInteractions(): void {
+  if (
+    !(stageMap instanceof HTMLElement) ||
+    !(stageMapContent instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  stageMap.addEventListener("wheel", onStageMapWheel, { passive: false });
+  stageMap.addEventListener("pointerdown", onStageMapPointerDown);
+  window.addEventListener("resize", onStageMapResize);
+  applyStageMapTransform();
+}
+
+function onStageMapWheel(event: WheelEvent): void {
+  if (!(stageMap instanceof HTMLElement)) {
+    return;
+  }
+
+  event.preventDefault();
+  const zoomFactor = Math.exp(-event.deltaY * MAP_ZOOM_SENSITIVITY);
+  const nextScale = clampMapScale(mapViewState.scale * zoomFactor);
+  zoomStageMapToClientPoint(nextScale, event.clientX, event.clientY);
+}
+
+function onStageMapPointerDown(event: PointerEvent): void {
+  if (!(stageMap instanceof HTMLElement)) {
+    return;
+  }
+
+  if (shouldIgnoreMapPanStart(event)) {
+    return;
+  }
+
+  mapPanState = {
+    pointerId: event.pointerId,
+    startClientX: event.clientX,
+    startClientY: event.clientY,
+    startOffsetX: mapViewState.offsetX,
+    startOffsetY: mapViewState.offsetY,
+    moved: false,
+  };
+
+  stageMap.classList.add("is-panning");
+  window.addEventListener("pointermove", onStageMapPointerMove);
+  window.addEventListener("pointerup", onStageMapPointerUp);
+  window.addEventListener("pointercancel", onStageMapPointerUp);
+}
+
+function onStageMapPointerMove(event: PointerEvent): void {
+  if (!(stageMap instanceof HTMLElement) || !mapPanState) {
+    return;
+  }
+
+  if (event.pointerId !== mapPanState.pointerId) {
+    return;
+  }
+
+  const deltaX = event.clientX - mapPanState.startClientX;
+  const deltaY = event.clientY - mapPanState.startClientY;
+  if (
+    !mapPanState.moved &&
+    Math.hypot(deltaX, deltaY) >= MAP_PAN_THRESHOLD_PX
+  ) {
+    mapPanState.moved = true;
+  }
+
+  setStageMapTransform(
+    mapViewState.scale,
+    mapPanState.startOffsetX + deltaX,
+    mapPanState.startOffsetY + deltaY,
+  );
+  event.preventDefault();
+}
+
+function onStageMapPointerUp(event: PointerEvent): void {
+  if (!(stageMap instanceof HTMLElement) || !mapPanState) {
+    return;
+  }
+
+  if (event.pointerId !== mapPanState.pointerId) {
+    return;
+  }
+
+  if (mapPanState.moved) {
+    suppressStageClickUntil = performance.now() + 250;
+  }
+
+  stageMap.classList.remove("is-panning");
+  window.removeEventListener("pointermove", onStageMapPointerMove);
+  window.removeEventListener("pointerup", onStageMapPointerUp);
+  window.removeEventListener("pointercancel", onStageMapPointerUp);
+  mapPanState = null;
+}
+
+function onStageMapResize(): void {
+  setStageMapTransform(
+    mapViewState.scale,
+    mapViewState.offsetX,
+    mapViewState.offsetY,
+  );
+}
+
+function shouldIgnoreMapPanStart(event: PointerEvent): boolean {
+  if (!(event.target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (
+    document.body.classList.contains(EDIT_MODE_CLASS) &&
+    event.target.closest(".stage-object")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function zoomStageMapToClientPoint(
+  nextScale: number,
+  clientX: number,
+  clientY: number,
+): void {
+  if (!(stageMap instanceof HTMLElement)) {
+    return;
+  }
+
+  const safeScale = clampMapScale(nextScale);
+  const rect = stageMap.getBoundingClientRect();
+  const viewportX = clientX - rect.left;
+  const viewportY = clientY - rect.top;
+  const mapX = (viewportX - mapViewState.offsetX) / mapViewState.scale;
+  const mapY = (viewportY - mapViewState.offsetY) / mapViewState.scale;
+
+  setStageMapTransform(
+    safeScale,
+    viewportX - mapX * safeScale,
+    viewportY - mapY * safeScale,
+  );
+}
+
+function clampMapScale(value: number): number {
+  return Math.max(MIN_MAP_SCALE, Math.min(value, MAX_MAP_SCALE));
+}
+
+function setStageMapTransform(
+  scale: number,
+  offsetX: number,
+  offsetY: number,
+): void {
+  const clamped = clampStageMapTransform(scale, offsetX, offsetY);
+  mapViewState.scale = clamped.scale;
+  mapViewState.offsetX = clamped.offsetX;
+  mapViewState.offsetY = clamped.offsetY;
+  applyStageMapTransform();
+}
+
+function clampStageMapTransform(
+  scale: number,
+  offsetX: number,
+  offsetY: number,
+): { scale: number; offsetX: number; offsetY: number } {
+  const safeScale = clampMapScale(scale);
+  const viewport = getStageMapViewportSize();
+  const scaledWidth = viewport.width * safeScale;
+  const scaledHeight = viewport.height * safeScale;
+
+  return {
+    scale: safeScale,
+    offsetX: clampStageMapOffset(offsetX, viewport.width, scaledWidth),
+    offsetY: clampStageMapOffset(offsetY, viewport.height, scaledHeight),
+  };
+}
+
+function clampStageMapOffset(
+  offset: number,
+  viewportSize: number,
+  scaledSize: number,
+): number {
+  if (scaledSize <= viewportSize) {
+    return (viewportSize - scaledSize) / 2;
+  }
+
+  const minOffset = viewportSize - scaledSize;
+  return Math.max(minOffset, Math.min(offset, 0));
+}
+
+function applyStageMapTransform(): void {
+  if (!(stageMapContent instanceof HTMLElement)) {
+    return;
+  }
+
+  stageMapContent.style.transform = `translate(${mapViewState.offsetX}px, ${mapViewState.offsetY}px) scale(${mapViewState.scale})`;
+}
+
+function getStageMapViewportSize(): { width: number; height: number } {
+  if (stageMap instanceof HTMLElement) {
+    const width = stageMap.clientWidth;
+    const height = stageMap.clientHeight;
+    if (width > 0 && height > 0) {
+      return { width, height };
+    }
+  }
+
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+}
+
+function viewportPointToMapPoint(
+  clientX: number,
+  clientY: number,
+): { x: number; y: number } {
+  if (!(stageMap instanceof HTMLElement)) {
+    return { x: clientX, y: clientY };
+  }
+
+  const rect = stageMap.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left - mapViewState.offsetX) / mapViewState.scale,
+    y: (clientY - rect.top - mapViewState.offsetY) / mapViewState.scale,
+  };
 }
 
 function buildStageId(): string {
@@ -1403,7 +1671,7 @@ async function rerenderStagesFromDb(): Promise<void> {
 
   for (const stage of stages) {
     const stageObject = createStageObject(stage);
-    document.body.append(stageObject);
+    appendStageObject(stageObject);
     placeStageObject(stageObject, stage.x, stage.y);
   }
 }
