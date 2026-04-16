@@ -86,6 +86,8 @@ const MIN_MAP_SCALE = 0.6;
 const MAX_MAP_SCALE = 3;
 const MAP_ZOOM_SENSITIVITY = 0.0014;
 const MAP_PAN_THRESHOLD_PX = 6;
+const MAP_INERTIA_FRICTION = 0.92;
+const MAP_INERTIA_MIN_SPEED = 0.02;
 
 const addBtn = document.getElementById(ADD_BUTTON_ID);
 const logoWrap = document.getElementById(LOGO_WRAP_ID);
@@ -155,7 +157,15 @@ let mapPanState: {
   startOffsetX: number;
   startOffsetY: number;
   moved: boolean;
+  lastClientX: number;
+  lastClientY: number;
+  lastTimestamp: number;
+  velocityX: number;
+  velocityY: number;
 } | null = null;
+let mapInertiaFrameId: number | null = null;
+let mapInertiaVelocityX = 0;
+let mapInertiaVelocityY = 0;
 const stageDialogFrame = createBasicImageDialogFrame({
   dialog: stageDialog,
   backdrop: stageDialogBackdrop,
@@ -607,6 +617,7 @@ function onStageMapWheel(event: WheelEvent): void {
     return;
   }
 
+  stopStageMapInertia();
   event.preventDefault();
   if (event.ctrlKey || event.metaKey) {
     const zoomFactor = Math.exp(-event.deltaY * MAP_ZOOM_SENSITIVITY);
@@ -631,6 +642,10 @@ function onStageMapPointerDown(event: PointerEvent): void {
     return;
   }
 
+  stopStageMapInertia();
+
+  const timestamp = performance.now();
+
   mapPanState = {
     pointerId: event.pointerId,
     startClientX: event.clientX,
@@ -638,6 +653,11 @@ function onStageMapPointerDown(event: PointerEvent): void {
     startOffsetX: mapViewState.offsetX,
     startOffsetY: mapViewState.offsetY,
     moved: false,
+    lastClientX: event.clientX,
+    lastClientY: event.clientY,
+    lastTimestamp: timestamp,
+    velocityX: 0,
+    velocityY: 0,
   };
 
   stageMap.classList.add("is-panning");
@@ -657,12 +677,22 @@ function onStageMapPointerMove(event: PointerEvent): void {
 
   const deltaX = event.clientX - mapPanState.startClientX;
   const deltaY = event.clientY - mapPanState.startClientY;
+  const now = performance.now();
+  const elapsed = Math.max(now - mapPanState.lastTimestamp, 1);
+  const velocityX = (event.clientX - mapPanState.lastClientX) / elapsed;
+  const velocityY = (event.clientY - mapPanState.lastClientY) / elapsed;
   if (
     !mapPanState.moved &&
     Math.hypot(deltaX, deltaY) >= MAP_PAN_THRESHOLD_PX
   ) {
     mapPanState.moved = true;
   }
+
+  mapPanState.velocityX = velocityX * 0.35 + mapPanState.velocityX * 0.65;
+  mapPanState.velocityY = velocityY * 0.35 + mapPanState.velocityY * 0.65;
+  mapPanState.lastClientX = event.clientX;
+  mapPanState.lastClientY = event.clientY;
+  mapPanState.lastTimestamp = now;
 
   setStageMapTransform(
     mapViewState.scale,
@@ -685,14 +715,20 @@ function onStageMapPointerUp(event: PointerEvent): void {
     suppressStageClickUntil = performance.now() + 250;
   }
 
+  const inertiaVelocityX = mapPanState.velocityX;
+  const inertiaVelocityY = mapPanState.velocityY;
+
   stageMap.classList.remove("is-panning");
   window.removeEventListener("pointermove", onStageMapPointerMove);
   window.removeEventListener("pointerup", onStageMapPointerUp);
   window.removeEventListener("pointercancel", onStageMapPointerUp);
   mapPanState = null;
+
+  startStageMapInertia(inertiaVelocityX, inertiaVelocityY);
 }
 
 function onStageMapResize(): void {
+  stopStageMapInertia();
   setStageMapTransform(
     mapViewState.scale,
     mapViewState.offsetX,
@@ -740,6 +776,76 @@ function zoomStageMapToClientPoint(
 
 function clampMapScale(value: number): number {
   return Math.max(MIN_MAP_SCALE, Math.min(value, MAX_MAP_SCALE));
+}
+
+function startStageMapInertia(velocityX: number, velocityY: number): void {
+  if (!(stageMap instanceof HTMLElement)) {
+    return;
+  }
+
+  stopStageMapInertia();
+
+  if (Math.hypot(velocityX, velocityY) < MAP_INERTIA_MIN_SPEED) {
+    return;
+  }
+
+  mapInertiaVelocityX = velocityX;
+  mapInertiaVelocityY = velocityY;
+
+  let lastTimestamp = performance.now();
+
+  const step = (timestamp: number) => {
+    const elapsed = Math.max(timestamp - lastTimestamp, 1);
+    lastTimestamp = timestamp;
+
+    mapInertiaVelocityX *= MAP_INERTIA_FRICTION;
+    mapInertiaVelocityY *= MAP_INERTIA_FRICTION;
+
+    const nextOffsetX = mapViewState.offsetX + mapInertiaVelocityX * elapsed;
+    const nextOffsetY = mapViewState.offsetY + mapInertiaVelocityY * elapsed;
+    const previousOffsetX = mapViewState.offsetX;
+    const previousOffsetY = mapViewState.offsetY;
+
+    setStageMapTransform(mapViewState.scale, nextOffsetX, nextOffsetY);
+
+    const hitBoundaryX =
+      Math.abs(mapViewState.offsetX - previousOffsetX) < 0.01;
+    const hitBoundaryY =
+      Math.abs(mapViewState.offsetY - previousOffsetY) < 0.01;
+    const slowEnough =
+      Math.abs(mapInertiaVelocityX) < MAP_INERTIA_MIN_SPEED &&
+      Math.abs(mapInertiaVelocityY) < MAP_INERTIA_MIN_SPEED;
+
+    if (hitBoundaryX) {
+      mapInertiaVelocityX = 0;
+    }
+    if (hitBoundaryY) {
+      mapInertiaVelocityY = 0;
+    }
+
+    if (
+      slowEnough ||
+      (Math.abs(mapInertiaVelocityX) < MAP_INERTIA_MIN_SPEED &&
+        Math.abs(mapInertiaVelocityY) < MAP_INERTIA_MIN_SPEED)
+    ) {
+      stopStageMapInertia();
+      return;
+    }
+
+    mapInertiaFrameId = window.requestAnimationFrame(step);
+  };
+
+  mapInertiaFrameId = window.requestAnimationFrame(step);
+}
+
+function stopStageMapInertia(): void {
+  if (mapInertiaFrameId != null) {
+    window.cancelAnimationFrame(mapInertiaFrameId);
+    mapInertiaFrameId = null;
+  }
+
+  mapInertiaVelocityX = 0;
+  mapInertiaVelocityY = 0;
 }
 
 function setStageMapTransform(
