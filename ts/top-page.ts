@@ -9,7 +9,6 @@ import {
   ADD_BUTTON_ID,
   BGM_BUTTON_ID,
   BGM_SRC,
-  BODY_READY_CLASS,
   BTN_SOUND_SRC,
   CANCEL_BUTTON_ID,
   COLOR_INPUT_ID,
@@ -26,10 +25,9 @@ import {
   DIALOG_TAB_IMAGE_ID,
   DIALOG_TITLE_ID,
   EDIT_MODE_CLASS,
-  INTRO_DONE_CLASS,
   LOGO_DISMISS_TIMEOUT_MS,
+  LOGO_EXITING_CLASS,
   LOGO_FADE_DURATION_MS,
-  LOGO_FADE_OUT_CLASS,
   LOGO_WRAP_ID,
   MAP_IMAGE_CLEAR_BUTTON_ID,
   MAP_IMAGE_CURRENT_ID,
@@ -39,7 +37,6 @@ import {
   MAP_INERTIA_FRICTION,
   MAP_INERTIA_MIN_SPEED,
   MAP_PAN_THRESHOLD_PX,
-  MAP_VISIBLE_CLASS,
   MAP_ZOOM_SENSITIVITY,
   MAX_MAP_SCALE,
   MIN_MAP_SCALE,
@@ -60,6 +57,7 @@ import {
   STAGE_MAP_CONTENT_SIZE,
   STAGE_MAP_ID,
   VIEW_MODE_CLASS,
+  WORLD_ACTIVE_CLASS,
 } from "./top-page/constants";
 import {
   loadSelectedWorld,
@@ -74,79 +72,36 @@ import {
   setupBackupToolbar,
   setupModeSwitch,
 } from "./ui/common-header";
-import { createMapViewportController } from "./ui/map-viewport";
+import {
+  createMapViewportController,
+  MapViewportController,
+} from "./ui/map-viewport";
 
-const addBtn = document.getElementById(ADD_BUTTON_ID);
-const logoWrap = document.getElementById(LOGO_WRAP_ID);
-const modeSwitch = document.getElementById(MODE_SWITCH_ID);
-const stageMap = document.getElementById(STAGE_MAP_ID);
-const stageMapContent = document.getElementById(STAGE_MAP_CONTENT_ID);
-const dbDownloadBtn = document.getElementById(DB_DOWNLOAD_BUTTON_ID);
-const dbUploadBtn = document.getElementById(DB_UPLOAD_BUTTON_ID);
-const dbUploadInput = document.getElementById(DB_UPLOAD_INPUT_ID);
-const dbMaintBtn = document.getElementById(DB_MAINT_BUTTON_ID);
-const selectedWorldNameEl = document.getElementById(SELECTED_WORLD_NAME_ID);
-const bgmBtn = document.getElementById(BGM_BUTTON_ID);
+type TopPageElements = {
+  addButton: HTMLButtonElement | null;
+  logoWrap: HTMLElement | null;
+  modeSwitch: HTMLInputElement | null;
+  stageMap: HTMLElement | null;
+  stageMapContent: HTMLElement | null;
+  dbDownloadButton: HTMLButtonElement | null;
+  dbUploadButton: HTMLButtonElement | null;
+  dbUploadInput: HTMLInputElement | null;
+  dbMaintButton: HTMLButtonElement | null;
+  selectedWorldName: HTMLElement | null;
+  bgmButton: HTMLButtonElement | null;
+};
+
+type TopPageContext = {
+  elements: TopPageElements;
+  mapViewport: MapViewportController;
+  stageDialog: ReturnType<typeof createStageDialogController>;
+};
 
 const bgmAudio = new Audio(BGM_SRC);
 bgmAudio.loop = true;
 
 const fileStore = createFileStoreGateway();
-const mapViewport = createMapViewportController({
-  viewport: stageMap,
-  content: stageMapContent,
-  contentSize: STAGE_MAP_CONTENT_SIZE,
-  minScale: MIN_MAP_SCALE,
-  maxScale: MAX_MAP_SCALE,
-  zoomSensitivity: MAP_ZOOM_SENSITIVITY,
-  panThresholdPx: MAP_PAN_THRESHOLD_PX,
-  inertiaFriction: MAP_INERTIA_FRICTION,
-  inertiaMinSpeed: MAP_INERTIA_MIN_SPEED,
-  ignorePanStart: (event) => {
-    if (!(event.target instanceof HTMLElement)) {
-      return false;
-    }
-
-    return (
-      document.body.classList.contains(EDIT_MODE_CLASS) &&
-      !!event.target.closest(".stage-object")
-    );
-  },
-});
-const stageDialog = createStageDialogController({
-  elements: {
-    dialog: document.getElementById(DIALOG_ID),
-    backdrop: document.getElementById(DIALOG_BACKDROP_ID),
-    title: document.getElementById(DIALOG_TITLE_ID),
-    tabBasic: document.getElementById(DIALOG_TAB_BASIC_ID),
-    tabImage: document.getElementById(DIALOG_TAB_IMAGE_ID),
-    panelBasic: document.getElementById(DIALOG_PANEL_BASIC_ID),
-    panelImage: document.getElementById(DIALOG_PANEL_IMAGE_ID),
-    progressRange: document.getElementById(PROGRESS_RANGE_ID),
-    progressBarFill: document.getElementById(PROGRESS_BAR_FILL_ID),
-    progressValue: document.getElementById(PROGRESS_VALUE_ID),
-    nameInput: document.getElementById(NAME_INPUT_ID),
-    descInput: document.getElementById(DESC_INPUT_ID),
-    colorInput: document.getElementById(COLOR_INPUT_ID),
-    stageImageFileInput: document.getElementById(STAGE_IMAGE_FILE_INPUT_ID),
-    stageImagePickButton: document.getElementById(STAGE_IMAGE_PICK_BUTTON_ID),
-    stageImageClearButton: document.getElementById(STAGE_IMAGE_CLEAR_BUTTON_ID),
-    stageImageSaveButton: document.getElementById(STAGE_IMAGE_SAVE_BUTTON_ID),
-    stageImageCurrent: document.getElementById(STAGE_IMAGE_CURRENT_ID),
-    mapImageFileInput: document.getElementById(MAP_IMAGE_FILE_INPUT_ID),
-    mapImagePickButton: document.getElementById(MAP_IMAGE_PICK_BUTTON_ID),
-    mapImageClearButton: document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID),
-    mapImageSaveButton: document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID),
-    mapImageCurrent: document.getElementById(MAP_IMAGE_CURRENT_ID),
-    cancelButton: document.getElementById(CANCEL_BUTTON_ID),
-    saveButton: document.getElementById(SAVE_BUTTON_ID),
-  },
-  fileStore,
-  saveStageFromElement: async (target) => {
-    await saveStageFromElement(target);
-  },
-  playButtonSound,
-});
+let topPageContext: TopPageContext | null = null;
 
 let stageCount = 0;
 
@@ -158,47 +113,23 @@ function playButtonSound(): void {
 }
 
 async function initTopPage(): Promise<void> {
-  // イントロの表示判定
+  await mountTopPageParts();
+  const elements = getTopPageElements();
+  const context = createTopPageContext(elements);
+  topPageContext = context;
 
-  const referrer = document.referrer;
-  const currentDomain = window.location.hostname;
-
-  // 1. 参照元（referrer）が空（直接入力やブックマーク）
-  // 2. または、参照元のドメインに自分のサイトのドメインが含まれていない
-  if (referrer && referrer.includes(currentDomain)) {
-    console.log("サイト内遷移なのでイントロをスキップします");
-    initWorldPage();
-    return;
-  }
-  // ロゴ組み込み
-  insertHtmlPart("logo", document.body);
-
-  // 所定時間経過後、または入力後にイントロを終了
-  window.setTimeout(() => {
-    document.body.classList.add(BODY_READY_CLASS);
-  }, 120);
-}
-
-async function initWorldPage(): Promise<void> {
   applyI18n(document);
   document.body.classList.add(VIEW_MODE_CLASS);
-  if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
-    return;
-  }
-  insertHtmlPart("info", document.body);
   hideElementOnLocalHost("info");
-  insertHtmlPart("header", document.body);
-  insertHtmlPart("world_map", document.body);
-  insertHtmlPart("stage_dialog", document.body);
 
-  mapViewport.setup();
-  stageDialog.bindEvents();
+  context.mapViewport.setup();
+  context.stageDialog.bindEvents();
 
   setupBackupToolbar({
-    downloadButton: dbDownloadBtn,
-    uploadButton: dbUploadBtn,
-    uploadInput: dbUploadInput,
-    settingsButton: dbMaintBtn,
+    downloadButton: elements.dbDownloadButton,
+    uploadButton: elements.dbUploadButton,
+    uploadInput: elements.dbUploadInput,
+    settingsButton: elements.dbMaintButton,
     settingsPath: "./settings.html",
     onDownload: async () => {
       await downloadYGBackupJson();
@@ -212,37 +143,42 @@ async function initWorldPage(): Promise<void> {
   });
 
   await ensureYGDatabase();
-  await syncSelectedWorldHeader();
-  await waitForLogoDismiss(logoWrap);
-  document.body.classList.add(INTRO_DONE_CLASS);
-  document.body.classList.add(MAP_VISIBLE_CLASS);
+  await syncSelectedWorldHeader(elements.selectedWorldName);
+
+  if (shouldSkipIntro()) {
+    showWorldImmediately(elements.logoWrap);
+  } else {
+    await waitForLogoDismiss(elements.logoWrap);
+    document.body.classList.add(WORLD_ACTIVE_CLASS);
+  }
 
   bgmAudio.play().catch(() => {});
-  if (bgmBtn instanceof HTMLButtonElement) {
-    bgmBtn.addEventListener("click", () => {
+  const bgmButton = elements.bgmButton;
+  if (bgmButton instanceof HTMLButtonElement) {
+    bgmButton.addEventListener("click", () => {
       if (bgmAudio.paused) {
         bgmAudio.play().catch(() => {});
-        bgmBtn.textContent = "🔊";
+        bgmButton.textContent = "🔊";
       } else {
         bgmAudio.pause();
-        bgmBtn.textContent = "🔇";
+        bgmButton.textContent = "🔇";
       }
     });
     bgmAudio.pause();
-    bgmBtn.textContent = "🔇";
+    bgmButton.textContent = "🔇";
   }
 
-  await waitForMapRevealComplete();
+  await waitForMapRevealComplete(elements.stageMap);
   await rerenderStagesFromDb();
 
   setupModeSwitch({
-    modeSwitch,
+    modeSwitch: elements.modeSwitch,
     editModeClass: EDIT_MODE_CLASS,
     viewModeClass: VIEW_MODE_CLASS,
     defaultEditMode: false,
   });
 
-  addBtn.addEventListener("click", async () => {
+  elements.addButton?.addEventListener("click", async () => {
     if (!document.body.classList.contains(EDIT_MODE_CLASS)) {
       return;
     }
@@ -270,19 +206,176 @@ async function initWorldPage(): Promise<void> {
 
     appendStageObject(stageObject);
 
-    const rect = logoWrap.getBoundingClientRect();
-    const point = mapViewport.viewportPointToContentPoint(
-      rect.left + 22,
-      rect.bottom + 22,
+    const point = getNewStageAnchorPoint();
+    context.mapViewport.placeElementWithinContent(
+      stageObject,
+      point.x,
+      point.y,
     );
-    mapViewport.placeElementWithinContent(stageObject, point.x, point.y);
 
     await saveStageFromElement(stageObject, stageCount);
     beginDrag(stageObject);
   });
 }
 
-async function syncSelectedWorldHeader(): Promise<void> {
+async function mountTopPageParts(): Promise<void> {
+  const partNames = [
+    "logo",
+    "info",
+    "header",
+    "control",
+    "world_map",
+    "stage_dialog",
+  ];
+
+  for (const partName of partNames) {
+    await insertHtmlPart(partName, document.body);
+  }
+}
+
+function shouldSkipIntro(): boolean {
+  const referrer = document.referrer;
+  const currentDomain = window.location.hostname;
+  return !!(referrer && referrer.includes(currentDomain));
+}
+
+function getTopPageElements(): TopPageElements {
+  return {
+    addButton: document.getElementById(
+      ADD_BUTTON_ID,
+    ) as HTMLButtonElement | null,
+    logoWrap: document.getElementById(LOGO_WRAP_ID),
+    modeSwitch: document.getElementById(
+      MODE_SWITCH_ID,
+    ) as HTMLInputElement | null,
+    stageMap: document.getElementById(STAGE_MAP_ID),
+    stageMapContent: document.getElementById(STAGE_MAP_CONTENT_ID),
+    dbDownloadButton: document.getElementById(
+      DB_DOWNLOAD_BUTTON_ID,
+    ) as HTMLButtonElement | null,
+    dbUploadButton: document.getElementById(
+      DB_UPLOAD_BUTTON_ID,
+    ) as HTMLButtonElement | null,
+    dbUploadInput: document.getElementById(
+      DB_UPLOAD_INPUT_ID,
+    ) as HTMLInputElement | null,
+    dbMaintButton: document.getElementById(
+      DB_MAINT_BUTTON_ID,
+    ) as HTMLButtonElement | null,
+    selectedWorldName: document.getElementById(SELECTED_WORLD_NAME_ID),
+    bgmButton: document.getElementById(
+      BGM_BUTTON_ID,
+    ) as HTMLButtonElement | null,
+  };
+}
+
+function createTopPageContext(elements: TopPageElements): TopPageContext {
+  const mapViewport = createMapViewportController({
+    viewport: elements.stageMap,
+    content: elements.stageMapContent,
+    contentSize: STAGE_MAP_CONTENT_SIZE,
+    minScale: MIN_MAP_SCALE,
+    maxScale: MAX_MAP_SCALE,
+    zoomSensitivity: MAP_ZOOM_SENSITIVITY,
+    panThresholdPx: MAP_PAN_THRESHOLD_PX,
+    inertiaFriction: MAP_INERTIA_FRICTION,
+    inertiaMinSpeed: MAP_INERTIA_MIN_SPEED,
+    ignorePanStart: (event) => {
+      if (!(event.target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return (
+        document.body.classList.contains(EDIT_MODE_CLASS) &&
+        !!event.target.closest(".stage-object")
+      );
+    },
+  });
+
+  const stageDialog = createStageDialogController({
+    elements: {
+      dialog: document.getElementById(DIALOG_ID),
+      backdrop: document.getElementById(DIALOG_BACKDROP_ID),
+      title: document.getElementById(DIALOG_TITLE_ID),
+      tabBasic: document.getElementById(DIALOG_TAB_BASIC_ID),
+      tabImage: document.getElementById(DIALOG_TAB_IMAGE_ID),
+      panelBasic: document.getElementById(DIALOG_PANEL_BASIC_ID),
+      panelImage: document.getElementById(DIALOG_PANEL_IMAGE_ID),
+      progressRange: document.getElementById(PROGRESS_RANGE_ID),
+      progressBarFill: document.getElementById(PROGRESS_BAR_FILL_ID),
+      progressValue: document.getElementById(PROGRESS_VALUE_ID),
+      nameInput: document.getElementById(NAME_INPUT_ID),
+      descInput: document.getElementById(DESC_INPUT_ID),
+      colorInput: document.getElementById(COLOR_INPUT_ID),
+      stageImageFileInput: document.getElementById(STAGE_IMAGE_FILE_INPUT_ID),
+      stageImagePickButton: document.getElementById(STAGE_IMAGE_PICK_BUTTON_ID),
+      stageImageClearButton: document.getElementById(
+        STAGE_IMAGE_CLEAR_BUTTON_ID,
+      ),
+      stageImageSaveButton: document.getElementById(STAGE_IMAGE_SAVE_BUTTON_ID),
+      stageImageCurrent: document.getElementById(STAGE_IMAGE_CURRENT_ID),
+      mapImageFileInput: document.getElementById(MAP_IMAGE_FILE_INPUT_ID),
+      mapImagePickButton: document.getElementById(MAP_IMAGE_PICK_BUTTON_ID),
+      mapImageClearButton: document.getElementById(MAP_IMAGE_CLEAR_BUTTON_ID),
+      mapImageSaveButton: document.getElementById(MAP_IMAGE_SAVE_BUTTON_ID),
+      mapImageCurrent: document.getElementById(MAP_IMAGE_CURRENT_ID),
+      cancelButton: document.getElementById(CANCEL_BUTTON_ID),
+      saveButton: document.getElementById(SAVE_BUTTON_ID),
+    },
+    fileStore,
+    saveStageFromElement: async (target) => {
+      await saveStageFromElement(target);
+    },
+    playButtonSound,
+  });
+
+  return {
+    elements,
+    mapViewport,
+    stageDialog,
+  };
+}
+
+function getTopPageContext(): TopPageContext | null {
+  return topPageContext;
+}
+
+function getNewStageAnchorPoint(): { x: number; y: number } {
+  const context = getTopPageContext();
+  if (!context) {
+    return { x: 0, y: 0 };
+  }
+
+  const { logoWrap, stageMap } = context.elements;
+  if (logoWrap instanceof HTMLElement && document.body.contains(logoWrap)) {
+    const rect = logoWrap.getBoundingClientRect();
+    return context.mapViewport.viewportPointToContentPoint(
+      rect.left + 22,
+      rect.bottom + 22,
+    );
+  }
+
+  if (stageMap instanceof HTMLElement) {
+    const rect = stageMap.getBoundingClientRect();
+    return context.mapViewport.viewportPointToContentPoint(
+      rect.left + rect.width / 2,
+      rect.top + rect.height / 2,
+    );
+  }
+
+  return { x: 0, y: 0 };
+}
+
+function showWorldImmediately(logoElement: HTMLElement | null): void {
+  if (logoElement instanceof HTMLElement) {
+    logoElement.remove();
+  }
+  document.body.classList.add(WORLD_ACTIVE_CLASS);
+}
+
+async function syncSelectedWorldHeader(
+  selectedWorldNameEl: HTMLElement | null,
+): Promise<void> {
   if (!(selectedWorldNameEl instanceof HTMLElement)) {
     return;
   }
@@ -291,7 +384,15 @@ async function syncSelectedWorldHeader(): Promise<void> {
   selectedWorldNameEl.textContent = world?.nm || t("no_world");
 }
 
-async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
+async function waitForLogoDismiss(
+  logoElement: HTMLElement | null,
+): Promise<void> {
+  if (!(logoElement instanceof HTMLElement)) {
+    return;
+  }
+
+  const targetLogo = logoElement;
+
   await new Promise<void>((resolve) => {
     let settled = false;
     const timeoutId = window.setTimeout(startDismiss, LOGO_DISMISS_TIMEOUT_MS);
@@ -315,13 +416,13 @@ async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
         return;
       }
       settled = true;
-      logoElement.removeEventListener("transitionend", onTransitionEnd);
+      targetLogo.removeEventListener("transitionend", onTransitionEnd);
       cleanupListeners();
       resolve();
     }
 
     function onTransitionEnd(event: TransitionEvent): void {
-      if (event.target === logoElement && event.propertyName === "opacity") {
+      if (event.target === targetLogo && event.propertyName === "opacity") {
         finish();
       }
     }
@@ -331,8 +432,8 @@ async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
         return;
       }
       cleanupListeners();
-      document.body.classList.add(LOGO_FADE_OUT_CLASS);
-      logoElement.addEventListener("transitionend", onTransitionEnd, {
+      document.body.classList.add(LOGO_EXITING_CLASS);
+      targetLogo.addEventListener("transitionend", onTransitionEnd, {
         once: true,
       });
       window.setTimeout(finish, LOGO_FADE_DURATION_MS + 120);
@@ -343,12 +444,14 @@ async function waitForLogoDismiss(logoElement: HTMLElement): Promise<void> {
   });
 }
 
-async function waitForMapRevealComplete(): Promise<void> {
+async function waitForMapRevealComplete(
+  stageMap: HTMLElement | null,
+): Promise<void> {
   if (!(stageMap instanceof HTMLElement)) {
     return;
   }
 
-  if (!document.body.classList.contains(MAP_VISIBLE_CLASS)) {
+  if (!document.body.classList.contains(WORLD_ACTIVE_CLASS)) {
     return;
   }
 
@@ -389,8 +492,9 @@ function createStageButton(stage: StageRecord): HTMLButtonElement {
 }
 
 function appendStageObject(target: HTMLButtonElement): void {
-  if (stageMapContent instanceof HTMLElement) {
-    stageMapContent.append(target);
+  const context = getTopPageContext();
+  if (context?.elements.stageMapContent instanceof HTMLElement) {
+    context.elements.stageMapContent.append(target);
     return;
   }
   document.body.append(target);
@@ -401,7 +505,8 @@ function onStageClick(event: MouseEvent): void {
     return;
   }
 
-  if (mapViewport.isClickSuppressed()) {
+  const context = getTopPageContext();
+  if (context?.mapViewport.isClickSuppressed()) {
     event.preventDefault();
     event.stopPropagation();
     return;
@@ -428,12 +533,17 @@ function onStageDoubleClick(event: MouseEvent): void {
     return;
   }
 
+  const context = getTopPageContext();
+  if (!context) {
+    return;
+  }
+
   const target = event.currentTarget;
   if (!(target instanceof HTMLButtonElement)) {
     return;
   }
 
-  stageDialog.open(target);
+  context.stageDialog.open(target);
 }
 
 function onPointerDown(event: PointerEvent): void {
@@ -451,6 +561,11 @@ function onPointerDown(event: PointerEvent): void {
 }
 
 function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
+  const context = getTopPageContext();
+  if (!context) {
+    return;
+  }
+
   target.classList.add("dragging");
 
   const left = Number.parseFloat(target.style.left);
@@ -460,7 +575,7 @@ function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
     y: Number.isFinite(top) ? top : 0,
   };
   const initialPointerPoint = startEvent
-    ? mapViewport.viewportPointToContentPoint(
+    ? context.mapViewport.viewportPointToContentPoint(
         startEvent.clientX,
         startEvent.clientY,
       )
@@ -475,8 +590,11 @@ function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
       : target.offsetHeight / 2;
 
   const move = (clientX: number, clientY: number) => {
-    const point = mapViewport.viewportPointToContentPoint(clientX, clientY);
-    mapViewport.placeElementWithinContent(
+    const point = context.mapViewport.viewportPointToContentPoint(
+      clientX,
+      clientY,
+    );
+    context.mapViewport.placeElementWithinContent(
       target,
       point.x - offsetX,
       point.y - offsetY,
@@ -506,6 +624,11 @@ function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
 }
 
 async function rerenderStagesFromDb(): Promise<void> {
+  const context = getTopPageContext();
+  if (!context) {
+    return;
+  }
+
   const current = Array.from(document.querySelectorAll(".stage-object"));
   for (const el of current) {
     el.remove();
@@ -517,6 +640,10 @@ async function rerenderStagesFromDb(): Promise<void> {
   for (const stage of stages) {
     const stageObject = createStageButton(stage);
     appendStageObject(stageObject);
-    mapViewport.placeElementWithinContent(stageObject, stage.x, stage.y);
+    context.mapViewport.placeElementWithinContent(
+      stageObject,
+      stage.x,
+      stage.y,
+    );
   }
 }

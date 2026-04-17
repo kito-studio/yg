@@ -1,7 +1,5 @@
-export const BODY_READY_CLASS = "ready";
-export const MAP_VISIBLE_CLASS = "map-visible";
-export const INTRO_DONE_CLASS = "intro-done";
-export const LOGO_FADE_OUT_CLASS = "logo-fade-out";
+export const WORLD_ACTIVE_CLASS = "world-active";
+export const LOGO_EXITING_CLASS = "logo-exiting";
 export const EDIT_MODE_CLASS = "edit-mode";
 export const VIEW_MODE_CLASS = "view-mode";
 

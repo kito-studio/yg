@@ -37,7 +37,7 @@ body {
   position: absolute;
   left: 50%;
   top: 10px;
-  transform: translateX(-50%);
+  transform: translate(-50%, -8px);
   z-index: 12;
   min-width: min(74vw, 560px);
   max-width: 88vw;
@@ -52,6 +52,18 @@ body {
   justify-content: space-between;
   gap: 8px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 280ms ease,
+    transform 280ms ease;
+}
+
+body.world-active .top-page-header {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%);
+  transition-delay: 120ms;
 }
 
 .top-page-header-value {
@@ -74,12 +86,12 @@ body {
   transition: opacity 900ms ease;
 }
 
-body.intro-done.map-visible.view-mode .stage-map {
+body.world-active.view-mode .stage-map {
   opacity: 1;
   pointer-events: auto;
 }
 
-body.intro-done.map-visible.edit-mode .stage-map {
+body.world-active.edit-mode .stage-map {
   opacity: 0.5;
   pointer-events: auto;
 }
@@ -118,8 +130,20 @@ body.intro-done.map-visible.edit-mode .stage-map {
   z-index: 11;
   background-color: lightpink;
   color: black;
-  opacity: 0.9;
+  opacity: 0;
   border-radius: 30px;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 280ms ease,
+    transform 280ms ease;
+}
+
+body.world-active #info {
+  opacity: 0.9;
+  pointer-events: auto;
+  transform: translateY(0);
+  transition-delay: 120ms;
 }
 
 .logo-wrap {
@@ -132,7 +156,7 @@ body.intro-done.map-visible.edit-mode .stage-map {
   transition: opacity 320ms ease;
 }
 
-body.logo-fade-out .logo-wrap {
+body.logo-exiting .logo-wrap {
   opacity: 0;
   pointer-events: none;
 }
@@ -164,7 +188,7 @@ body.logo-fade-out .logo-wrap {
     transform 280ms ease;
 }
 
-body.ready.intro-done .control-stack {
+body.world-active .control-stack {
   opacity: 1;
   transform: translateY(0);
   transition-delay: 120ms;
@@ -295,12 +319,12 @@ body.ready.intro-done .control-stack {
   filter: brightness(1.08);
 }
 
-body.ready.edit-mode .add-stage-btn {
+body.world-active.edit-mode .add-stage-btn {
   opacity: 1;
   transform: translateY(0);
 }
 
-body.ready:not(.edit-mode) .add-stage-btn {
+body.world-active:not(.edit-mode) .add-stage-btn {
   opacity: 0;
   transform: translateY(6px);
   pointer-events: none;
@@ -591,17 +615,6 @@ body.view-mode .stage-object {
 .stage-dialog-btn.save {
   color: #2d1806;
   background: linear-gradient(180deg, #ffd889, #f4b752);
-}
-
-body.ready.intro-done.edit-mode .add-stage-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-body.ready.intro-done:not(.edit-mode) .add-stage-btn {
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
 }
 
 @keyframes float-in {
