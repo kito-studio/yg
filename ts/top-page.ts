@@ -1,3 +1,4 @@
+import { insertHtmlPart } from "./core";
 import { createFileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
@@ -159,16 +160,31 @@ function playButtonSound(): void {
 }
 
 async function initTopPage(): Promise<void> {
-  applyI18n(document);
-  document.body.classList.add(VIEW_MODE_CLASS);
+  const referrer = document.referrer;
+  const currentDomain = window.location.hostname;
 
+  // 1. 参照元（referrer）が空（直接入力やブックマーク）
+  // 2. または、参照元のドメインに自分のサイトのドメインが含まれていない
+  if (referrer && referrer.includes(currentDomain)) {
+    console.log("サイト内遷移なのでイントロをスキップします");
+    initWorldPage();
+    return;
+  }
   window.setTimeout(() => {
     document.body.classList.add(BODY_READY_CLASS);
   }, 120);
 
+  insertHtmlPart("logo", document.body);
+}
+
+async function initWorldPage(): Promise<void> {
+  applyI18n(document);
+  document.body.classList.add(VIEW_MODE_CLASS);
   if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
     return;
   }
+  insertHtmlPart("header", document.body);
+  insertHtmlPart("world_map", document.body);
 
   mapViewport.setup();
   stageDialog.bindEvents();
@@ -207,6 +223,8 @@ async function initTopPage(): Promise<void> {
         bgmBtn.textContent = "🔇";
       }
     });
+    bgmAudio.pause();
+    bgmBtn.textContent = "🔇";
   }
 
   await waitForMapRevealComplete();

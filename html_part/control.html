@@ -1,0 +1,61 @@
+<div class="control-stack" id="controlStack">
+  <label
+    class="mode-switch"
+    aria-label="閲覧モードと編集モードの切り替え"
+    data-i18n-aria-label="mode_toggle_aria"
+  >
+    <input class="mode-switch-input" id="modeSwitch" type="checkbox" />
+    <span class="mode-switch-track" aria-hidden="true">
+      <span class="mode-switch-icon view">👁</span>
+      <span class="mode-switch-icon edit">✎</span>
+      <span class="mode-switch-thumb"></span>
+    </span>
+  </label>
+  <button
+    class="add-stage-btn"
+    id="addStageBtn"
+    type="button"
+    aria-label="ステージ追加"
+    data-i18n-aria-label="add_stage_aria"
+  >
+    +
+  </button>
+  <div class="db-io-row">
+    <button
+      class="db-io-btn"
+      id="dbDownloadBtn"
+      type="button"
+      aria-label="データベース全体をダウンロード"
+      data-i18n-aria-label="db_download_aria"
+    >
+      ⬇ DB
+    </button>
+    <button
+      class="db-io-btn"
+      id="dbUploadBtn"
+      type="button"
+      aria-label="データベースバックアップをアップロード"
+      data-i18n-aria-label="db_upload_aria"
+    >
+      ⬆ DB
+    </button>
+    <button
+      class="db-io-btn"
+      id="dbMaintBtn"
+      type="button"
+      aria-label="データメンテ画面へ移動"
+      data-i18n-aria-label="settings_aria"
+    >
+      ⚙
+    </button>
+    <button class="bgm-btn" id="bgmBtn" type="button" aria-label="BGM切り替え">
+      🔊
+    </button>
+  </div>
+  <input
+    id="dbUploadInput"
+    type="file"
+    accept="application/json,.json"
+    hidden
+  />
+</div>

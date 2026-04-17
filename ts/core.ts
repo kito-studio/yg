@@ -1,3 +1,4 @@
+import { createAccessToken } from "./access";
 import { lg } from "./util/log";
 
 (() => {
@@ -5,8 +6,11 @@ import { lg } from "./util/log";
     lg(
       "ローカル環境のため、Cloudflare Analyticsのスクリプトは読み込まれません。",
     );
-    return;
+  } else {
+    // アクセス解析のトークンを生成
+    createAccessToken();
   }
+  //
 })();
 
 export function isLocal(): boolean {
@@ -26,8 +30,8 @@ export async function insertHtmlPart(
   url: string,
   target: HTMLElement,
 ): Promise<void> {
-  const res = await fetch(url);
-  lg(`html_part/${url}.html`, "⚠️HTML部品挿入:");
+  const uri = `/yg/html_part/${url}.html`;
+  const res = await fetch(uri);
   if (!res.ok) {
     throw new Error("読み込み失敗 " + url);
   }
