@@ -150,8 +150,6 @@ const stageDialog = createStageDialogController({
 
 let stageCount = 0;
 
-hideElementOnLocalHost("info");
-
 void initTopPage();
 
 function playButtonSound(): void {
@@ -160,6 +158,8 @@ function playButtonSound(): void {
 }
 
 async function initTopPage(): Promise<void> {
+  // イントロの表示判定
+
   const referrer = document.referrer;
   const currentDomain = window.location.hostname;
 
@@ -170,11 +170,13 @@ async function initTopPage(): Promise<void> {
     initWorldPage();
     return;
   }
+  // ロゴ組み込み
+  insertHtmlPart("logo", document.body);
+
+  // 所定時間経過後、または入力後にイントロを終了
   window.setTimeout(() => {
     document.body.classList.add(BODY_READY_CLASS);
   }, 120);
-
-  insertHtmlPart("logo", document.body);
 }
 
 async function initWorldPage(): Promise<void> {
@@ -183,8 +185,11 @@ async function initWorldPage(): Promise<void> {
   if (!addBtn || !logoWrap || !(modeSwitch instanceof HTMLInputElement)) {
     return;
   }
+  insertHtmlPart("info", document.body);
+  hideElementOnLocalHost("info");
   insertHtmlPart("header", document.body);
   insertHtmlPart("world_map", document.body);
+  insertHtmlPart("stage_dialog", document.body);
 
   mapViewport.setup();
   stageDialog.bindEvents();
