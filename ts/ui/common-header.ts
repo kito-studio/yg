@@ -113,19 +113,13 @@ export function setupHeaderSwitch(options: HeaderSwitchOptions): void {
     void onSelect(nextId);
   };
 
-  if (
-    prevButton instanceof HTMLButtonElement ||
-    prevButton instanceof HTMLElement
-  ) {
+  if (prevButton instanceof HTMLElement) {
     prevButton.addEventListener("click", () => {
       moveBy(-1);
     });
   }
 
-  if (
-    nextButton instanceof HTMLButtonElement ||
-    nextButton instanceof HTMLElement
-  ) {
+  if (nextButton instanceof HTMLElement) {
     nextButton.addEventListener("click", () => {
       moveBy(1);
     });

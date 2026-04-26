@@ -3,11 +3,10 @@ import {
   fetchAllRows,
   getAppStateText,
   putRow,
-  requestToPromise,
   setAppStateText,
 } from "./data/yg-idb";
 import { applyI18n, t } from "./i18n";
-import { ensureYGDatabase, openYGDatabase } from "./init-db";
+import { ensureYGDatabase } from "./init-db";
 import { resolveSelectedId } from "./state/selection";
 import {
   renderHeaderSelectedLabel,
@@ -98,6 +97,7 @@ async function initStagePage(): Promise<void> {
       stages.map((row) => String(row.stgId || "")).filter(Boolean),
     getSelectedId: () => selectedStageId,
     onSelect: async (nextStageId) => {
+      // URL遷移や復帰時の整合を保つため、現在ステージを都度保存する。
       selectedStageId = nextStageId;
       await setAppStateText("stages", selectedStageId);
       await reload();
@@ -109,6 +109,7 @@ async function initStagePage(): Promise<void> {
 }
 
 function bindEvents(): void {
+  // 閲覧モードでは編集操作を受け付けず、誤更新を防ぐ。
   if (addMapBtn instanceof HTMLButtonElement) {
     addMapBtn.addEventListener("click", () => {
       if (!document.body.classList.contains("edit-mode")) {
@@ -120,6 +121,7 @@ function bindEvents(): void {
 }
 
 async function reload(): Promise<void> {
+  // URL/app_state/現在値からアクティブなステージを解決し、一覧を再読込する。
   stages = ((await fetchAllRows("stages")) as StageRecord[])
     .filter((row) => typeof row?.stgId === "string")
     .sort((a, b) => Number(a.ord || 0) - Number(b.ord || 0));
@@ -193,26 +195,12 @@ async function getObjectUrlForFile(fId: string): Promise<string | null> {
   return fileStore.getObjectUrlForFile(fId);
 }
 
-async function getFileBlobById(fId: string): Promise<Blob | null> {
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("files", "readonly");
-    const store = tx.objectStore("files");
-    const row = (await requestToPromise(store.get(fId))) as
-      | { bin?: Blob }
-      | undefined;
-    const bin = row?.bin;
-    return bin instanceof Blob ? bin : null;
-  } finally {
-    db.close();
-  }
-}
-
 function renderMapList(): void {
   if (!(mapList instanceof HTMLElement)) {
     return;
   }
 
+  // データ件数が小さい前提なので、全再描画で実装を単純化する。
   mapList.innerHTML = "";
 
   if (maps.length === 0) {
@@ -224,47 +212,52 @@ function renderMapList(): void {
   }
 
   for (const map of maps) {
-    const row = document.createElement("div");
-    row.className = "object-row";
-
-    const left = document.createElement("div");
-    const nm = document.createElement("div");
-    nm.className = "nm";
-    nm.textContent = map.nm || map.mpId;
-    left.append(nm);
-
-    const desc = document.createElement("div");
-    desc.className = "desc";
-    desc.textContent = map.desc || map.mpId;
-    left.append(desc);
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-
-    const openBtn = document.createElement("button");
-    openBtn.type = "button";
-    openBtn.className = "page-btn";
-    openBtn.textContent = t("open_map");
-    openBtn.addEventListener("click", async () => {
-      await setAppStateText("maps", map.mpId);
-      window.location.href = `./map.html?mpId=${encodeURIComponent(map.mpId)}`;
-    });
-
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "page-btn";
-    editBtn.textContent = t("edit");
-    editBtn.addEventListener("click", () => {
-      if (!document.body.classList.contains("edit-mode")) {
-        return;
-      }
-      openMapDialog(map);
-    });
-
-    actions.append(openBtn, editBtn);
-    row.append(left, actions);
-    mapList.append(row);
+    mapList.append(createMapRow(map));
   }
+}
+
+function createMapRow(map: MapRecord): HTMLDivElement {
+  // 表示ブロックと操作ボタンを1行単位で組み立てる。
+  const row = document.createElement("div");
+  row.className = "object-row";
+
+  const left = document.createElement("div");
+  const nm = document.createElement("div");
+  nm.className = "nm";
+  nm.textContent = map.nm || map.mpId;
+  left.append(nm);
+
+  const desc = document.createElement("div");
+  desc.className = "desc";
+  desc.textContent = map.desc || map.mpId;
+  left.append(desc);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+
+  const openBtn = document.createElement("button");
+  openBtn.type = "button";
+  openBtn.className = "page-btn";
+  openBtn.textContent = t("open_map");
+  openBtn.addEventListener("click", async () => {
+    await setAppStateText("maps", map.mpId);
+    window.location.href = `./map.html?mpId=${encodeURIComponent(map.mpId)}`;
+  });
+
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "page-btn";
+  editBtn.textContent = t("edit");
+  editBtn.addEventListener("click", () => {
+    if (!document.body.classList.contains("edit-mode")) {
+      return;
+    }
+    openMapDialog(map);
+  });
+
+  actions.append(openBtn, editBtn);
+  row.append(left, actions);
+  return row;
 }
 
 async function addMap(): Promise<void> {
