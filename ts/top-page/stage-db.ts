@@ -14,45 +14,54 @@ import {
   normalizeStageRow,
 } from "./stage-model";
 
+type WorldRow = {
+  wId?: string;
+  nm?: string;
+  ord?: number;
+};
+
+export type WorldHeaderRecord = {
+  wId: string;
+  nm: string;
+};
+
+export async function loadWorlds(): Promise<WorldHeaderRecord[]> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("worlds", "readonly");
+    const worldsStore = tx.objectStore("worlds");
+    const worlds = (await requestToPromise(worldsStore.getAll())) as WorldRow[];
+
+    return worlds
+      .filter((row) => typeof row?.wId === "string")
+      .sort((a, b) => Number(a?.ord || 0) - Number(b?.ord || 0))
+      .map((row) => {
+        const wId = String(row.wId || "").trim();
+        const nm = String(row.nm || wId || "").trim();
+        return { wId, nm: nm || wId };
+      })
+      .filter((row) => row.wId.length > 0);
+  } finally {
+    db.close();
+  }
+}
+
 export async function loadSelectedWorld(): Promise<{
   wId: string;
   nm: string;
 } | null> {
   const selectedWId = String((await getAppStateText("worlds")) || "").trim();
-  const db = await openYGDatabase();
-  try {
-    const tx = db.transaction("worlds", "readonly");
-    const worldsStore = tx.objectStore("worlds");
-    const worlds = (await requestToPromise(worldsStore.getAll())) as Array<{
-      wId?: string;
-      nm?: string;
-      ord?: number;
-    }>;
-
-    const sorted = worlds
-      .filter((row) => typeof row?.wId === "string")
-      .sort((a, b) => Number(a?.ord || 0) - Number(b?.ord || 0));
-
-    if (sorted.length === 0) {
-      return null;
-    }
-
-    const selected =
-      sorted.find((row) => String(row.wId || "") === selectedWId) || sorted[0];
-    const wId = String(selected.wId || "").trim();
-    const nm = String(selected.nm || wId || "").trim();
-    if (!wId) {
-      return null;
-    }
-
-    if (wId !== selectedWId) {
-      await setAppStateText("worlds", wId);
-    }
-
-    return { wId, nm: nm || wId };
-  } finally {
-    db.close();
+  const worlds = await loadWorlds();
+  if (worlds.length === 0) {
+    return null;
   }
+
+  const selected = worlds.find((row) => row.wId === selectedWId) || worlds[0];
+  if (selected.wId !== selectedWId) {
+    await setAppStateText("worlds", selected.wId);
+  }
+
+  return selected;
 }
 
 export async function loadStages(): Promise<StageRecord[]> {

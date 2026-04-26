@@ -58,10 +58,13 @@ import {
   STAGE_MAP_ID,
   VIEW_MODE_CLASS,
   WORLD_ACTIVE_CLASS,
+  WORLD_LEFT_BUTTON_ID,
+  WORLD_RIGHT_BUTTON_ID,
 } from "./top-page/constants";
 import {
   loadSelectedWorld,
   loadStages,
+  loadWorlds,
   saveStageFromElement,
 } from "./top-page/stage-db";
 import { createStageDialogController } from "./top-page/stage-dialog";
@@ -69,7 +72,9 @@ import { buildStageId } from "./top-page/stage-model";
 import { applyStageVisuals, createStageObject } from "./top-page/stage-ui";
 import {
   hideElementOnLocalHost,
+  renderHeaderSelectedLabel,
   setupBackupToolbar,
+  setupHeaderSwitch,
   setupModeSwitch,
 } from "./ui/common-header";
 import {
@@ -88,6 +93,8 @@ type TopPageElements = {
   dbUploadInput: HTMLInputElement | null;
   dbMaintButton: HTMLButtonElement | null;
   selectedWorldName: HTMLElement | null;
+  worldLeftButton: HTMLElement | null;
+  worldRightButton: HTMLElement | null;
   bgmButton: HTMLButtonElement | null;
 };
 
@@ -104,6 +111,8 @@ const fileStore = createFileStoreGateway();
 let topPageContext: TopPageContext | null = null;
 
 let stageCount = 0;
+let selectedWorldId = "";
+let worldItems: Array<{ wId: string; nm: string }> = [];
 
 void initTopPage();
 
@@ -113,6 +122,7 @@ function playButtonSound(): void {
 }
 
 async function initTopPage(): Promise<void> {
+  // Build the page from HTML parts first, then wire runtime behavior.
   await mountTopPageParts();
   const elements = getTopPageElements();
   const context = createTopPageContext(elements);
@@ -144,7 +154,19 @@ async function initTopPage(): Promise<void> {
 
   await ensureYGDatabase();
   await syncSelectedWorldHeader(elements.selectedWorldName);
+  setupHeaderSwitch({
+    prevButton: elements.worldLeftButton,
+    nextButton: elements.worldRightButton,
+    getItemIds: () => worldItems.map((world) => world.wId),
+    getSelectedId: () => selectedWorldId,
+    onSelect: async (nextWorldId) => {
+      selectedWorldId = nextWorldId;
+      await setAppStateText("worlds", nextWorldId);
+      renderSelectedWorldHeader(elements.selectedWorldName);
+    },
+  });
 
+  // Logo overlay is a short intro. After dismissal, reveal the map surface.
   if (shouldSkipIntro()) {
     showWorldImmediately(elements.logoWrap);
   } else {
@@ -183,6 +205,7 @@ async function initTopPage(): Promise<void> {
       return;
     }
 
+    // New stages are created in-memory first, then persisted and switched to drag mode.
     stageCount += 1;
     const stageObject = createStageButton({
       stgId: buildStageId(),
@@ -263,6 +286,8 @@ function getTopPageElements(): TopPageElements {
       DB_MAINT_BUTTON_ID,
     ) as HTMLButtonElement | null,
     selectedWorldName: document.getElementById(SELECTED_WORLD_NAME_ID),
+    worldLeftButton: document.getElementById(WORLD_LEFT_BUTTON_ID),
+    worldRightButton: document.getElementById(WORLD_RIGHT_BUTTON_ID),
     bgmButton: document.getElementById(
       BGM_BUTTON_ID,
     ) as HTMLButtonElement | null,
@@ -376,12 +401,24 @@ function showWorldImmediately(logoElement: HTMLElement | null): void {
 async function syncSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): Promise<void> {
-  if (!(selectedWorldNameEl instanceof HTMLElement)) {
-    return;
-  }
-
+  worldItems = await loadWorlds();
   const world = await loadSelectedWorld();
-  selectedWorldNameEl.textContent = world?.nm || t("no_world");
+  selectedWorldId = world?.wId || worldItems[0]?.wId || "";
+  renderSelectedWorldHeader(selectedWorldNameEl);
+}
+
+function renderSelectedWorldHeader(
+  selectedWorldNameEl: HTMLElement | null,
+): void {
+  renderHeaderSelectedLabel({
+    labelElement: selectedWorldNameEl,
+    items: worldItems.map((world) => ({
+      id: world.wId,
+      label: world.nm || world.wId,
+    })),
+    selectedId: selectedWorldId,
+    emptyLabel: t("no_world"),
+  });
 }
 
 async function waitForLogoDismiss(
@@ -610,6 +647,7 @@ function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerup", onUp);
     window.removeEventListener("pointercancel", onUp);
+    // Save only once drag ends to avoid excessive IndexedDB writes while moving.
     void saveStageFromElement(target);
   };
 
@@ -634,6 +672,7 @@ async function rerenderStagesFromDb(): Promise<void> {
     el.remove();
   }
 
+  // Current schema stores top-page stages globally, independent from world selection.
   const stages = await loadStages();
   stageCount = stages.length;
 

@@ -8,8 +8,12 @@ import {
 } from "./data/yg-idb";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
-import { getCycledId, resolveSelectedId } from "./state/selection";
-import { setupModeSwitch } from "./ui/common-header";
+import { resolveSelectedId } from "./state/selection";
+import {
+  renderHeaderSelectedLabel,
+  setupHeaderSwitch,
+  setupModeSwitch,
+} from "./ui/common-header";
 import { createEntityEditDialog } from "./ui/entity-edit-dialog";
 
 type StageRecord = {
@@ -87,6 +91,19 @@ async function initStagePage(): Promise<void> {
     });
   }
 
+  setupHeaderSwitch({
+    prevButton: prevStageBtn,
+    nextButton: nextStageBtn,
+    getItemIds: () =>
+      stages.map((row) => String(row.stgId || "")).filter(Boolean),
+    getSelectedId: () => selectedStageId,
+    onSelect: async (nextStageId) => {
+      selectedStageId = nextStageId;
+      await setAppStateText("stages", selectedStageId);
+      await reload();
+    },
+  });
+
   bindEvents();
   await reload();
 }
@@ -98,18 +115,6 @@ function bindEvents(): void {
         return;
       }
       void addMap();
-    });
-  }
-
-  if (prevStageBtn instanceof HTMLButtonElement) {
-    prevStageBtn.addEventListener("click", () => {
-      moveStageSelection(-1);
-    });
-  }
-
-  if (nextStageBtn instanceof HTMLButtonElement) {
-    nextStageBtn.addEventListener("click", () => {
-      moveStageSelection(1);
     });
   }
 }
@@ -147,17 +152,15 @@ async function reload(): Promise<void> {
 }
 
 function renderSelectedStageHeader(): void {
-  if (!(selectedStageHeaderName instanceof HTMLElement)) {
-    return;
-  }
-
-  const stage = stages.find((s) => s.stgId === selectedStageId);
-  if (!stage) {
-    selectedStageHeaderName.textContent = t("no_stage");
-    return;
-  }
-
-  selectedStageHeaderName.textContent = stage.nm || stage.stgId;
+  renderHeaderSelectedLabel({
+    labelElement: selectedStageHeaderName,
+    items: stages.map((stage) => ({
+      id: stage.stgId,
+      label: stage.nm || stage.stgId,
+    })),
+    selectedId: selectedStageId,
+    emptyLabel: t("no_stage"),
+  });
 }
 
 async function applySelectedStageBackground(): Promise<void> {
@@ -262,20 +265,6 @@ function renderMapList(): void {
     row.append(left, actions);
     mapList.append(row);
   }
-}
-
-function moveStageSelection(delta: number): void {
-  if (stages.length === 0) {
-    return;
-  }
-
-  const stageIds = stages.map((row) => String(row.stgId || "")).filter(Boolean);
-  selectedStageId = getCycledId(stageIds, selectedStageId, delta);
-
-  void (async () => {
-    await setAppStateText("stages", selectedStageId);
-    await reload();
-  })();
 }
 
 async function addMap(): Promise<void> {
