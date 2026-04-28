@@ -2,7 +2,8 @@ import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
-import { TOP_PAGE_CLASS, TOP_PAGE_ID, TOP_PAGE_SELECTOR } from "./dom/top-page";
+import { PAGE_CLASS, PAGE_SELECTOR } from "./dom/page";
+import { TOP_PAGE_ID } from "./dom/top-page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
 import { StageRecord, TopPageElements } from "./obj";
@@ -70,8 +71,6 @@ type TopPageContext = {
 let context: TopPageContext | null = null;
 
 const stageHandlers = createStageInteractionHandlers({
-  editModeClass: TOP_PAGE_CLASS.editMode,
-  viewModeClass: TOP_PAGE_CLASS.viewMode,
   getContext: () => context,
   saveSelectedStageId: async (stgId) => {
     await setAppStateText("stages", stgId);
@@ -97,7 +96,7 @@ async function initTopPage(): Promise<void> {
   context = createTopPageContext(elements);
 
   applyI18n(document);
-  document.body.classList.add(TOP_PAGE_CLASS.viewMode);
+  document.body.classList.add(PAGE_CLASS.viewMode);
   hideElementOnLocalHost("info");
 
   context.mapViewport.setup();
@@ -129,8 +128,8 @@ async function initTopPage(): Promise<void> {
     skipIntro: shouldSkipIntro(document.referrer, window.location.hostname),
     dismissTimeoutMs: LOGO_DISMISS_TIMEOUT_MS,
     fadeDurationMs: LOGO_FADE_DURATION_MS,
-    exitingClass: TOP_PAGE_CLASS.logoExiting,
-    activeClass: TOP_PAGE_CLASS.worldActive,
+    exitingClass: PAGE_CLASS.logoExiting,
+    activeClass: PAGE_CLASS.worldActive,
   });
 
   setupLoopAudioToggle({
@@ -140,19 +139,19 @@ async function initTopPage(): Promise<void> {
 
   await waitForMapRevealComplete({
     stageMap: elements.stageMap,
-    activeClass: TOP_PAGE_CLASS.worldActive,
+    activeClass: PAGE_CLASS.worldActive,
   });
   await rerenderStagesFromDb();
 
   setupModeSwitch({
     modeSwitch: elements.modeSwitch,
-    editModeClass: TOP_PAGE_CLASS.editMode,
-    viewModeClass: TOP_PAGE_CLASS.viewMode,
+    editModeClass: PAGE_CLASS.editMode,
+    viewModeClass: PAGE_CLASS.viewMode,
     defaultEditMode: false,
   });
 
   elements.addButton?.addEventListener("click", async () => {
-    if (!document.body.classList.contains(TOP_PAGE_CLASS.editMode)) {
+    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
       return;
     }
     if (!context) {
@@ -310,8 +309,8 @@ function createTopPageMapViewport(
       }
 
       return (
-        document.body.classList.contains(TOP_PAGE_CLASS.editMode) &&
-        !!event.target.closest(TOP_PAGE_SELECTOR.stageObject)
+        document.body.classList.contains(PAGE_CLASS.editMode) &&
+        !!event.target.closest(PAGE_SELECTOR.stageObject)
       );
     },
   });
@@ -415,7 +414,7 @@ async function rerenderStagesFromDb(): Promise<void> {
   }
 
   const current = Array.from(
-    document.querySelectorAll(TOP_PAGE_SELECTOR.stageObject),
+    document.querySelectorAll(PAGE_SELECTOR.stageObject),
   );
   for (const el of current) {
     el.remove();

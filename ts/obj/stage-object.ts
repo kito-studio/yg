@@ -1,5 +1,5 @@
 import { FileStoreGateway } from "../data/file-store";
-import { TOP_PAGE_CLASS, TOP_PAGE_SELECTOR } from "../dom/top-page";
+import { PAGE_CLASS, PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
 import { StageRecord } from "../obj";
 import { DEFAULT_PROGRESS } from "../top-page/constants";
@@ -21,7 +21,7 @@ export function createStageObject(
 ): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
-  el.className = TOP_PAGE_CLASS.stageObject;
+  el.className = PAGE_CLASS.stageObject;
   el.dataset.stageId = stage.stgId;
   el.dataset.stageLabel = stage.nm;
   el.dataset.stageOrd = String(stage.ord);
@@ -34,21 +34,21 @@ export function createStageObject(
   el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
 
   const sideImage = document.createElement("span");
-  sideImage.className = TOP_PAGE_CLASS.stageObjectSideImage;
+  sideImage.className = PAGE_CLASS.stageObjectSideImage;
   sideImage.setAttribute("aria-hidden", "true");
 
   const sideImageImg = document.createElement("img");
-  sideImageImg.className = TOP_PAGE_CLASS.stageObjectSideImageImg;
+  sideImageImg.className = PAGE_CLASS.stageObjectSideImageImg;
   sideImageImg.alt = "";
   sideImage.append(sideImageImg);
   el.append(sideImage);
 
   const hp = document.createElement("span");
-  hp.className = TOP_PAGE_CLASS.stageObjectHp;
+  hp.className = PAGE_CLASS.stageObjectHp;
   hp.setAttribute("aria-hidden", "true");
 
   const hpFill = document.createElement("span");
-  hpFill.className = TOP_PAGE_CLASS.stageObjectHpFill;
+  hpFill.className = PAGE_CLASS.stageObjectHpFill;
   hp.append(hpFill);
   el.append(hp);
 
@@ -71,7 +71,7 @@ export function applyStageVisuals(
   target.style.setProperty("--stage-base-color", color);
 
   const hpFill = target.querySelector(
-    TOP_PAGE_SELECTOR.stageObjectHpFill,
+    PAGE_SELECTOR.stageObjectHpFill,
   ) as HTMLElement | null;
   if (hpFill) {
     hpFill.style.width = `${progress}%`;
@@ -86,10 +86,10 @@ export async function applyStageImageVisual(
   fileStore: FileStoreGateway,
 ): Promise<void> {
   const sideImage = target.querySelector(
-    TOP_PAGE_SELECTOR.stageObjectSideImage,
+    PAGE_SELECTOR.stageObjectSideImage,
   ) as HTMLElement | null;
   const sideImageImg = target.querySelector(
-    TOP_PAGE_SELECTOR.stageObjectSideImageImg,
+    PAGE_SELECTOR.stageObjectSideImageImg,
   ) as HTMLImageElement | null;
   if (!sideImage || !sideImageImg) {
     return;

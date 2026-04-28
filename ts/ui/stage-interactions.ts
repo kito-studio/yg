@@ -1,3 +1,4 @@
+import { PAGE_CLASS } from "../dom/page";
 import { beginStageDrag } from "../top-page/drag";
 
 type StageMapViewport = {
@@ -23,8 +24,6 @@ type StagePageContext = {
 };
 
 type StageInteractionOptions = {
-  editModeClass: string;
-  viewModeClass: string;
   getContext: () => StagePageContext | null;
   saveSelectedStageId: (stgId: string) => Promise<void>;
   navigateToStage: (stgId: string) => void;
@@ -42,8 +41,6 @@ export function createStageInteractionHandlers(
   options: StageInteractionOptions,
 ): StageInteractionHandlers {
   const {
-    editModeClass,
-    viewModeClass,
     getContext,
     saveSelectedStageId,
     navigateToStage,
@@ -51,7 +48,7 @@ export function createStageInteractionHandlers(
   } = options;
 
   function onStageClick(event: MouseEvent): void {
-    if (!document.body.classList.contains(viewModeClass)) {
+    if (!document.body.classList.contains(PAGE_CLASS.viewMode)) {
       return;
     }
 
@@ -79,7 +76,7 @@ export function createStageInteractionHandlers(
   }
 
   function onStageDoubleClick(event: MouseEvent): void {
-    if (!document.body.classList.contains(editModeClass)) {
+    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
       return;
     }
 
@@ -97,7 +94,7 @@ export function createStageInteractionHandlers(
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (!document.body.classList.contains(editModeClass)) {
+    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
       return;
     }
 

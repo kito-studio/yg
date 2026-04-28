@@ -1,5 +1,5 @@
 import { FileStoreGateway } from "../data/file-store";
-import { TOP_PAGE_SELECTOR } from "../dom/top-page";
+import { PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
 import { applyStageImageVisual, applyStageVisuals } from "../obj/stage-object";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
@@ -181,8 +181,7 @@ export function createStageDialogController(
     oldPop?.remove();
 
     const overlayRoot =
-      document.querySelector(TOP_PAGE_SELECTOR.stageDialogShell) ||
-      document.body;
+      document.querySelector(PAGE_SELECTOR.stageDialogShell) || document.body;
     const createdUrls: string[] = [];
     const close = () => {
       for (const url of createdUrls) {

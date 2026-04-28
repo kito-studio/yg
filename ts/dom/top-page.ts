@@ -1,24 +1,3 @@
-export const TOP_PAGE_CLASS = {
-  worldActive: "world-active",
-  logoExiting: "logo-exiting",
-  editMode: "edit-mode",
-  viewMode: "view-mode",
-  stageObject: "stage-object",
-  stageObjectSideImage: "stage-object-side-image",
-  stageObjectSideImageImg: "stage-object-side-image-img",
-  stageObjectHp: "stage-object-hp",
-  stageObjectHpFill: "stage-object-hp-fill",
-  stageDialogShell: "stage-dialog-shell",
-} as const;
-
-export const TOP_PAGE_SELECTOR = {
-  stageObject: `.${TOP_PAGE_CLASS.stageObject}`,
-  stageObjectHpFill: `.${TOP_PAGE_CLASS.stageObjectHpFill}`,
-  stageObjectSideImage: `.${TOP_PAGE_CLASS.stageObjectSideImage}`,
-  stageObjectSideImageImg: `.${TOP_PAGE_CLASS.stageObjectSideImageImg}`,
-  stageDialogShell: `.${TOP_PAGE_CLASS.stageDialogShell}`,
-} as const;
-
 export const TOP_PAGE_ID = {
   addButton: "addStageBtn",
   logoWrap: "logoWrap",
