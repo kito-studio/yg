@@ -509,9 +509,9 @@ export function createStageDialogController(
       ),
     );
 
-    if (title instanceof HTMLElement) {
-      title.textContent = `${label} ${t("stage_settings_suffix")}`;
-    }
+    // if (title instanceof HTMLElement) {
+    //   title.textContent = `${label} ${t("stage_settings_suffix")}`;
+    // }
 
     nameInput.value = label;
     descInput.value = desc;
