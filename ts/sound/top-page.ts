@@ -1,4 +1,4 @@
-import { playTransientSound } from "./audio";
+import { playAudio } from "./audio";
 
 const TOP_PAGE_SOUND_SOURCE = {
   bgm: "./wav/gound003.wav",
@@ -12,5 +12,5 @@ export function createTopPageBgmAudio(): HTMLAudioElement {
 }
 
 export function playTopPageButtonSound(): void {
-  playTransientSound(TOP_PAGE_SOUND_SOURCE.buttonClick);
+  playAudio(TOP_PAGE_SOUND_SOURCE.buttonClick);
 }

@@ -6,7 +6,7 @@ type ToggleLoopAudioOptions = {
 const ON_LABEL = "🔊";
 const OFF_LABEL = "🔇";
 
-export function playTransientSound(src: string): void {
+export function playAudio(src: string): void {
   const audio = new Audio(src);
   audio.play().catch(() => {});
 }

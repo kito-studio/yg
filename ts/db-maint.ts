@@ -1,4 +1,4 @@
-import { DB_DEF } from "../db/db_def";
+import { DB_DEF } from "../ts/db_def";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";

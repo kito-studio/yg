@@ -67,12 +67,12 @@ type TopPageContext = {
   fileStore: FileStoreGateway;
 };
 
-let topPageContext: TopPageContext | null = null;
+let context: TopPageContext | null = null;
 
 const stageHandlers = createStageInteractionHandlers({
   editModeClass: TOP_PAGE_CLASS.editMode,
   viewModeClass: TOP_PAGE_CLASS.viewMode,
-  getContext: () => getTopPageContext(),
+  getContext: () => context,
   saveSelectedStageId: async (stgId) => {
     await setAppStateText("stages", stgId);
   },
@@ -94,8 +94,7 @@ async function initTopPage(): Promise<void> {
   // 先にHTML断片を組み立ててから、挙動を配線する。
   await mountTopPageParts();
   const elements = getTopPageElements();
-  const context = createTopPageContext(elements);
-  topPageContext = context;
+  context = createTopPageContext(elements);
 
   applyI18n(document);
   document.body.classList.add(TOP_PAGE_CLASS.viewMode);
@@ -156,6 +155,9 @@ async function initTopPage(): Promise<void> {
     if (!document.body.classList.contains(TOP_PAGE_CLASS.editMode)) {
       return;
     }
+    if (!context) {
+      return;
+    }
 
     context.stageCount += 1;
     const stageObject = createStageButton(
@@ -201,22 +203,22 @@ function createNewStageRecord(ord: number): StageRecord {
 }
 
 async function setupWorldHeader(elements: TopPageElements): Promise<void> {
-  const context = getTopPageContext();
   if (!context) {
     return;
   }
+  const cntx = context;
 
   // ヘッダ切り替えの仕組みは共通。ここでは対象が「世界」になる。
   await syncSelectedWorldHeader(elements.selectedWorldName);
   setupHeaderSwitch({
     prevButton: elements.worldLeftButton,
     nextButton: elements.worldRightButton,
-    getItemIds: () => context.worldItems.map((world) => world.wId),
-    getSelectedId: () => context.selectedWorldId,
+    getItemIds: () => cntx.worldItems.map((world) => world.wId),
+    getSelectedId: () => cntx.selectedWorldId,
     onSelect: async (nextWorldId) => {
-      context.selectedWorldId = nextWorldId;
-      context.world =
-        context.worldItems.find((world) => world.wId === nextWorldId) || null;
+      cntx.selectedWorldId = nextWorldId;
+      cntx.world =
+        cntx.worldItems.find((world) => world.wId === nextWorldId) || null;
       await setAppStateText("worlds", nextWorldId);
       renderSelectedWorldHeader(elements.selectedWorldName);
     },
@@ -328,12 +330,7 @@ function createTopPageStageDialog(
   });
 }
 
-function getTopPageContext(): TopPageContext | null {
-  return topPageContext;
-}
-
 function getNewStageAnchorPoint(): { x: number; y: number } {
-  const context = getTopPageContext();
   if (!context) {
     return { x: 0, y: 0 };
   }
@@ -362,7 +359,6 @@ function getNewStageAnchorPoint(): { x: number; y: number } {
 async function syncSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): Promise<void> {
-  const context = getTopPageContext();
   if (!context) {
     return;
   }
@@ -378,7 +374,6 @@ async function syncSelectedWorldHeader(
 function renderSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): void {
-  const context = getTopPageContext();
   if (!context) {
     return;
   }
@@ -395,7 +390,6 @@ function renderSelectedWorldHeader(
 }
 
 function createStageButton(stage: StageRecord): HTMLButtonElement {
-  const context = getTopPageContext();
   const stageObject = createStageObject(stage, {
     onPointerDown: stageHandlers.onPointerDown,
     onDoubleClick: stageHandlers.onStageDoubleClick,
@@ -408,7 +402,6 @@ function createStageButton(stage: StageRecord): HTMLButtonElement {
 }
 
 function appendStageObject(target: HTMLButtonElement): void {
-  const context = getTopPageContext();
   if (context?.elements.stageMapContent instanceof HTMLElement) {
     context.elements.stageMapContent.append(target);
     return;
@@ -417,7 +410,6 @@ function appendStageObject(target: HTMLButtonElement): void {
 }
 
 async function rerenderStagesFromDb(): Promise<void> {
-  const context = getTopPageContext();
   if (!context) {
     return;
   }
