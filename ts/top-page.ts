@@ -1,5 +1,5 @@
 import { insertHtmlPart } from "./core";
-import { createFileStoreGateway } from "./data/file-store";
+import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { TOP_PAGE_CLASS, TOP_PAGE_ID, TOP_PAGE_SELECTOR } from "./dom/top-page";
@@ -35,6 +35,7 @@ import {
   loadStages,
   loadWorlds,
   saveStageFromElement,
+  WorldHeaderRecord,
 } from "./top-page/stage-db";
 import { createStageDialogController } from "./top-page/stage-dialog";
 import { getStageDialogElements } from "./top-page/stage-dialog-elements";
@@ -52,16 +53,17 @@ import {
 } from "./ui/map-viewport";
 import { createStageInteractionHandlers } from "./ui/stage-interactions";
 
-// 世界地図画面の構成
+// －－－ 世界地図画面の構成 －－－
 type TopPageContext = {
   elements: TopPageElements;
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
+  world: WorldHeaderRecord | null;
+  stages: StageRecord[];
+  bgmAudio: HTMLAudioElement;
+  fileStore: FileStoreGateway;
 };
 
-const bgmAudio = createTopPageBgmAudio();
-
-const fileStore = createFileStoreGateway();
 let topPageContext: TopPageContext | null = null;
 
 let stageCount = 0;
@@ -134,10 +136,8 @@ async function initTopPage(): Promise<void> {
   });
 
   setupLoopAudioToggle({
-    audio: bgmAudio,
+    audio: context.bgmAudio,
     button: elements.bgmButton,
-    onLabel: "🔊",
-    offLabel: "🔇",
   });
 
   await waitForMapRevealComplete({
@@ -209,6 +209,11 @@ async function setupWorldHeader(elements: TopPageElements): Promise<void> {
     getSelectedId: () => selectedWorldId,
     onSelect: async (nextWorldId) => {
       selectedWorldId = nextWorldId;
+      const context = getTopPageContext();
+      if (context) {
+        context.world =
+          worldItems.find((world) => world.wId === nextWorldId) || null;
+      }
       await setAppStateText("worlds", nextWorldId);
       renderSelectedWorldHeader(elements.selectedWorldName);
     },
@@ -264,10 +269,16 @@ function getTopPageElements(): TopPageElements {
 }
 
 function createTopPageContext(elements: TopPageElements): TopPageContext {
+  const fileStore = createFileStoreGateway();
+  const bgmAudio = createTopPageBgmAudio();
   return {
     elements,
     mapViewport: createTopPageMapViewport(elements),
-    stageDialog: createTopPageStageDialog(),
+    stageDialog: createTopPageStageDialog(fileStore),
+    world: null,
+    stages: [],
+    bgmAudio,
+    fileStore,
   };
 }
 
@@ -298,9 +309,9 @@ function createTopPageMapViewport(
   });
 }
 
-function createTopPageStageDialog(): ReturnType<
-  typeof createStageDialogController
-> {
+function createTopPageStageDialog(
+  fileStore: FileStoreGateway,
+): ReturnType<typeof createStageDialogController> {
   return createStageDialogController({
     elements: getStageDialogElements(),
     fileStore,
@@ -345,10 +356,14 @@ function getNewStageAnchorPoint(): { x: number; y: number } {
 async function syncSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): Promise<void> {
+  const context = getTopPageContext();
   // 世界一覧と現在選択をapp_stateと同期する。
   worldItems = await loadWorlds();
   const world = await loadSelectedWorld();
   selectedWorldId = world?.wId || worldItems[0]?.wId || "";
+  if (context) {
+    context.world = world;
+  }
   renderSelectedWorldHeader(selectedWorldNameEl);
 }
 
@@ -367,12 +382,15 @@ function renderSelectedWorldHeader(
 }
 
 function createStageButton(stage: StageRecord): HTMLButtonElement {
+  const context = getTopPageContext();
   const stageObject = createStageObject(stage, {
     onPointerDown: stageHandlers.onPointerDown,
     onDoubleClick: stageHandlers.onStageDoubleClick,
     onClick: stageHandlers.onStageClick,
   });
-  applyStageVisuals(stageObject, fileStore);
+  if (context) {
+    applyStageVisuals(stageObject, context.fileStore);
+  }
   return stageObject;
 }
 
@@ -400,6 +418,7 @@ async function rerenderStagesFromDb(): Promise<void> {
 
   // 現行スキーマではトップページのステージは世界とは独立して保持される。
   const stages = await loadStages();
+  context.stages = stages;
   stageCount = stages.length;
 
   for (const stage of stages) {

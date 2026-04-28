@@ -1,9 +1,10 @@
 type ToggleLoopAudioOptions = {
   audio: HTMLAudioElement;
   button: HTMLButtonElement | null;
-  onLabel: string;
-  offLabel: string;
 };
+
+const ON_LABEL = "🔊";
+const OFF_LABEL = "🔇";
 
 export function playTransientSound(src: string): void {
   const audio = new Audio(src);
@@ -11,7 +12,7 @@ export function playTransientSound(src: string): void {
 }
 
 export function setupLoopAudioToggle(options: ToggleLoopAudioOptions): void {
-  const { audio, button, onLabel, offLabel } = options;
+  const { audio, button } = options;
 
   // Keep the initial state muted in case autoplay is blocked.
   audio.play().catch(() => {});
@@ -22,13 +23,13 @@ export function setupLoopAudioToggle(options: ToggleLoopAudioOptions): void {
   button.addEventListener("click", () => {
     if (audio.paused) {
       audio.play().catch(() => {});
-      button.textContent = onLabel;
+      button.textContent = ON_LABEL;
     } else {
       audio.pause();
-      button.textContent = offLabel;
+      button.textContent = OFF_LABEL;
     }
   });
 
   audio.pause();
-  button.textContent = offLabel;
+  button.textContent = OFF_LABEL;
 }
