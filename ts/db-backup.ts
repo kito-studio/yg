@@ -1,4 +1,4 @@
-import { DB_DEF, DB_NM } from "../db/db_def";
+import { DB_DEF, DB_NM } from "../ts/db_def";
 import { ensureYGDatabase, openYGDatabase } from "./init-db";
 
 type BlobPack = {

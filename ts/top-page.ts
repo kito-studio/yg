@@ -60,15 +60,14 @@ type TopPageContext = {
   stageDialog: ReturnType<typeof createStageDialogController>;
   world: WorldHeaderRecord | null;
   stages: StageRecord[];
+  stageCount: number;
+  selectedWorldId: string;
+  worldItems: WorldHeaderRecord[];
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
 
 let topPageContext: TopPageContext | null = null;
-
-let stageCount = 0;
-let selectedWorldId = "";
-let worldItems: Array<{ wId: string; nm: string }> = [];
 
 const stageHandlers = createStageInteractionHandlers({
   editModeClass: TOP_PAGE_CLASS.editMode,
@@ -158,8 +157,10 @@ async function initTopPage(): Promise<void> {
       return;
     }
 
-    stageCount += 1;
-    const stageObject = createStageButton(createNewStageRecord(stageCount));
+    context.stageCount += 1;
+    const stageObject = createStageButton(
+      createNewStageRecord(context.stageCount),
+    );
 
     appendStageObject(stageObject);
 
@@ -170,7 +171,7 @@ async function initTopPage(): Promise<void> {
       point.y,
     );
 
-    await saveStageFromElement(stageObject, stageCount);
+    await saveStageFromElement(stageObject, context.stageCount);
     stageHandlers.beginDrag(stageObject);
   });
 }
@@ -200,20 +201,22 @@ function createNewStageRecord(ord: number): StageRecord {
 }
 
 async function setupWorldHeader(elements: TopPageElements): Promise<void> {
+  const context = getTopPageContext();
+  if (!context) {
+    return;
+  }
+
   // ヘッダ切り替えの仕組みは共通。ここでは対象が「世界」になる。
   await syncSelectedWorldHeader(elements.selectedWorldName);
   setupHeaderSwitch({
     prevButton: elements.worldLeftButton,
     nextButton: elements.worldRightButton,
-    getItemIds: () => worldItems.map((world) => world.wId),
-    getSelectedId: () => selectedWorldId,
+    getItemIds: () => context.worldItems.map((world) => world.wId),
+    getSelectedId: () => context.selectedWorldId,
     onSelect: async (nextWorldId) => {
-      selectedWorldId = nextWorldId;
-      const context = getTopPageContext();
-      if (context) {
-        context.world =
-          worldItems.find((world) => world.wId === nextWorldId) || null;
-      }
+      context.selectedWorldId = nextWorldId;
+      context.world =
+        context.worldItems.find((world) => world.wId === nextWorldId) || null;
       await setAppStateText("worlds", nextWorldId);
       renderSelectedWorldHeader(elements.selectedWorldName);
     },
@@ -277,6 +280,9 @@ function createTopPageContext(elements: TopPageElements): TopPageContext {
     stageDialog: createTopPageStageDialog(fileStore),
     world: null,
     stages: [],
+    stageCount: 0,
+    selectedWorldId: "",
+    worldItems: [],
     bgmAudio,
     fileStore,
   };
@@ -357,26 +363,33 @@ async function syncSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): Promise<void> {
   const context = getTopPageContext();
-  // 世界一覧と現在選択をapp_stateと同期する。
-  worldItems = await loadWorlds();
-  const world = await loadSelectedWorld();
-  selectedWorldId = world?.wId || worldItems[0]?.wId || "";
-  if (context) {
-    context.world = world;
+  if (!context) {
+    return;
   }
+
+  // 世界一覧と現在選択をapp_stateと同期する。
+  context.worldItems = await loadWorlds();
+  const world = await loadSelectedWorld();
+  context.selectedWorldId = world?.wId || context.worldItems[0]?.wId || "";
+  context.world = world;
   renderSelectedWorldHeader(selectedWorldNameEl);
 }
 
 function renderSelectedWorldHeader(
   selectedWorldNameEl: HTMLElement | null,
 ): void {
+  const context = getTopPageContext();
+  if (!context) {
+    return;
+  }
+
   renderHeaderSelectedLabel({
     labelElement: selectedWorldNameEl,
-    items: worldItems.map((world) => ({
+    items: context.worldItems.map((world) => ({
       id: world.wId,
       label: world.nm || world.wId,
     })),
-    selectedId: selectedWorldId,
+    selectedId: context.selectedWorldId,
     emptyLabel: t("no_world"),
   });
 }
@@ -419,7 +432,7 @@ async function rerenderStagesFromDb(): Promise<void> {
   // 現行スキーマではトップページのステージは世界とは独立して保持される。
   const stages = await loadStages();
   context.stages = stages;
-  stageCount = stages.length;
+  context.stageCount = stages.length;
 
   for (const stage of stages) {
     const stageObject = createStageButton(stage);

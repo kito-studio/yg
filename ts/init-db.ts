@@ -1,4 +1,4 @@
-import { DB_DEF, DB_NM, DB_VERSION } from "../db/db_def";
+import { DB_DEF, DB_NM, DB_VERSION } from "./db_def";
 
 type SchemaText = string;
 type DBDefMap = Record<string, SchemaText>;
