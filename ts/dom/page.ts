@@ -18,3 +18,18 @@ export const PAGE_SELECTOR = {
   stageObjectSideImageImg: `.${PAGE_CLASS.stageObjectSideImageImg}`,
   stageDialogShell: `.${PAGE_CLASS.stageDialogShell}`,
 } as const;
+export type TopPageElements = {
+  addButton: HTMLButtonElement | null;
+  logoWrap: HTMLElement | null;
+  modeSwitch: HTMLInputElement | null;
+  stageMap: HTMLElement | null;
+  stageMapContent: HTMLElement | null;
+  dbDownloadButton: HTMLButtonElement | null;
+  dbUploadButton: HTMLButtonElement | null;
+  dbUploadInput: HTMLInputElement | null;
+  dbMaintButton: HTMLButtonElement | null;
+  selectedWorldName: HTMLElement | null;
+  worldLeftButton: HTMLElement | null;
+  worldRightButton: HTMLElement | null;
+  bgmButton: HTMLButtonElement | null;
+};

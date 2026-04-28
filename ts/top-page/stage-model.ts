@@ -1,4 +1,4 @@
-import { StageRecord } from "../obj";
+import { StageRecord } from "../obj/stage-object";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "./constants";
 
 export function buildStageId(): string {

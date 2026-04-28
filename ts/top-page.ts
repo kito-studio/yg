@@ -2,15 +2,15 @@ import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
-import { PAGE_CLASS, PAGE_SELECTOR } from "./dom/page";
+import { PAGE_CLASS, PAGE_SELECTOR, TopPageElements } from "./dom/page";
 import { TOP_PAGE_ID } from "./dom/top-page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
-import { StageRecord, TopPageElements } from "./obj";
 import {
   applyStageVisuals,
   createNewStageRecord,
   createStageObject,
+  StageRecord,
 } from "./obj/stage-object";
 import { setupLoopAudioToggle } from "./sound/audio";
 import {

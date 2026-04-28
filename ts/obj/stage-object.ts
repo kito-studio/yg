@@ -1,7 +1,6 @@
 import { FileStoreGateway } from "../data/file-store";
 import { PAGE_CLASS, PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
-import { StageRecord } from "../obj";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../top-page/constants";
 import {
   buildStageId,
@@ -140,3 +139,24 @@ export function createNewStageRecord(ord: number): StageRecord {
     t_u: now,
   };
 }
+export type StageRecord = {
+  stgId: string;
+  wId: string;
+  parentStgId: string;
+  ord: number;
+  nm: string;
+  desc: string;
+  baseColor: string;
+  progress: number;
+  imgPath: string;
+  mapImgPath: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  mode: string;
+  isLocked: number;
+  t_c: number;
+  t_u: number;
+};
