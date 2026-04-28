@@ -52,6 +52,7 @@ import {
 } from "./ui/map-viewport";
 import { createStageInteractionHandlers } from "./ui/stage-interactions";
 
+// 世界地図画面の構成
 type TopPageContext = {
   elements: TopPageElements;
   mapViewport: MapViewportController;

@@ -33,7 +33,7 @@ body {
   overflow: hidden;
 }
 
-.top-page-header {
+.page-header {
   position: absolute;
   left: 50%;
   top: 10px;
@@ -59,14 +59,14 @@ body {
     transform 280ms ease;
 }
 
-body.world-active .top-page-header {
+body.world-active .page-header {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(-50%);
   transition-delay: 120ms;
 }
 
-.top-page-header-value {
+.page-header-value {
   font-size: 18px;
   letter-spacing: 0.03em;
   max-width: 70vw;
