@@ -7,14 +7,17 @@ import { TOP_PAGE_ID } from "./dom/top-page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
 import { StageRecord, TopPageElements } from "./obj";
-import { applyStageVisuals, createStageObject } from "./obj/stage-object";
+import {
+  applyStageVisuals,
+  createNewStageRecord,
+  createStageObject,
+} from "./obj/stage-object";
 import { setupLoopAudioToggle } from "./sound/audio";
 import {
   createTopPageBgmAudio,
   playTopPageButtonSound,
 } from "./sound/top-page";
 import {
-  DEFAULT_PROGRESS,
   LOGO_DISMISS_TIMEOUT_MS,
   LOGO_FADE_DURATION_MS,
   MAP_INERTIA_FRICTION,
@@ -23,7 +26,6 @@ import {
   MAP_ZOOM_SENSITIVITY,
   MAX_MAP_SCALE,
   MIN_MAP_SCALE,
-  STAGE_DEFAULT_SIZE,
   STAGE_MAP_CONTENT_SIZE,
 } from "./top-page/constants";
 import {
@@ -40,7 +42,6 @@ import {
 } from "./top-page/stage-db";
 import { createStageDialogController } from "./top-page/stage-dialog";
 import { getStageDialogElements } from "./top-page/stage-dialog-elements";
-import { buildStageId } from "./top-page/stage-model";
 import {
   hideElementOnLocalHost,
   renderHeaderSelectedLabel,
@@ -61,7 +62,6 @@ type TopPageContext = {
   stageDialog: ReturnType<typeof createStageDialogController>;
   world: WorldHeaderRecord | null;
   stages: StageRecord[];
-  stageCount: number;
   selectedWorldId: string;
   worldItems: WorldHeaderRecord[];
   bgmAudio: HTMLAudioElement;
@@ -158,9 +158,8 @@ async function initTopPage(): Promise<void> {
       return;
     }
 
-    context.stageCount += 1;
     const stageObject = createStageButton(
-      createNewStageRecord(context.stageCount),
+      createNewStageRecord(context.stages.length + 1),
     );
 
     appendStageObject(stageObject);
@@ -172,33 +171,9 @@ async function initTopPage(): Promise<void> {
       point.y,
     );
 
-    await saveStageFromElement(stageObject, context.stageCount);
+    await saveStageFromElement(stageObject, context.stages.length);
     stageHandlers.beginDrag(stageObject);
   });
-}
-
-function createNewStageRecord(ord: number): StageRecord {
-  // 新規ステージの既定値を1か所に集約して調整しやすくする。
-  const now = Date.now();
-  return {
-    stgId: buildStageId(),
-    ord,
-    nm: `ST${ord}`,
-    desc: "",
-    baseColor: "#ffc96b",
-    progress: DEFAULT_PROGRESS,
-    imgPath: "",
-    mapImgPath: "",
-    x: 0,
-    y: 0,
-    w: STAGE_DEFAULT_SIZE,
-    h: STAGE_DEFAULT_SIZE,
-    rot: 0,
-    mode: "edit",
-    isLocked: 0,
-    t_c: now,
-    t_u: now,
-  };
 }
 
 async function setupWorldHeader(elements: TopPageElements): Promise<void> {
@@ -281,7 +256,6 @@ function createTopPageContext(elements: TopPageElements): TopPageContext {
     stageDialog: createTopPageStageDialog(fileStore),
     world: null,
     stages: [],
-    stageCount: 0,
     selectedWorldId: "",
     worldItems: [],
     bgmAudio,
@@ -423,7 +397,6 @@ async function rerenderStagesFromDb(): Promise<void> {
   // 現行スキーマではトップページのステージは世界とは独立して保持される。
   const stages = await loadStages();
   context.stages = stages;
-  context.stageCount = stages.length;
 
   for (const stage of stages) {
     const stageObject = createStageButton(stage);

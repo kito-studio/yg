@@ -2,8 +2,9 @@ import { FileStoreGateway } from "../data/file-store";
 import { PAGE_CLASS, PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
 import { StageRecord } from "../obj";
-import { DEFAULT_PROGRESS } from "../top-page/constants";
+import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../top-page/constants";
 import {
+  buildStageId,
   clampProgress,
   getHpColor,
   normalizeHexColor,
@@ -111,4 +112,27 @@ export async function applyStageImageVisual(
 
   sideImage.hidden = false;
   sideImageImg.src = objectUrl;
+}
+export function createNewStageRecord(ord: number): StageRecord {
+  // 新規ステージの既定値を1か所に集約して調整しやすくする。
+  const now = Date.now();
+  return {
+    stgId: buildStageId(),
+    ord,
+    nm: `ST${ord}`,
+    desc: "",
+    baseColor: "#ffc96b",
+    progress: DEFAULT_PROGRESS,
+    imgPath: "",
+    mapImgPath: "",
+    x: 0,
+    y: 0,
+    w: STAGE_DEFAULT_SIZE,
+    h: STAGE_DEFAULT_SIZE,
+    rot: 0,
+    mode: "edit",
+    isLocked: 0,
+    t_c: now,
+    t_u: now,
+  };
 }
