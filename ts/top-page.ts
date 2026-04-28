@@ -1,6 +1,6 @@
 import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
-import { getAppStateText, setAppStateText } from "./data/yg-idb";
+import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { PAGE_CLASS, PAGE_SELECTOR } from "./dom/page";
 import { TOP_PAGE_ID } from "./dom/top-page";
@@ -364,12 +364,16 @@ async function syncHeaderSelection(
   const world = await loadSelectedWorld();
   context.selectedWorldId = world?.wId || context.worldItems[0]?.wId || "";
   context.world = world;
+  // URLパラメータからのディープリンクのみ反映する。
+  // savedStageId は stages ロード前にセットすると no_world になるため、
+  // rerenderStagesFromDb 内で解決する。
   const queryStageId = String(
     new URLSearchParams(window.location.search).get("stgId") || "",
   ).trim();
-  const savedStageId = String((await getAppStateText("stages")) || "").trim();
-  context.selectedStageId = queryStageId || savedStageId;
-  renderCurrentHeaderLabel(selectedWorldNameEl);
+  if (queryStageId) {
+    context.selectedStageId = queryStageId;
+  }
+  // renderCurrentHeaderLabel は stages ロード前に呼ばない。rerenderStagesFromDb 内で呼ばれる。
 }
 
 function renderCurrentHeaderLabel(
