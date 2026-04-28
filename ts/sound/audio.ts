@@ -13,7 +13,7 @@ export function playTransientSound(src: string): void {
 export function setupLoopAudioToggle(options: ToggleLoopAudioOptions): void {
   const { audio, button, onLabel, offLabel } = options;
 
-  // ブラウザの自動再生制約を考慮し、初期状態はミュート表示に寄せる。
+  // Keep the initial state muted in case autoplay is blocked.
   audio.play().catch(() => {});
   if (!(button instanceof HTMLButtonElement)) {
     return;

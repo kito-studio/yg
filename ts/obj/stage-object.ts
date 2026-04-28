@@ -1,8 +1,13 @@
 import { FileStoreGateway } from "../data/file-store";
+import { TOP_PAGE_CLASS, TOP_PAGE_SELECTOR } from "../dom/top-page";
 import { t } from "../i18n";
 import { StageRecord } from "../obj";
-import { DEFAULT_PROGRESS } from "./constants";
-import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
+import { DEFAULT_PROGRESS } from "../top-page/constants";
+import {
+  clampProgress,
+  getHpColor,
+  normalizeHexColor,
+} from "../top-page/stage-model";
 
 export type StageObjectHandlers = {
   onPointerDown: (event: PointerEvent) => void;
@@ -16,7 +21,7 @@ export function createStageObject(
 ): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
-  el.className = "stage-object";
+  el.className = TOP_PAGE_CLASS.stageObject;
   el.dataset.stageId = stage.stgId;
   el.dataset.stageLabel = stage.nm;
   el.dataset.stageOrd = String(stage.ord);
@@ -29,21 +34,21 @@ export function createStageObject(
   el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
 
   const sideImage = document.createElement("span");
-  sideImage.className = "stage-object-side-image";
+  sideImage.className = TOP_PAGE_CLASS.stageObjectSideImage;
   sideImage.setAttribute("aria-hidden", "true");
 
   const sideImageImg = document.createElement("img");
-  sideImageImg.className = "stage-object-side-image-img";
+  sideImageImg.className = TOP_PAGE_CLASS.stageObjectSideImageImg;
   sideImageImg.alt = "";
   sideImage.append(sideImageImg);
   el.append(sideImage);
 
   const hp = document.createElement("span");
-  hp.className = "stage-object-hp";
+  hp.className = TOP_PAGE_CLASS.stageObjectHp;
   hp.setAttribute("aria-hidden", "true");
 
   const hpFill = document.createElement("span");
-  hpFill.className = "stage-object-hp-fill";
+  hpFill.className = TOP_PAGE_CLASS.stageObjectHpFill;
   hp.append(hpFill);
   el.append(hp);
 
@@ -66,7 +71,7 @@ export function applyStageVisuals(
   target.style.setProperty("--stage-base-color", color);
 
   const hpFill = target.querySelector(
-    ".stage-object-hp-fill",
+    TOP_PAGE_SELECTOR.stageObjectHpFill,
   ) as HTMLElement | null;
   if (hpFill) {
     hpFill.style.width = `${progress}%`;
@@ -81,10 +86,10 @@ export async function applyStageImageVisual(
   fileStore: FileStoreGateway,
 ): Promise<void> {
   const sideImage = target.querySelector(
-    ".stage-object-side-image",
+    TOP_PAGE_SELECTOR.stageObjectSideImage,
   ) as HTMLElement | null;
   const sideImageImg = target.querySelector(
-    ".stage-object-side-image-img",
+    TOP_PAGE_SELECTOR.stageObjectSideImageImg,
   ) as HTMLImageElement | null;
   if (!sideImage || !sideImageImg) {
     return;

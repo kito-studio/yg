@@ -1,8 +1,11 @@
-import { beginStageDrag } from "./drag";
+import { beginStageDrag } from "../top-page/drag";
 
 type StageMapViewport = {
   isClickSuppressed: () => boolean;
-  viewportPointToContentPoint: (x: number, y: number) => { x: number; y: number };
+  viewportPointToContentPoint: (
+    x: number,
+    y: number,
+  ) => { x: number; y: number };
   placeElementWithinContent: (
     target: HTMLElement,
     x: number,
@@ -53,7 +56,6 @@ export function createStageInteractionHandlers(
     }
 
     const context = getContext();
-    // パン/ドラッグ由来のクリックは誤操作として無視する。
     if (context?.mapViewport.isClickSuppressed()) {
       event.preventDefault();
       event.stopPropagation();
@@ -71,7 +73,6 @@ export function createStageInteractionHandlers(
     }
 
     void (async () => {
-      // ドリルダウン先で状態復元できるよう、選択ステージを保存してから遷移する。
       await saveSelectedStageId(stgId);
       navigateToStage(stgId);
     })();
@@ -109,7 +110,10 @@ export function createStageInteractionHandlers(
     beginDrag(target, event);
   }
 
-  function beginDrag(target: HTMLButtonElement, startEvent?: PointerEvent): void {
+  function beginDrag(
+    target: HTMLButtonElement,
+    startEvent?: PointerEvent,
+  ): void {
     const context = getContext();
     if (!context) {
       return;
@@ -120,7 +124,6 @@ export function createStageInteractionHandlers(
       mapViewport: context.mapViewport,
       startEvent,
       onDragEnd: async (dragTarget) => {
-        // 移動中の連続保存を避け、ドラッグ完了時に一度だけ保存する。
         await saveStageFromElement(dragTarget);
       },
     });

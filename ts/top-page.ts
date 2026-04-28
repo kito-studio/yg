@@ -2,41 +2,28 @@ import { insertHtmlPart } from "./core";
 import { createFileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
+import { TOP_PAGE_CLASS, TOP_PAGE_ID, TOP_PAGE_SELECTOR } from "./dom/top-page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
-import { StageRecord } from "./obj";
-import { playTransientSound, setupLoopAudioToggle } from "./top-page/audio";
+import { StageRecord, TopPageElements } from "./obj";
+import { applyStageVisuals, createStageObject } from "./obj/stage-object";
+import { setupLoopAudioToggle } from "./sound/audio";
 import {
-  ADD_BUTTON_ID,
-  BGM_BUTTON_ID,
-  BGM_SRC,
-  BTN_SOUND_SRC,
-  DB_DOWNLOAD_BUTTON_ID,
-  DB_MAINT_BUTTON_ID,
-  DB_UPLOAD_BUTTON_ID,
-  DB_UPLOAD_INPUT_ID,
+  createTopPageBgmAudio,
+  playTopPageButtonSound,
+} from "./sound/top-page";
+import {
   DEFAULT_PROGRESS,
-  EDIT_MODE_CLASS,
   LOGO_DISMISS_TIMEOUT_MS,
-  LOGO_EXITING_CLASS,
   LOGO_FADE_DURATION_MS,
-  LOGO_WRAP_ID,
   MAP_INERTIA_FRICTION,
   MAP_INERTIA_MIN_SPEED,
   MAP_PAN_THRESHOLD_PX,
   MAP_ZOOM_SENSITIVITY,
   MAX_MAP_SCALE,
   MIN_MAP_SCALE,
-  MODE_SWITCH_ID,
-  SELECTED_WORLD_NAME_ID,
   STAGE_DEFAULT_SIZE,
-  STAGE_MAP_CONTENT_ID,
   STAGE_MAP_CONTENT_SIZE,
-  STAGE_MAP_ID,
-  VIEW_MODE_CLASS,
-  WORLD_ACTIVE_CLASS,
-  WORLD_LEFT_BUTTON_ID,
-  WORLD_RIGHT_BUTTON_ID,
 } from "./top-page/constants";
 import {
   revealWorld,
@@ -51,9 +38,7 @@ import {
 } from "./top-page/stage-db";
 import { createStageDialogController } from "./top-page/stage-dialog";
 import { getStageDialogElements } from "./top-page/stage-dialog-elements";
-import { createStageInteractionHandlers } from "./top-page/stage-events";
 import { buildStageId } from "./top-page/stage-model";
-import { applyStageVisuals, createStageObject } from "./top-page/stage-ui";
 import {
   hideElementOnLocalHost,
   renderHeaderSelectedLabel,
@@ -65,22 +50,7 @@ import {
   createMapViewportController,
   MapViewportController,
 } from "./ui/map-viewport";
-
-type TopPageElements = {
-  addButton: HTMLButtonElement | null;
-  logoWrap: HTMLElement | null;
-  modeSwitch: HTMLInputElement | null;
-  stageMap: HTMLElement | null;
-  stageMapContent: HTMLElement | null;
-  dbDownloadButton: HTMLButtonElement | null;
-  dbUploadButton: HTMLButtonElement | null;
-  dbUploadInput: HTMLInputElement | null;
-  dbMaintButton: HTMLButtonElement | null;
-  selectedWorldName: HTMLElement | null;
-  worldLeftButton: HTMLElement | null;
-  worldRightButton: HTMLElement | null;
-  bgmButton: HTMLButtonElement | null;
-};
+import { createStageInteractionHandlers } from "./ui/stage-interactions";
 
 type TopPageContext = {
   elements: TopPageElements;
@@ -88,8 +58,7 @@ type TopPageContext = {
   stageDialog: ReturnType<typeof createStageDialogController>;
 };
 
-const bgmAudio = new Audio(BGM_SRC);
-bgmAudio.loop = true;
+const bgmAudio = createTopPageBgmAudio();
 
 const fileStore = createFileStoreGateway();
 let topPageContext: TopPageContext | null = null;
@@ -99,8 +68,8 @@ let selectedWorldId = "";
 let worldItems: Array<{ wId: string; nm: string }> = [];
 
 const stageHandlers = createStageInteractionHandlers({
-  editModeClass: EDIT_MODE_CLASS,
-  viewModeClass: VIEW_MODE_CLASS,
+  editModeClass: TOP_PAGE_CLASS.editMode,
+  viewModeClass: TOP_PAGE_CLASS.viewMode,
   getContext: () => getTopPageContext(),
   saveSelectedStageId: async (stgId) => {
     await setAppStateText("stages", stgId);
@@ -116,7 +85,7 @@ const stageHandlers = createStageInteractionHandlers({
 void initTopPage();
 
 function playButtonSound(): void {
-  playTransientSound(BTN_SOUND_SRC);
+  playTopPageButtonSound();
 }
 
 async function initTopPage(): Promise<void> {
@@ -127,7 +96,7 @@ async function initTopPage(): Promise<void> {
   topPageContext = context;
 
   applyI18n(document);
-  document.body.classList.add(VIEW_MODE_CLASS);
+  document.body.classList.add(TOP_PAGE_CLASS.viewMode);
   hideElementOnLocalHost("info");
 
   context.mapViewport.setup();
@@ -159,8 +128,8 @@ async function initTopPage(): Promise<void> {
     skipIntro: shouldSkipIntro(document.referrer, window.location.hostname),
     dismissTimeoutMs: LOGO_DISMISS_TIMEOUT_MS,
     fadeDurationMs: LOGO_FADE_DURATION_MS,
-    exitingClass: LOGO_EXITING_CLASS,
-    activeClass: WORLD_ACTIVE_CLASS,
+    exitingClass: TOP_PAGE_CLASS.logoExiting,
+    activeClass: TOP_PAGE_CLASS.worldActive,
   });
 
   setupLoopAudioToggle({
@@ -172,19 +141,19 @@ async function initTopPage(): Promise<void> {
 
   await waitForMapRevealComplete({
     stageMap: elements.stageMap,
-    activeClass: WORLD_ACTIVE_CLASS,
+    activeClass: TOP_PAGE_CLASS.worldActive,
   });
   await rerenderStagesFromDb();
 
   setupModeSwitch({
     modeSwitch: elements.modeSwitch,
-    editModeClass: EDIT_MODE_CLASS,
-    viewModeClass: VIEW_MODE_CLASS,
+    editModeClass: TOP_PAGE_CLASS.editMode,
+    viewModeClass: TOP_PAGE_CLASS.viewMode,
     defaultEditMode: false,
   });
 
   elements.addButton?.addEventListener("click", async () => {
-    if (!document.body.classList.contains(EDIT_MODE_CLASS)) {
+    if (!document.body.classList.contains(TOP_PAGE_CLASS.editMode)) {
       return;
     }
 
@@ -264,31 +233,31 @@ async function mountTopPageParts(): Promise<void> {
 function getTopPageElements(): TopPageElements {
   return {
     addButton: document.getElementById(
-      ADD_BUTTON_ID,
+      TOP_PAGE_ID.addButton,
     ) as HTMLButtonElement | null,
-    logoWrap: document.getElementById(LOGO_WRAP_ID),
+    logoWrap: document.getElementById(TOP_PAGE_ID.logoWrap),
     modeSwitch: document.getElementById(
-      MODE_SWITCH_ID,
+      TOP_PAGE_ID.modeSwitch,
     ) as HTMLInputElement | null,
-    stageMap: document.getElementById(STAGE_MAP_ID),
-    stageMapContent: document.getElementById(STAGE_MAP_CONTENT_ID),
+    stageMap: document.getElementById(TOP_PAGE_ID.stageMap),
+    stageMapContent: document.getElementById(TOP_PAGE_ID.stageMapContent),
     dbDownloadButton: document.getElementById(
-      DB_DOWNLOAD_BUTTON_ID,
+      TOP_PAGE_ID.dbDownloadButton,
     ) as HTMLButtonElement | null,
     dbUploadButton: document.getElementById(
-      DB_UPLOAD_BUTTON_ID,
+      TOP_PAGE_ID.dbUploadButton,
     ) as HTMLButtonElement | null,
     dbUploadInput: document.getElementById(
-      DB_UPLOAD_INPUT_ID,
+      TOP_PAGE_ID.dbUploadInput,
     ) as HTMLInputElement | null,
     dbMaintButton: document.getElementById(
-      DB_MAINT_BUTTON_ID,
+      TOP_PAGE_ID.dbMaintButton,
     ) as HTMLButtonElement | null,
-    selectedWorldName: document.getElementById(SELECTED_WORLD_NAME_ID),
-    worldLeftButton: document.getElementById(WORLD_LEFT_BUTTON_ID),
-    worldRightButton: document.getElementById(WORLD_RIGHT_BUTTON_ID),
+    selectedWorldName: document.getElementById(TOP_PAGE_ID.selectedWorldName),
+    worldLeftButton: document.getElementById(TOP_PAGE_ID.worldLeftButton),
+    worldRightButton: document.getElementById(TOP_PAGE_ID.worldRightButton),
     bgmButton: document.getElementById(
-      BGM_BUTTON_ID,
+      TOP_PAGE_ID.bgmButton,
     ) as HTMLButtonElement | null,
   };
 }
@@ -301,7 +270,9 @@ function createTopPageContext(elements: TopPageElements): TopPageContext {
   };
 }
 
-function createTopPageMapViewport(elements: TopPageElements): MapViewportController {
+function createTopPageMapViewport(
+  elements: TopPageElements,
+): MapViewportController {
   // ビューポートはパン/ズームを担当し、座標は常にコンテンツ基準で扱う。
   return createMapViewportController({
     viewport: elements.stageMap,
@@ -319,14 +290,16 @@ function createTopPageMapViewport(elements: TopPageElements): MapViewportControl
       }
 
       return (
-        document.body.classList.contains(EDIT_MODE_CLASS) &&
-        !!event.target.closest(".stage-object")
+        document.body.classList.contains(TOP_PAGE_CLASS.editMode) &&
+        !!event.target.closest(TOP_PAGE_SELECTOR.stageObject)
       );
     },
   });
 }
 
-function createTopPageStageDialog(): ReturnType<typeof createStageDialogController> {
+function createTopPageStageDialog(): ReturnType<
+  typeof createStageDialogController
+> {
   return createStageDialogController({
     elements: getStageDialogElements(),
     fileStore,
@@ -417,7 +390,9 @@ async function rerenderStagesFromDb(): Promise<void> {
     return;
   }
 
-  const current = Array.from(document.querySelectorAll(".stage-object"));
+  const current = Array.from(
+    document.querySelectorAll(TOP_PAGE_SELECTOR.stageObject),
+  );
   for (const el of current) {
     el.remove();
   }
