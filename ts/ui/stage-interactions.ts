@@ -26,7 +26,7 @@ type StagePageContext = {
 type StageInteractionOptions = {
   getContext: () => StagePageContext | null;
   saveSelectedStageId: (stgId: string) => Promise<void>;
-  navigateToStage: (stgId: string) => void;
+  navigateToStage: (stgId: string) => Promise<void> | void;
   saveStageFromElement: (target: HTMLButtonElement) => Promise<void>;
 };
 
@@ -71,7 +71,7 @@ export function createStageInteractionHandlers(
 
     void (async () => {
       await saveSelectedStageId(stgId);
-      navigateToStage(stgId);
+      await navigateToStage(stgId);
     })();
   }
 

@@ -36,35 +36,31 @@ export const DB_DEF = {
   // fId: ファイルID（拡張子付き推奨）
   files: "fId, ext, nm, mime, size, body, bin, memo, t_c, t_u",
 
-  // 🗺️ ステージ（top.html）
+  // 🌍 世界（index.html）
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
   worlds:
-    "wId, ord, cat, nm, desc, mode, isLocked, status, progress, mapImgPath, coverFId, bgFId, memo, t_c, t_u",
+    "wId, ord, cat, nm, desc, mode, isLocked, status, progress, mapImgPath, coverFId, bgFId, bgmFId, memo, t_c, t_u",
 
-  // 🗺️ ステージ（top.html）
+  // 🗺️ ステージ（index.html）
+  // parentStgId: 親ステージID（ルートは null/空）
+  // 階層ステージで「世界地図」「ステージ地図」を共通表現する
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
   stages:
-    "stgId, ord, cat, nm, desc, mode, isLocked, status, progress, imgPath, mapImgPath, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+    "stgId, wId, parentStgId, [wId+ord], [wId+parentStgId], [parentStgId+ord], ord, cat, nm, desc, mode, isLocked, status, progress, imgPath, mapImgPath, coverFId, bgFId, bgmFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
-  // 🗺️ マップ（maps.html）
-  maps: "mpId, stgId, ord, cat, nm, desc, mode, isLocked, status, progress, coverFId, bgFId, x, y, w, h, rot, clr, memo, t_c, t_u",
-
-  // ⚔️ タスク（map.html）
-  // parentTkId: 親タスクID（ルートは null/空）
-  // layer: 階層の深さ（ルート=0, 子=1, 孫=2...）
-  // nodeType: stage_goal | milestone | task など用途分類
+  // ⚔️ タスク（index.html 内のステージ詳細）
+  // stgId: 所属ステージID
   // state: todo | doing | done | sealed
   // requiresApproval: 第三者承認が必要なタスクに1
   tasks:
-    "tkId, mpId, parentTkId, [mpId+parentTkId], [mpId+layer+ord], [mpId+state], ord, layer, nodeType, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, x, y, w, h, rot, clr, vis, isLocked, memo, t_c, t_u",
+    "tkId, stgId, [stgId+ord], [stgId+state], ord, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, x, y, w, h, rot, clr, vis, isLocked, memo, t_c, t_u",
 
-  // ⛓️ 依存関係（同一tasks内の任意ノード間）
-  // srcType/dstType: task 固定（将来拡張用に保持）
+  // ⛓️ 依存関係（同一ステージ内の任意タスク間）
   // relType: blocks | unlocks | recommends
   task_links:
-    "id, mpId, [srcType+srcId], [dstType+dstId], [srcType+srcId+dstType+dstId], srcType, srcId, dstType, dstId, relType, ord, memo, t_c, t_u",
+    "tlId, stgId, [stgId+srcId], [stgId+dstId], [stgId+srcId+dstId], srcId, dstId, relType, ord, memo, t_c, t_u",
 
   // ✅ 承認トークン（拡張機能）
   approval_tokens:
@@ -76,7 +72,7 @@ export const DB_DEF = {
     "dlId, [objType+objId], objType, objId, result, score, jsn, memo, t_c, t_u",
 
   // 📦 JSON出力スナップショット
-  map_exports: "mxId, stgId, mpId, ver, nm, jsn, memo, t_c, t_u",
+  stage_exports: "sxId, wId, stgId, ver, nm, jsn, memo, t_c, t_u",
 };
 
 /**
@@ -95,12 +91,15 @@ export function getPrimaryKeyMap(): { [key: string]: string } {
  * 画面ごとの主要テーブル対応（pages.txt ベース）
  */
 export const PAGE_TABLES: { [page: string]: string[] } = {
-  "top.html": ["stages"],
-  "maps.html": ["stages", "maps"],
-  "map.html": ["maps", "tasks", "task_links"],
+  "index.html": ["worlds", "stages", "tasks", "task_links"],
 };
 
 /**
  * MVPで一覧取得時に優先する読み込み順
  */
-export const TABLE_ORDER: string[] = ["stages", "maps", "tasks", "task_links"];
+export const TABLE_ORDER: string[] = [
+  "worlds",
+  "stages",
+  "tasks",
+  "task_links",
+];

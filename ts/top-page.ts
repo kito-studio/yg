@@ -1,6 +1,6 @@
 import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
-import { setAppStateText } from "./data/yg-idb";
+import { getAppStateText, setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { PAGE_CLASS, PAGE_SELECTOR } from "./dom/page";
 import { TOP_PAGE_ID } from "./dom/top-page";
@@ -63,6 +63,7 @@ type TopPageContext = {
   world: WorldHeaderRecord | null;
   stages: StageRecord[];
   selectedWorldId: string;
+  selectedStageId: string;
   worldItems: WorldHeaderRecord[];
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
@@ -75,8 +76,12 @@ const stageHandlers = createStageInteractionHandlers({
   saveSelectedStageId: async (stgId) => {
     await setAppStateText("stages", stgId);
   },
-  navigateToStage: (stgId) => {
-    window.location.href = `./maps.html?stgId=${encodeURIComponent(stgId)}`;
+  navigateToStage: async (stgId) => {
+    if (!context) {
+      return;
+    }
+    context.selectedStageId = stgId;
+    await rerenderStagesFromDb();
   },
   saveStageFromElement: async (target) => {
     await saveStageFromElement(target);
@@ -158,9 +163,11 @@ async function initTopPage(): Promise<void> {
       return;
     }
 
-    const stageObject = createStageButton(
-      createNewStageRecord(context.stages.length + 1),
-    );
+    const nextOrd = getVisibleStages(context).length + 1;
+    const stageRecord = createNewStageRecord(nextOrd);
+    stageRecord.wId = context.selectedWorldId;
+    stageRecord.parentStgId = context.selectedStageId;
+    const stageObject = createStageButton(stageRecord);
 
     appendStageObject(stageObject);
 
@@ -171,7 +178,7 @@ async function initTopPage(): Promise<void> {
       point.y,
     );
 
-    await saveStageFromElement(stageObject, context.stages.length);
+    await saveStageFromElement(stageObject, nextOrd);
     stageHandlers.beginDrag(stageObject);
   });
 }
@@ -182,21 +189,37 @@ async function setupWorldHeader(elements: TopPageElements): Promise<void> {
   }
   const cntx = context;
 
-  // ヘッダ切り替えの仕組みは共通。ここでは対象が「世界」になる。
-  await syncSelectedWorldHeader(elements.selectedWorldName);
+  await syncHeaderSelection(elements.selectedWorldName);
   setupHeaderSwitch({
     prevButton: elements.worldLeftButton,
     nextButton: elements.worldRightButton,
-    getItemIds: () => cntx.worldItems.map((world) => world.wId),
-    getSelectedId: () => cntx.selectedWorldId,
-    onSelect: async (nextWorldId) => {
-      cntx.selectedWorldId = nextWorldId;
-      cntx.world =
-        cntx.worldItems.find((world) => world.wId === nextWorldId) || null;
-      await setAppStateText("worlds", nextWorldId);
-      renderSelectedWorldHeader(elements.selectedWorldName);
+    getItemIds: () => getHeaderItems(cntx).map((item) => item.id),
+    getSelectedId: () => getHeaderSelectedId(cntx),
+    onSelect: async (nextId) => {
+      const currentStage = getCurrentStage(cntx);
+      if (!currentStage) {
+        cntx.selectedWorldId = nextId;
+        cntx.world =
+          cntx.worldItems.find((world) => world.wId === nextId) || null;
+        cntx.selectedStageId = "";
+        await setAppStateText("worlds", nextId);
+        await setAppStateText("stages", null);
+        await rerenderStagesFromDb();
+        return;
+      }
+
+      cntx.selectedStageId = nextId;
+      await setAppStateText("stages", nextId);
+      await rerenderStagesFromDb();
     },
   });
+
+  if (elements.selectedWorldName instanceof HTMLElement) {
+    elements.selectedWorldName.style.cursor = "pointer";
+    elements.selectedWorldName.addEventListener("click", () => {
+      void stepOutSelection();
+    });
+  }
 }
 
 async function mountTopPageParts(): Promise<void> {
@@ -257,6 +280,7 @@ function createTopPageContext(elements: TopPageElements): TopPageContext {
     world: null,
     stages: [],
     selectedWorldId: "",
+    selectedStageId: "",
     worldItems: [],
     bgmAudio,
     fileStore,
@@ -329,22 +353,26 @@ function getNewStageAnchorPoint(): { x: number; y: number } {
   return { x: 0, y: 0 };
 }
 
-async function syncSelectedWorldHeader(
+async function syncHeaderSelection(
   selectedWorldNameEl: HTMLElement | null,
 ): Promise<void> {
   if (!context) {
     return;
   }
 
-  // 世界一覧と現在選択をapp_stateと同期する。
   context.worldItems = await loadWorlds();
   const world = await loadSelectedWorld();
   context.selectedWorldId = world?.wId || context.worldItems[0]?.wId || "";
   context.world = world;
-  renderSelectedWorldHeader(selectedWorldNameEl);
+  const queryStageId = String(
+    new URLSearchParams(window.location.search).get("stgId") || "",
+  ).trim();
+  const savedStageId = String((await getAppStateText("stages")) || "").trim();
+  context.selectedStageId = queryStageId || savedStageId;
+  renderCurrentHeaderLabel(selectedWorldNameEl);
 }
 
-function renderSelectedWorldHeader(
+function renderCurrentHeaderLabel(
   selectedWorldNameEl: HTMLElement | null,
 ): void {
   if (!context) {
@@ -353,11 +381,8 @@ function renderSelectedWorldHeader(
 
   renderHeaderSelectedLabel({
     labelElement: selectedWorldNameEl,
-    items: context.worldItems.map((world) => ({
-      id: world.wId,
-      label: world.nm || world.wId,
-    })),
-    selectedId: context.selectedWorldId,
+    items: getHeaderItems(context),
+    selectedId: getHeaderSelectedId(context),
     emptyLabel: t("no_world"),
   });
 }
@@ -386,6 +411,7 @@ async function rerenderStagesFromDb(): Promise<void> {
   if (!context) {
     return;
   }
+  const cntx = context;
 
   const current = Array.from(
     document.querySelectorAll(PAGE_SELECTOR.stageObject),
@@ -394,17 +420,109 @@ async function rerenderStagesFromDb(): Promise<void> {
     el.remove();
   }
 
-  // 現行スキーマではトップページのステージは世界とは独立して保持される。
   const stages = await loadStages();
-  context.stages = stages;
+  cntx.stages = stages;
+  cntx.selectedStageId = resolveSelectedStageId(cntx);
+  cntx.world =
+    cntx.worldItems.find((world) => world.wId === cntx.selectedWorldId) || null;
 
-  for (const stage of stages) {
+  await applyCurrentMapBackground();
+  renderCurrentHeaderLabel(cntx.elements.selectedWorldName);
+
+  for (const stage of getVisibleStages(cntx)) {
     const stageObject = createStageButton(stage);
     appendStageObject(stageObject);
-    context.mapViewport.placeElementWithinContent(
-      stageObject,
-      stage.x,
-      stage.y,
-    );
+    cntx.mapViewport.placeElementWithinContent(stageObject, stage.x, stage.y);
   }
+}
+
+function getVisibleStages(cntx: TopPageContext): StageRecord[] {
+  return cntx.stages
+    .filter((stage) => stage.wId === cntx.selectedWorldId)
+    .filter((stage) => stage.parentStgId === cntx.selectedStageId)
+    .sort((a, b) => a.ord - b.ord);
+}
+
+function getCurrentStage(cntx: TopPageContext): StageRecord | null {
+  return (
+    cntx.stages.find((stage) => stage.stgId === cntx.selectedStageId) || null
+  );
+}
+
+function getHeaderItems(
+  cntx: TopPageContext,
+): Array<{ id: string; label: string }> {
+  const currentStage = getCurrentStage(cntx);
+  if (!currentStage) {
+    return cntx.worldItems.map((world) => ({
+      id: world.wId,
+      label: world.nm || world.wId,
+    }));
+  }
+
+  return cntx.stages
+    .filter((stage) => stage.wId === currentStage.wId)
+    .filter((stage) => stage.parentStgId === currentStage.parentStgId)
+    .sort((a, b) => a.ord - b.ord)
+    .map((stage) => ({
+      id: stage.stgId,
+      label: stage.nm || stage.stgId,
+    }));
+}
+
+function getHeaderSelectedId(cntx: TopPageContext): string {
+  return cntx.selectedStageId || cntx.selectedWorldId;
+}
+
+function resolveSelectedStageId(cntx: TopPageContext): string {
+  const selected = cntx.stages.find(
+    (stage) => stage.stgId === cntx.selectedStageId,
+  );
+  if (!selected) {
+    return "";
+  }
+  if (selected.wId !== cntx.selectedWorldId) {
+    return "";
+  }
+  return selected.stgId;
+}
+
+async function applyCurrentMapBackground(): Promise<void> {
+  if (!context?.elements.stageMapContent) {
+    return;
+  }
+
+  const image = context.elements.stageMapContent.querySelector(
+    ".stage-map-image",
+  ) as HTMLImageElement | null;
+  if (!(image instanceof HTMLImageElement)) {
+    return;
+  }
+
+  const currentStage = getCurrentStage(context);
+  const path = String(
+    currentStage?.mapImgPath || context.world?.mapImgPath || "",
+  ).trim();
+  if (!path) {
+    image.src = "./img/world_map/fantasy1_e.jpg";
+    return;
+  }
+
+  const objectUrl = await context.fileStore.getObjectUrlForFile(path);
+  image.src = objectUrl || path;
+}
+
+async function stepOutSelection(): Promise<void> {
+  if (!context) {
+    return;
+  }
+
+  const currentStage = getCurrentStage(context);
+  if (!currentStage) {
+    return;
+  }
+
+  context.selectedStageId = currentStage.parentStgId || "";
+  await setAppStateText("stages", context.selectedStageId || null);
+  await rerenderStagesFromDb();
 }

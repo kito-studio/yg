@@ -1,5 +1,7 @@
 export type StageRecord = {
   stgId: string;
+  wId: string;
+  parentStgId: string;
   ord: number;
   nm: string;
   desc: string;

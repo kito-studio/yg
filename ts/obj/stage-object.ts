@@ -24,6 +24,8 @@ export function createStageObject(
   el.type = "button";
   el.className = PAGE_CLASS.stageObject;
   el.dataset.stageId = stage.stgId;
+  el.dataset.stageWorldId = stage.wId;
+  el.dataset.parentStageId = stage.parentStgId;
   el.dataset.stageLabel = stage.nm;
   el.dataset.stageOrd = String(stage.ord);
   el.dataset.stageDesc = stage.desc;
@@ -118,6 +120,8 @@ export function createNewStageRecord(ord: number): StageRecord {
   const now = Date.now();
   return {
     stgId: buildStageId(),
+    wId: "",
+    parentStgId: "",
     ord,
     nm: `ST${ord}`,
     desc: "",

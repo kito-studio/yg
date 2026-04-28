@@ -18,11 +18,13 @@ type WorldRow = {
   wId?: string;
   nm?: string;
   ord?: number;
+  mapImgPath?: string;
 };
 
 export type WorldHeaderRecord = {
   wId: string;
   nm: string;
+  mapImgPath?: string;
 };
 
 export async function loadWorlds(): Promise<WorldHeaderRecord[]> {
@@ -38,7 +40,8 @@ export async function loadWorlds(): Promise<WorldHeaderRecord[]> {
       .map((row) => {
         const wId = String(row.wId || "").trim();
         const nm = String(row.nm || wId || "").trim();
-        return { wId, nm: nm || wId };
+        const mapImgPath = String(row.mapImgPath || "").trim();
+        return { wId, nm: nm || wId, mapImgPath };
       })
       .filter((row) => row.wId.length > 0);
   } finally {
@@ -87,6 +90,8 @@ export async function saveStageFromElement(
   ordOverride?: number,
 ): Promise<void> {
   const stgId = target.dataset.stageId;
+  const wId = String(target.dataset.stageWorldId || "").trim();
+  const parentStgId = String(target.dataset.parentStageId || "").trim();
   const stageName = target.dataset.stageLabel;
   const stageDesc = target.dataset.stageDesc || "";
   const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
@@ -113,6 +118,8 @@ export async function saveStageFromElement(
   const now = Date.now();
   await upsertStage({
     stgId,
+    wId,
+    parentStgId,
     ord,
     nm: stageName,
     desc: stageDesc,
