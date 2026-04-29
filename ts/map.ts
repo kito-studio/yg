@@ -38,7 +38,7 @@ import {
 } from "./obj/stage";
 import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
-import { createTopPageBgmAudio } from "./sound/top-page";
+import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
   hideElementOnLocalHost,
   renderHeaderSelectedLabel,
@@ -69,13 +69,13 @@ type MapPageContext = {
 
 let context: MapPageContext | null = null;
 
-void initTopPage();
+void initMapPage();
 
-async function initTopPage(): Promise<void> {
+async function initMapPage(): Promise<void> {
   // 先にHTML断片を組み立ててから、挙動を配線する。
-  await mountTopPageParts();
-  const elements = getTopPageElements();
-  context = createTopPageContext(elements);
+  await mountMapPageParts();
+  const elements = getMapPageElements();
+  context = createMapPageContext(elements);
 
   applyI18n(document);
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
@@ -196,7 +196,7 @@ async function setupWorldHeader(elements: MapPageElements): Promise<void> {
   }
 }
 
-async function mountTopPageParts(): Promise<void> {
+async function mountMapPageParts(): Promise<void> {
   // z-indexとオーバーレイの重なりを壊さないよう、固定順序で挿入する。
   const partNames = [
     "logo",
@@ -212,7 +212,7 @@ async function mountTopPageParts(): Promise<void> {
   }
 }
 
-function getTopPageElements(): MapPageElements {
+function getMapPageElements(): MapPageElements {
   return {
     addButton: document.getElementById(
       MAP_PAGE_ID.addButton,
@@ -244,14 +244,14 @@ function getTopPageElements(): MapPageElements {
   };
 }
 
-function createTopPageContext(elements: MapPageElements): MapPageContext {
+function createMapPageContext(elements: MapPageElements): MapPageContext {
   const fileStore = createFileStoreGateway();
-  const bgmAudio = createTopPageBgmAudio();
+  const bgmAudio = createMapPageBgmAudio();
   return {
     elements,
-    mapViewport: createTopPageMapViewport(elements),
-    stageDialog: createTopPageStageDialog(fileStore),
-    stageHandlers: createTopPageStageHandlers(),
+    mapViewport: createMapViewport(elements),
+    stageDialog: createStageDialog(fileStore),
+    stageHandlers: createStageHandlers(),
     world: null,
     stages: [],
     selectedWorldId: "",
@@ -262,7 +262,7 @@ function createTopPageContext(elements: MapPageElements): MapPageContext {
   };
 }
 
-function createTopPageStageHandlers(): ReturnType<
+function createStageHandlers(): ReturnType<
   typeof createStageInteractionHandlers
 > {
   return createStageInteractionHandlers({
@@ -283,9 +283,7 @@ function createTopPageStageHandlers(): ReturnType<
   });
 }
 
-function createTopPageMapViewport(
-  elements: MapPageElements,
-): MapViewportController {
+function createMapViewport(elements: MapPageElements): MapViewportController {
   // ビューポートはパン/ズームを担当し、座標は常にコンテンツ基準で扱う。
   return createMapViewportController({
     viewport: elements.stageMap,
@@ -310,7 +308,7 @@ function createTopPageMapViewport(
   });
 }
 
-function createTopPageStageDialog(
+function createStageDialog(
   fileStore: FileStoreGateway,
 ): ReturnType<typeof createStageDialogController> {
   return createStageDialogController({
