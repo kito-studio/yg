@@ -25,7 +25,7 @@ type HeaderLabelOptions = {
   emptyLabel: string;
 };
 
-type BackupToolbarOptions = {
+type ToolbarOptions = {
   downloadButton: HTMLElement | null;
   uploadButton: HTMLElement | null;
   uploadInput: HTMLElement | null;
@@ -128,7 +128,7 @@ export function renderHeaderSelectedLabel(options: HeaderLabelOptions): void {
   labelElement.textContent = selected?.label || emptyLabel;
 }
 
-export function setupBackupToolbar(options: BackupToolbarOptions): void {
+export function setupToolbar(options: ToolbarOptions): void {
   const {
     downloadButton,
     uploadButton,

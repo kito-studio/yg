@@ -41,9 +41,9 @@ import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
   renderHeaderSelectedLabel,
-  setupBackupToolbar,
   setupHeaderSwitch,
   setupModeSwitch,
+  setupToolbar,
 } from "./ui/common-header";
 import {
   createMapViewportController,
@@ -58,11 +58,11 @@ type MapPageContext = {
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
   stageHandlers: ReturnType<typeof createStageInteractionHandlers>;
+  worlds: WorldRecord[];
   world: WorldRecord | null;
   stages: StageRecord[];
   selectedWorldId: string;
   selectedStageId: string;
-  worldItems: WorldRecord[];
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
@@ -77,16 +77,16 @@ async function initMapPage(): Promise<void> {
   // CSS IDなどを参照しやすくする
   const elements = getMapPageElements();
   // 地図画面要素の初期化
-  context = createMapPageContext(elements);
-  lg(context, "createMapPageContext");
+  const cntx = createMapPageContext(elements);
+  context = cntx;
 
   // 翻訳
   applyI18n();
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
 
-  context.stageDialog.bindEvents();
+  cntx.stageDialog.bindEvents();
 
-  setupBackupToolbar({
+  setupToolbar({
     downloadButton: elements.dbDownloadButton,
     uploadButton: elements.dbUploadButton,
     uploadInput: elements.dbUploadInput,
@@ -102,11 +102,12 @@ async function initMapPage(): Promise<void> {
     restoreSuccessMessage: t("restore_success"),
     restoreFailedFallbackMessage: t("restore_failed"),
   });
-  lg(context, "setupWorldHeader");
 
   await ensureYGDatabase();
-  await setupWorldHeader(elements);
-  context.mapViewport.setup();
+  // createMapPageContext 直後は world が null。ここで選択状態を読み込んで反映する。
+  await setupHeader(cntx, elements);
+  lg(cntx, "setupHeader");
+  cntx.mapViewport.setup();
 
   // イントロ演出とマップ表示待機を分離し、ステージ描画がCSS遷移と競合しないようにする。
   await revealWorld({
@@ -119,7 +120,7 @@ async function initMapPage(): Promise<void> {
   });
 
   setupLoopAudioToggle({
-    audio: context.bgmAudio,
+    audio: cntx.bgmAudio,
     button: elements.bgmButton,
   });
 
@@ -199,19 +200,17 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     stages: [],
     selectedWorldId: "",
     selectedStageId: "",
-    worldItems: [],
+    worlds: [],
     bgmAudio,
     fileStore,
   };
 }
 
-async function setupWorldHeader(elements: MapPageElements): Promise<void> {
-  if (!context) {
-    return;
-  }
-  const cntx = context;
-
-  await syncHeaderSelection(elements.selectedWorldName);
+async function setupHeader(
+  cntx: MapPageContext,
+  elements: MapPageElements,
+): Promise<void> {
+  await syncHeaderSelection(cntx);
   setupHeaderSwitch({
     prevButton: elements.worldLeftButton,
     nextButton: elements.worldRightButton,
@@ -221,8 +220,7 @@ async function setupWorldHeader(elements: MapPageElements): Promise<void> {
       const currentStage = getCurrentStage(cntx);
       if (!currentStage) {
         cntx.selectedWorldId = nextId;
-        cntx.world =
-          cntx.worldItems.find((world) => world.wId === nextId) || null;
+        cntx.world = cntx.worlds.find((world) => world.wId === nextId) || null;
         cntx.selectedStageId = "";
         await setAppStateText("worlds", nextId);
         await setAppStateText("stages", null);
@@ -327,17 +325,11 @@ function getNewStageAnchorPoint(cntx: MapPageContext): {
   return { x: 0, y: 0 };
 }
 
-async function syncHeaderSelection(
-  selectedWorldNameEl: HTMLElement | null,
-): Promise<void> {
-  if (!context) {
-    return;
-  }
-
-  context.worldItems = await loadWorlds();
+async function syncHeaderSelection(cntx: MapPageContext): Promise<void> {
+  cntx.worlds = await loadWorlds();
   const world = await loadSelectedWorld();
-  context.selectedWorldId = world?.wId || context.worldItems[0]?.wId || "";
-  context.world = world;
+  cntx.selectedWorldId = world?.wId || cntx.worlds[0]?.wId || "";
+  cntx.world = world;
   // URLパラメータからのディープリンクのみ反映する。
   // savedStageId は stages ロード前にセットすると no_world になるため、
   // rerenderStagesFromDb 内で解決する。
@@ -345,22 +337,19 @@ async function syncHeaderSelection(
     new URLSearchParams(window.location.search).get("stgId") || "",
   ).trim();
   if (queryStageId) {
-    context.selectedStageId = queryStageId;
+    cntx.selectedStageId = queryStageId;
   }
   // renderCurrentHeaderLabel は stages ロード前に呼ばない。rerenderStagesFromDb 内で呼ばれる。
 }
 
 function renderCurrentHeaderLabel(
+  cntx: MapPageContext,
   selectedWorldNameEl: HTMLElement | null,
 ): void {
-  if (!context) {
-    return;
-  }
-
   renderHeaderSelectedLabel({
     labelElement: selectedWorldNameEl,
-    items: getHeaderItems(context),
-    selectedId: getHeaderSelectedId(context),
+    items: getHeaderItems(cntx),
+    selectedId: getHeaderSelectedId(cntx),
     emptyLabel: t("no_world"),
   });
 }
@@ -406,10 +395,10 @@ async function rerenderStagesFromDb(): Promise<void> {
   cntx.stages = stages;
   cntx.selectedStageId = resolveSelectedStageId(cntx);
   cntx.world =
-    cntx.worldItems.find((world) => world.wId === cntx.selectedWorldId) || null;
+    cntx.worlds.find((world) => world.wId === cntx.selectedWorldId) || null;
 
   await applyCurrentMapBackground(cntx);
-  renderCurrentHeaderLabel(cntx.elements.selectedWorldName);
+  renderCurrentHeaderLabel(cntx, cntx.elements.selectedWorldName);
 
   for (const stage of getVisibleStages(cntx)) {
     const stageObject = createStageButton(stage, cntx);
@@ -436,7 +425,7 @@ function getHeaderItems(
 ): Array<{ id: string; label: string }> {
   const currentStage = getCurrentStage(cntx);
   if (!currentStage) {
-    return cntx.worldItems.map((world) => ({
+    return cntx.worlds.map((world) => ({
       id: world.wId || "",
       label: world.nm || world.wId,
     }));
