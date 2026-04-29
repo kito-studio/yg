@@ -29,6 +29,19 @@ export function getStageDialogElements() {
       MAP_PAGE_ID.stageImageSaveButton,
     ),
     stageImageCurrent: document.getElementById(MAP_PAGE_ID.stageImageCurrent),
+    stageSpriteToggle: document.getElementById(MAP_PAGE_ID.stageSpriteToggle),
+    stageSpriteMetaInfo: document.getElementById(
+      MAP_PAGE_ID.stageSpriteMetaInfo,
+    ),
+    stageSpriteCoordGroup: document.getElementById(
+      MAP_PAGE_ID.stageSpriteCoordGroup,
+    ),
+    stageSpriteRowInput: document.getElementById(
+      MAP_PAGE_ID.stageSpriteRowInput,
+    ),
+    stageSpriteColInput: document.getElementById(
+      MAP_PAGE_ID.stageSpriteColInput,
+    ),
     mapImageFileInput: document.getElementById(MAP_PAGE_ID.mapImageFileInput),
     mapImagePickButton: document.getElementById(MAP_PAGE_ID.mapImagePickButton),
     mapImageClearButton: document.getElementById(

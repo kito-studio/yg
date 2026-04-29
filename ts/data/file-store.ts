@@ -3,19 +3,90 @@ import { requestToPromise, transactionDone } from "./yg-idb";
 
 const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
 
+export type SpriteFileMeta = {
+  type: "sprite";
+  w: number;
+  h: number;
+  unit_w: number;
+  unit_h: number;
+  nw: number;
+  nh: number;
+};
+
 export type RegisteredImageRow = {
   fId: string;
   nm: string;
   ext: string;
   objectUrl: string;
+  spriteMeta: SpriteFileMeta | null;
 };
 
 export type FileStoreGateway = {
   fetchRegisteredImageRows: () => Promise<RegisteredImageRow[]>;
-  saveFileToStore: (file: File) => Promise<string | null>;
+  saveFileToStore: (
+    file: File,
+    options?: { body?: string | null },
+  ) => Promise<string | null>;
   getObjectUrlForFile: (fId: string) => Promise<string | null>;
   getFileBlobById: (fId: string) => Promise<Blob | null>;
+  getSpriteMetaForFile: (fId: string) => Promise<SpriteFileMeta | null>;
 };
+
+function parseSpriteFileMeta(rawBody: unknown): SpriteFileMeta | null {
+  if (!rawBody) {
+    return null;
+  }
+
+  let parsed: unknown = rawBody;
+  if (typeof rawBody === "string") {
+    const text = rawBody.trim();
+    if (!text || text.startsWith("data:")) {
+      return null;
+    }
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return null;
+  }
+
+  const meta = parsed as Partial<SpriteFileMeta>;
+  const toPositiveInt = (value: unknown): number | null => {
+    const num = Number(value);
+    if (!Number.isFinite(num) || num <= 0) {
+      return null;
+    }
+    return Math.round(num);
+  };
+
+  if (meta.type !== "sprite") {
+    return null;
+  }
+
+  const w = toPositiveInt(meta.w);
+  const h = toPositiveInt(meta.h);
+  const unit_w = toPositiveInt(meta.unit_w);
+  const unit_h = toPositiveInt(meta.unit_h);
+  const nw = toPositiveInt(meta.nw);
+  const nh = toPositiveInt(meta.nh);
+  if (!w || !h || !unit_w || !unit_h || !nw || !nh) {
+    return null;
+  }
+
+  return {
+    type: "sprite",
+    w,
+    h,
+    unit_w,
+    unit_h,
+    nw,
+    nh,
+  };
+}
 
 export function createFileStoreGateway(): FileStoreGateway {
   const fileObjectUrlCache = new Map<string, string>();
@@ -91,6 +162,7 @@ export function createFileStoreGateway(): FileStoreGateway {
           const ext = String(row?.ext || "")
             .trim()
             .toLowerCase();
+          const spriteMeta = parseSpriteFileMeta(row?.body);
           let objectUrl = "";
           if (row?.bin instanceof Blob) {
             objectUrl = URL.createObjectURL(row.bin);
@@ -105,6 +177,7 @@ export function createFileStoreGateway(): FileStoreGateway {
             nm,
             ext,
             objectUrl,
+            spriteMeta,
             t_u: Number(row?.t_u || 0),
           };
         })
@@ -120,13 +193,17 @@ export function createFileStoreGateway(): FileStoreGateway {
           nm: row.nm,
           ext: row.ext,
           objectUrl: row.objectUrl,
+          spriteMeta: row.spriteMeta,
         }));
     } finally {
       db.close();
     }
   }
 
-  async function saveFileToStore(file: File): Promise<string | null> {
+  async function saveFileToStore(
+    file: File,
+    options?: { body?: string | null },
+  ): Promise<string | null> {
     const extByName = String(file.name || "")
       .split(".")
       .pop()
@@ -150,6 +227,7 @@ export function createFileStoreGateway(): FileStoreGateway {
           nm: file.name || fId,
           mime: file.type || "application/octet-stream",
           size: file.size,
+          body: String(options?.body || "").trim(),
           bin: file,
           t_c: Date.now(),
           t_u: Date.now(),
@@ -162,10 +240,27 @@ export function createFileStoreGateway(): FileStoreGateway {
     }
   }
 
+  async function getSpriteMetaForFile(
+    fId: string,
+  ): Promise<SpriteFileMeta | null> {
+    const db = await openYGDatabase();
+    try {
+      const tx = db.transaction("files", "readonly");
+      const store = tx.objectStore("files");
+      const row = (await requestToPromise(store.get(fId))) as
+        | { body?: string }
+        | undefined;
+      return parseSpriteFileMeta(row?.body);
+    } finally {
+      db.close();
+    }
+  }
+
   return {
     fetchRegisteredImageRows,
     saveFileToStore,
     getObjectUrlForFile,
     getFileBlobById,
+    getSpriteMetaForFile,
   };
 }

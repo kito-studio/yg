@@ -136,6 +136,27 @@ export async function applyStageImageVisual(
     return;
   }
 
+  const spriteMeta = await fileStore.getSpriteMetaForFile(fId);
+  if (spriteMeta) {
+    const spriteCol = parseSpriteCellValue(target.dataset.stageSpriteCol, 0);
+    const spriteRow = parseSpriteCellValue(target.dataset.stageSpriteRow, 0);
+    const spriteTone = normalizeSpriteTone(target.dataset.stageSpriteTone);
+
+    target.dataset.stageSpriteCol = String(spriteCol);
+    target.dataset.stageSpriteRow = String(spriteRow);
+    target.dataset.stageSpriteTone = spriteTone;
+
+    applySpriteCellVisual(target, {
+      col: spriteCol,
+      row: spriteRow,
+      tone: spriteTone,
+      sheetUrl: objectUrl,
+      columns: spriteMeta.nw,
+      rows: spriteMeta.nh,
+    });
+    return;
+  }
+
   clearSpriteCellVisual(target);
   sideImage.hidden = false;
   sideImageImg.hidden = false;

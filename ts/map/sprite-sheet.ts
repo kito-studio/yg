@@ -4,12 +4,15 @@ const SPRITE_COLUMNS = 12;
 const SPRITE_ROWS = 12;
 const SPRITE_SHEET_URL = "./img/world_map/sprite1536.webp";
 
-type SpriteTone = "none" | "red" | "dark";
+export type SpriteTone = "none" | "red" | "dark";
 
 type SpriteCell = {
   col: number;
   row: number;
   tone?: SpriteTone;
+  sheetUrl?: string;
+  columns?: number;
+  rows?: number;
 };
 
 function clampCell(value: number, max: number): number {
@@ -58,8 +61,14 @@ export function applySpriteCellVisual(
     return;
   }
 
-  const col = clampCell(Number(spriteCell.col), SPRITE_COLUMNS);
-  const row = clampCell(Number(spriteCell.row), SPRITE_ROWS);
+  const columns = Number.isFinite(Number(spriteCell.columns))
+    ? Math.max(1, Number(spriteCell.columns))
+    : SPRITE_COLUMNS;
+  const rows = Number.isFinite(Number(spriteCell.rows))
+    ? Math.max(1, Number(spriteCell.rows))
+    : SPRITE_ROWS;
+  const col = clampCell(Number(spriteCell.col), columns);
+  const row = clampCell(Number(spriteCell.row), rows);
 
   sideImage.hidden = false;
   sideImage.classList.add(MAPPAGE_CLASS.stageObjectSideImageSprite);
@@ -73,12 +82,12 @@ export function applySpriteCellVisual(
 
   sideImage.style.setProperty(
     "--sprite-sheet-url",
-    `url(\"${SPRITE_SHEET_URL}\")`,
+    `url(\"${spriteCell.sheetUrl || SPRITE_SHEET_URL}\")`,
   );
   sideImage.style.setProperty("--sprite-col", `${col}`);
   sideImage.style.setProperty("--sprite-row", `${row}`);
-  sideImage.style.setProperty("--sprite-cols", `${SPRITE_COLUMNS}`);
-  sideImage.style.setProperty("--sprite-rows", `${SPRITE_ROWS}`);
+  sideImage.style.setProperty("--sprite-cols", `${columns}`);
+  sideImage.style.setProperty("--sprite-rows", `${rows}`);
 
   sideImageImg.hidden = true;
   sideImageImg.removeAttribute("src");

@@ -106,6 +106,33 @@
             <span data-i18n="current_file_label">現在</span>
             <span id="stageImageCurrent">-</span>
           </p>
+          <label class="stage-sprite-toggle">
+            <input id="stageSpriteToggle" type="checkbox" />
+            <span>この画像をスプライトシートとして登録</span>
+          </label>
+          <p class="stage-image-current" id="stageSpriteMetaInfo">通常画像</p>
+          <div class="stage-sprite-coord" id="stageSpriteCoordGroup" hidden>
+            <div class="stage-sprite-coord-field">
+              <label for="stageSpriteRowInput">行番号</label>
+              <input
+                id="stageSpriteRowInput"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+              />
+            </div>
+            <div class="stage-sprite-coord-field">
+              <label for="stageSpriteColInput">列番号</label>
+              <input
+                id="stageSpriteColInput"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+              />
+            </div>
+          </div>
           <div class="stage-image-actions">
             <button
               class="stage-dialog-btn"

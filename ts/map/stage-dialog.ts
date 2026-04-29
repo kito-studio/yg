@@ -1,4 +1,4 @@
-import { FileStoreGateway } from "../data/file-store";
+import { FileStoreGateway, SpriteFileMeta } from "../data/file-store";
 import { t } from "../i18n";
 import { applyStageImageVisual, applyStageVisuals } from "../obj/stage";
 import { playAudio } from "../sound/audio";
@@ -27,6 +27,11 @@ type StageDialogElements = {
   stageImageClearButton: HTMLElement | null;
   stageImageSaveButton: HTMLElement | null;
   stageImageCurrent: HTMLElement | null;
+  stageSpriteToggle: HTMLElement | null;
+  stageSpriteMetaInfo: HTMLElement | null;
+  stageSpriteCoordGroup: HTMLElement | null;
+  stageSpriteRowInput: HTMLElement | null;
+  stageSpriteColInput: HTMLElement | null;
   mapImageFileInput: HTMLElement | null;
   mapImagePickButton: HTMLElement | null;
   mapImageClearButton: HTMLElement | null;
@@ -71,6 +76,11 @@ export function createStageDialogController(
     stageImageClearButton,
     stageImageSaveButton,
     stageImageCurrent,
+    stageSpriteToggle,
+    stageSpriteMetaInfo,
+    stageSpriteCoordGroup,
+    stageSpriteRowInput,
+    stageSpriteColInput,
     mapImageFileInput,
     mapImagePickButton,
     mapImageClearButton,
@@ -81,6 +91,7 @@ export function createStageDialogController(
   } = elements;
 
   let editingStage: HTMLButtonElement | null = null;
+  const DEFAULT_SPRITE_GRID = 12;
 
   const frame = createBasicImageDialogFrame({
     dialog,
@@ -110,7 +121,123 @@ export function createStageDialogController(
     }
   }
 
-  function syncImageTabFromStage(target: HTMLButtonElement): void {
+  function buildSpriteMetaText(meta: SpriteFileMeta | null): string {
+    if (!meta) {
+      return "通常画像";
+    }
+    return `sprite ${meta.w}x${meta.h} / ${meta.nw}x${meta.nh} / cell ${meta.unit_w}x${meta.unit_h}`;
+  }
+
+  function updateSpriteCoordinateInputs(
+    target: HTMLButtonElement | null,
+    spriteMeta: SpriteFileMeta | null,
+  ): void {
+    if (
+      !(stageSpriteCoordGroup instanceof HTMLElement) ||
+      !(stageSpriteRowInput instanceof HTMLInputElement) ||
+      !(stageSpriteColInput instanceof HTMLInputElement) ||
+      !(stageSpriteMetaInfo instanceof HTMLElement) ||
+      !(stageSpriteToggle instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
+    stageSpriteToggle.checked = !!spriteMeta;
+    stageSpriteMetaInfo.textContent = buildSpriteMetaText(spriteMeta);
+    stageSpriteCoordGroup.hidden = !spriteMeta;
+
+    if (!spriteMeta) {
+      stageSpriteRowInput.value = "1";
+      stageSpriteColInput.value = "1";
+      stageSpriteRowInput.removeAttribute("max");
+      stageSpriteColInput.removeAttribute("max");
+      return;
+    }
+
+    const rowZero = Number.parseInt(target?.dataset.stageSpriteRow || "0", 10);
+    const colZero = Number.parseInt(target?.dataset.stageSpriteCol || "0", 10);
+    const safeRow = Number.isFinite(rowZero) && rowZero >= 0 ? rowZero : 0;
+    const safeCol = Number.isFinite(colZero) && colZero >= 0 ? colZero : 0;
+    const clampedRow = Math.min(safeRow, Math.max(0, spriteMeta.nh - 1));
+    const clampedCol = Math.min(safeCol, Math.max(0, spriteMeta.nw - 1));
+
+    if (target) {
+      target.dataset.stageSpriteRow = String(clampedRow);
+      target.dataset.stageSpriteCol = String(clampedCol);
+    }
+
+    stageSpriteRowInput.max = String(spriteMeta.nh);
+    stageSpriteColInput.max = String(spriteMeta.nw);
+    stageSpriteRowInput.value = String(clampedRow + 1);
+    stageSpriteColInput.value = String(clampedCol + 1);
+  }
+
+  function syncSpritePlacementFromInputs(): void {
+    if (
+      !editingStage ||
+      !(stageSpriteRowInput instanceof HTMLInputElement) ||
+      !(stageSpriteColInput instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
+    const row = Math.max(
+      1,
+      Number.parseInt(stageSpriteRowInput.value || "1", 10),
+    );
+    const col = Math.max(
+      1,
+      Number.parseInt(stageSpriteColInput.value || "1", 10),
+    );
+    editingStage.dataset.stageSpriteRow = String(row - 1);
+    editingStage.dataset.stageSpriteCol = String(col - 1);
+  }
+
+  async function buildSpriteMetaFromFile(
+    file: File,
+  ): Promise<SpriteFileMeta | null> {
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const size = await new Promise<{ width: number; height: number }>(
+        (resolve, reject) => {
+          const image = new Image();
+          image.onload = () => {
+            resolve({ width: image.naturalWidth, height: image.naturalHeight });
+          };
+          image.onerror = () => {
+            reject(new Error("Failed to read image size"));
+          };
+          image.src = objectUrl;
+        },
+      );
+
+      if (
+        size.width % DEFAULT_SPRITE_GRID !== 0 ||
+        size.height % DEFAULT_SPRITE_GRID !== 0
+      ) {
+        window.alert(
+          "スプライトシートは現在 12x12 分割できる画像のみ対応です。",
+        );
+        return null;
+      }
+
+      return {
+        type: "sprite",
+        w: size.width,
+        h: size.height,
+        unit_w: size.width / DEFAULT_SPRITE_GRID,
+        unit_h: size.height / DEFAULT_SPRITE_GRID,
+        nw: DEFAULT_SPRITE_GRID,
+        nh: DEFAULT_SPRITE_GRID,
+      };
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  async function syncImageTabFromStage(
+    target: HTMLButtonElement,
+  ): Promise<void> {
     if (
       !(stageImageCurrent instanceof HTMLElement) ||
       !(mapImageCurrent instanceof HTMLElement) ||
@@ -127,6 +254,11 @@ export function createStageDialogController(
     const mapImgPath = String(target.dataset.stageMapImgPath || "").trim();
     stageImageCurrent.textContent = stageImgPath || "-";
     mapImageCurrent.textContent = mapImgPath || "-";
+
+    const spriteMeta = stageImgPath
+      ? await fileStore.getSpriteMetaForFile(stageImgPath)
+      : null;
+    updateSpriteCoordinateInputs(target, spriteMeta);
   }
 
   async function saveImageTabSelection(kind: "stage" | "map"): Promise<void> {
@@ -149,13 +281,27 @@ export function createStageDialogController(
       return;
     }
 
-    const fId = await fileStore.saveFileToStore(file);
+    let body = "";
+    let spriteMeta: SpriteFileMeta | null = null;
+    if (kind === "stage" && stageSpriteToggle instanceof HTMLInputElement) {
+      if (stageSpriteToggle.checked) {
+        spriteMeta = await buildSpriteMetaFromFile(file);
+        if (!spriteMeta) {
+          return;
+        }
+        body = JSON.stringify(spriteMeta);
+      }
+    }
+
+    const fId = await fileStore.saveFileToStore(file, { body });
     if (!fId) {
       return;
     }
 
     if (kind === "stage") {
       editingStage.dataset.stageImgPath = fId;
+      updateSpriteCoordinateInputs(editingStage, spriteMeta);
+      syncSpritePlacementFromInputs();
       stageImageCurrent.textContent = fId;
       await applyStageImageVisual(editingStage, fileStore);
     } else {
@@ -364,6 +510,8 @@ export function createStageDialogController(
 
           if (kind === "stage") {
             editingStage.dataset.stageImgPath = row.fId;
+            updateSpriteCoordinateInputs(editingStage, row.spriteMeta);
+            syncSpritePlacementFromInputs();
             if (stageImageCurrent instanceof HTMLElement) {
               stageImageCurrent.textContent = row.fId;
             }
@@ -420,6 +568,7 @@ export function createStageDialogController(
     editingStage.dataset.stageDesc = nextDesc;
     editingStage.dataset.stageColor = nextColor;
     editingStage.dataset.stageProgress = String(nextProgress);
+    syncSpritePlacementFromInputs();
     editingStage.title = nextDesc || t("stage_no_desc");
     editingStage.setAttribute(
       "aria-label",
@@ -444,7 +593,85 @@ export function createStageDialogController(
     ) {
       stageImageClearButton.addEventListener("click", () => {
         stageImageFileInput.value = "";
+        if (editingStage) {
+          void syncImageTabFromStage(editingStage);
+        } else {
+          updateSpriteCoordinateInputs(null, null);
+        }
       });
+    }
+
+    if (stageImageFileInput instanceof HTMLInputElement) {
+      stageImageFileInput.addEventListener("change", async () => {
+        const file = stageImageFileInput.files?.[0] || null;
+        if (!file) {
+          if (editingStage) {
+            void syncImageTabFromStage(editingStage);
+          } else {
+            updateSpriteCoordinateInputs(null, null);
+          }
+          return;
+        }
+
+        if (
+          !(stageSpriteToggle instanceof HTMLInputElement) ||
+          !stageSpriteToggle.checked
+        ) {
+          updateSpriteCoordinateInputs(editingStage, null);
+          return;
+        }
+
+        const spriteMeta = await buildSpriteMetaFromFile(file);
+        if (!spriteMeta) {
+          stageImageFileInput.value = "";
+          return;
+        }
+        updateSpriteCoordinateInputs(editingStage, spriteMeta);
+      });
+    }
+
+    if (stageSpriteToggle instanceof HTMLInputElement) {
+      stageSpriteToggle.addEventListener("change", async () => {
+        const file =
+          stageImageFileInput instanceof HTMLInputElement
+            ? stageImageFileInput.files?.[0] || null
+            : null;
+        if (!file) {
+          if (editingStage) {
+            void syncImageTabFromStage(editingStage);
+          } else {
+            updateSpriteCoordinateInputs(null, null);
+          }
+          return;
+        }
+
+        if (!stageSpriteToggle.checked) {
+          updateSpriteCoordinateInputs(editingStage, null);
+          return;
+        }
+
+        const spriteMeta = await buildSpriteMetaFromFile(file);
+        if (!spriteMeta) {
+          stageSpriteToggle.checked = false;
+          return;
+        }
+        updateSpriteCoordinateInputs(editingStage, spriteMeta);
+      });
+    }
+
+    const handleSpritePlacementInput = () => {
+      syncSpritePlacementFromInputs();
+      if (editingStage) {
+        void applyStageImageVisual(editingStage, fileStore);
+      }
+    };
+
+    if (stageSpriteRowInput instanceof HTMLInputElement) {
+      stageSpriteRowInput.addEventListener("input", handleSpritePlacementInput);
+    }
+
+    if (stageSpriteColInput instanceof HTMLInputElement) {
+      stageSpriteColInput.addEventListener("input", handleSpritePlacementInput);
     }
 
     if (stageImagePickButton instanceof HTMLButtonElement) {
@@ -520,7 +747,7 @@ export function createStageDialogController(
     progressRange.value = String(progress);
     updateProgressPreview(progress);
     frame.setTab("basic");
-    syncImageTabFromStage(target);
+    void syncImageTabFromStage(target);
     frame.open();
   }
 
