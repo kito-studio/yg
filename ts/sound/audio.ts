@@ -1,10 +1,9 @@
+import { OFF_LABEL, ON_LABEL } from "./constants";
+
 type ToggleLoopAudioOptions = {
   audio: HTMLAudioElement;
   button: HTMLButtonElement | null;
 };
-
-const ON_LABEL = "🔊";
-const OFF_LABEL = "🔇";
 
 export function playAudio(src: string): void {
   const audio = new Audio(src);

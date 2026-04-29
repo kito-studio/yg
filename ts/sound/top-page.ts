@@ -1,9 +1,5 @@
 import { playAudio } from "./audio";
-
-const TOP_PAGE_SOUND_SOURCE = {
-  bgm: "./wav/gound003.wav",
-  buttonClick: "./wav/hyu.wav",
-} as const;
+import { TOP_PAGE_SOUND_SOURCE } from "./constants";
 
 export function createTopPageBgmAudio(): HTMLAudioElement {
   const audio = new Audio(TOP_PAGE_SOUND_SOURCE.bgm);

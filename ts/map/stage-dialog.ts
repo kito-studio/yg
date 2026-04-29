@@ -1,6 +1,8 @@
 import { FileStoreGateway } from "../data/file-store";
 import { t } from "../i18n";
 import { applyStageImageVisual, applyStageVisuals } from "../obj/stage";
+import { playAudio } from "../sound/audio";
+import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
@@ -497,7 +499,7 @@ export function createStageDialogController(
       return;
     }
 
-    playButtonSound();
+    playAudio(TOP_PAGE_SOUND_SOURCE.buttonClick);
     editingStage = target;
 
     const label = target.dataset.stageLabel || "ST";
