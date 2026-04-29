@@ -667,6 +667,49 @@ body.view-mode .stage-object {
 
 .stage-progress-range {
   width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(12, 8, 4, 0.9);
+  outline: none;
+  cursor: pointer;
+}
+
+.stage-progress-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #9b60d0;
+  cursor: pointer;
+}
+
+.stage-progress-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+}
+
+.stage-progress-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #9b60d0;
+  cursor: pointer;
+  border: none;
+}
+
+.stage-progress-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(12, 8, 4, 0.9);
+}
+
+.stage-progress-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: #9b60d0;
 }
 
 .stage-dialog-footer {

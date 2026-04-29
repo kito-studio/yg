@@ -120,6 +120,12 @@ export function createStageDialogController(
       progressValue.textContent = `${safeValue}%`;
       progressValue.style.color = hpColor;
     }
+
+    if (progressRange instanceof HTMLInputElement) {
+      const trackColor = "rgba(12, 8, 4, 0.9)";
+      const fillColor = "#9b60d0";
+      progressRange.style.background = `linear-gradient(to right, ${fillColor} ${safeValue}%, ${trackColor} ${safeValue}%)`;
+    }
   }
 
   function buildSpriteMetaText(meta: SpriteFileMeta | null): string {
