@@ -1,40 +1,4 @@
-export const PAGE_CLASS = {
-  worldActive: "world-active",
-  logoExiting: "logo-exiting",
-  editMode: "edit-mode",
-  viewMode: "view-mode",
-  stageObject: "stage-object",
-  stageObjectSideImage: "stage-object-side-image",
-  stageObjectSideImageImg: "stage-object-side-image-img",
-  stageObjectHp: "stage-object-hp",
-  stageObjectHpFill: "stage-object-hp-fill",
-  stageDialogShell: "stage-dialog-shell",
-} as const;
-
-export const PAGE_SELECTOR = {
-  stageObject: `.${PAGE_CLASS.stageObject}`,
-  stageObjectHpFill: `.${PAGE_CLASS.stageObjectHpFill}`,
-  stageObjectSideImage: `.${PAGE_CLASS.stageObjectSideImage}`,
-  stageObjectSideImageImg: `.${PAGE_CLASS.stageObjectSideImageImg}`,
-  stageDialogShell: `.${PAGE_CLASS.stageDialogShell}`,
-} as const;
-
-export type TopPageElements = {
-  addButton: HTMLButtonElement | null;
-  logoWrap: HTMLElement | null;
-  modeSwitch: HTMLInputElement | null;
-  stageMap: HTMLElement | null;
-  stageMapContent: HTMLElement | null;
-  dbDownloadButton: HTMLButtonElement | null;
-  dbUploadButton: HTMLButtonElement | null;
-  dbUploadInput: HTMLInputElement | null;
-  dbMaintButton: HTMLButtonElement | null;
-  selectedWorldName: HTMLElement | null;
-  worldLeftButton: HTMLElement | null;
-  worldRightButton: HTMLElement | null;
-  bgmButton: HTMLButtonElement | null;
-};
-export const TOP_PAGE_ID = {
+export const MAP_PAGE_ID = {
   addButton: "addStageBtn",
   logoWrap: "logoWrap",
   modeSwitch: "modeSwitch",
@@ -74,3 +38,40 @@ export const TOP_PAGE_ID = {
   saveButton: "stageDialogSave",
   bgmButton: "bgmBtn",
 } as const;
+
+export const MAPPAGE_CLASS = {
+  worldActive: "world-active",
+  logoExiting: "logo-exiting",
+  editMode: "edit-mode",
+  viewMode: "view-mode",
+  stageObject: "stage-object",
+  stageObjectSideImage: "stage-object-side-image",
+  stageObjectSideImageImg: "stage-object-side-image-img",
+  stageObjectHp: "stage-object-hp",
+  stageObjectHpFill: "stage-object-hp-fill",
+  stageDialogShell: "stage-dialog-shell",
+} as const;
+
+export const MAPPAGE_SELECTOR = {
+  stageObject: `.${MAPPAGE_CLASS.stageObject}`,
+  stageObjectHpFill: `.${MAPPAGE_CLASS.stageObjectHpFill}`,
+  stageObjectSideImage: `.${MAPPAGE_CLASS.stageObjectSideImage}`,
+  stageObjectSideImageImg: `.${MAPPAGE_CLASS.stageObjectSideImageImg}`,
+  stageDialogShell: `.${MAPPAGE_CLASS.stageDialogShell}`,
+} as const;
+
+export type MapPageElements = {
+  addButton: HTMLButtonElement | null;
+  logoWrap: HTMLElement | null;
+  modeSwitch: HTMLInputElement | null;
+  stageMap: HTMLElement | null;
+  stageMapContent: HTMLElement | null;
+  dbDownloadButton: HTMLButtonElement | null;
+  dbUploadButton: HTMLButtonElement | null;
+  dbUploadInput: HTMLInputElement | null;
+  dbMaintButton: HTMLButtonElement | null;
+  selectedWorldName: HTMLElement | null;
+  worldLeftButton: HTMLElement | null;
+  worldRightButton: HTMLElement | null;
+  bgmButton: HTMLButtonElement | null;
+};

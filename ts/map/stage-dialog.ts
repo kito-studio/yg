@@ -1,9 +1,9 @@
 import { FileStoreGateway } from "../data/file-store";
-import { PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
 import { applyStageImageVisual, applyStageVisuals } from "../obj/stage";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
+import { MAPPAGE_SELECTOR } from "./dom";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
 
 type StageDialogElements = {
@@ -181,7 +181,8 @@ export function createStageDialogController(
     oldPop?.remove();
 
     const overlayRoot =
-      document.querySelector(PAGE_SELECTOR.stageDialogShell) || document.body;
+      document.querySelector(MAPPAGE_SELECTOR.stageDialogShell) ||
+      document.body;
     const createdUrls: string[] = [];
     const close = () => {
       for (const url of createdUrls) {

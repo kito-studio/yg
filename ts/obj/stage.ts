@@ -1,13 +1,35 @@
 import { FileStoreGateway } from "../data/file-store";
-import { PAGE_CLASS, PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
+import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
 import {
   buildStageId,
   clampProgress,
   getHpColor,
   normalizeHexColor,
 } from "../map/stage-model";
+
+export type StageRecord = {
+  stgId: string;
+  wId: string;
+  parentStgId: string;
+  ord: number;
+  nm: string;
+  desc: string;
+  baseColor: string;
+  progress: number;
+  imgPath: string;
+  mapImgPath: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  rot: number;
+  mode: string;
+  isLocked: number;
+  t_c: number;
+  t_u: number;
+};
 
 export type StageObjectHandlers = {
   onPointerDown: (event: PointerEvent) => void;
@@ -21,7 +43,7 @@ export function createStageObject(
 ): HTMLButtonElement {
   const el = document.createElement("button");
   el.type = "button";
-  el.className = PAGE_CLASS.stageObject;
+  el.className = MAPPAGE_CLASS.stageObject;
   el.dataset.stageId = stage.stgId;
   el.dataset.stageWorldId = stage.wId;
   el.dataset.parentStageId = stage.parentStgId;
@@ -36,21 +58,21 @@ export function createStageObject(
   el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
 
   const sideImage = document.createElement("span");
-  sideImage.className = PAGE_CLASS.stageObjectSideImage;
+  sideImage.className = MAPPAGE_CLASS.stageObjectSideImage;
   sideImage.setAttribute("aria-hidden", "true");
 
   const sideImageImg = document.createElement("img");
-  sideImageImg.className = PAGE_CLASS.stageObjectSideImageImg;
+  sideImageImg.className = MAPPAGE_CLASS.stageObjectSideImageImg;
   sideImageImg.alt = "";
   sideImage.append(sideImageImg);
   el.append(sideImage);
 
   const hp = document.createElement("span");
-  hp.className = PAGE_CLASS.stageObjectHp;
+  hp.className = MAPPAGE_CLASS.stageObjectHp;
   hp.setAttribute("aria-hidden", "true");
 
   const hpFill = document.createElement("span");
-  hpFill.className = PAGE_CLASS.stageObjectHpFill;
+  hpFill.className = MAPPAGE_CLASS.stageObjectHpFill;
   hp.append(hpFill);
   el.append(hp);
 
@@ -73,7 +95,7 @@ export function applyStageVisuals(
   target.style.setProperty("--stage-base-color", color);
 
   const hpFill = target.querySelector(
-    PAGE_SELECTOR.stageObjectHpFill,
+    MAPPAGE_SELECTOR.stageObjectHpFill,
   ) as HTMLElement | null;
   if (hpFill) {
     hpFill.style.width = `${progress}%`;
@@ -88,10 +110,10 @@ export async function applyStageImageVisual(
   fileStore: FileStoreGateway,
 ): Promise<void> {
   const sideImage = target.querySelector(
-    PAGE_SELECTOR.stageObjectSideImage,
+    MAPPAGE_SELECTOR.stageObjectSideImage,
   ) as HTMLElement | null;
   const sideImageImg = target.querySelector(
-    PAGE_SELECTOR.stageObjectSideImageImg,
+    MAPPAGE_SELECTOR.stageObjectSideImageImg,
   ) as HTMLImageElement | null;
   if (!sideImage || !sideImageImg) {
     return;
@@ -140,25 +162,3 @@ export function createNewStageRecord(ord: number): StageRecord {
     t_u: now,
   };
 }
-
-export type StageRecord = {
-  stgId: string;
-  wId: string;
-  parentStgId: string;
-  ord: number;
-  nm: string;
-  desc: string;
-  baseColor: string;
-  progress: number;
-  imgPath: string;
-  mapImgPath: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  rot: number;
-  mode: string;
-  isLocked: number;
-  t_c: number;
-  t_u: number;
-};

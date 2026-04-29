@@ -6,6 +6,7 @@ import {
 } from "../data/yg-idb";
 import { openYGDatabase } from "../init-db";
 import { StageRecord } from "../obj/stage";
+import { WorldRow } from "../obj/world";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "./constants";
 import {
   clampProgress,
@@ -13,13 +14,6 @@ import {
   normalizeHexColor,
   normalizeStageRow,
 } from "./stage-model";
-
-type WorldRow = {
-  wId?: string;
-  nm?: string;
-  ord?: number;
-  mapImgPath?: string;
-};
 
 export type WorldHeaderRecord = {
   wId: string;

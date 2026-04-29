@@ -2,12 +2,6 @@ import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
-import {
-  PAGE_CLASS,
-  PAGE_SELECTOR,
-  TOP_PAGE_ID,
-  TopPageElements,
-} from "./dom/page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
 import {
@@ -21,6 +15,12 @@ import {
   MIN_MAP_SCALE,
   STAGE_MAP_CONTENT_SIZE,
 } from "./map/constants";
+import {
+  MAP_PAGE_ID,
+  MAPPAGE_CLASS,
+  MAPPAGE_SELECTOR,
+  MapPageElements,
+} from "./map/dom";
 import {
   revealWorld,
   shouldSkipIntro,
@@ -61,7 +61,7 @@ import { createStageInteractionHandlers } from "./ui/stage-interactions";
 
 // －－－ 世界地図画面の構成 －－－
 type TopPageContext = {
-  elements: TopPageElements;
+  elements: MapPageElements;
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
   world: WorldHeaderRecord | null;
@@ -105,7 +105,7 @@ async function initTopPage(): Promise<void> {
   context = createTopPageContext(elements);
 
   applyI18n(document);
-  document.body.classList.add(PAGE_CLASS.viewMode);
+  document.body.classList.add(MAPPAGE_CLASS.viewMode);
   hideElementOnLocalHost("info");
 
   context.mapViewport.setup();
@@ -137,8 +137,8 @@ async function initTopPage(): Promise<void> {
     skipIntro: shouldSkipIntro(document.referrer, window.location.hostname),
     dismissTimeoutMs: LOGO_DISMISS_TIMEOUT_MS,
     fadeDurationMs: LOGO_FADE_DURATION_MS,
-    exitingClass: PAGE_CLASS.logoExiting,
-    activeClass: PAGE_CLASS.worldActive,
+    exitingClass: MAPPAGE_CLASS.logoExiting,
+    activeClass: MAPPAGE_CLASS.worldActive,
   });
 
   setupLoopAudioToggle({
@@ -148,19 +148,19 @@ async function initTopPage(): Promise<void> {
 
   await waitForMapRevealComplete({
     stageMap: elements.stageMap,
-    activeClass: PAGE_CLASS.worldActive,
+    activeClass: MAPPAGE_CLASS.worldActive,
   });
   await rerenderStagesFromDb();
 
   setupModeSwitch({
     modeSwitch: elements.modeSwitch,
-    editModeClass: PAGE_CLASS.editMode,
-    viewModeClass: PAGE_CLASS.viewMode,
+    editModeClass: MAPPAGE_CLASS.editMode,
+    viewModeClass: MAPPAGE_CLASS.viewMode,
     defaultEditMode: false,
   });
 
   elements.addButton?.addEventListener("click", async () => {
-    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
       return;
     }
     if (!context) {
@@ -187,7 +187,7 @@ async function initTopPage(): Promise<void> {
   });
 }
 
-async function setupWorldHeader(elements: TopPageElements): Promise<void> {
+async function setupWorldHeader(elements: MapPageElements): Promise<void> {
   if (!context) {
     return;
   }
@@ -242,39 +242,39 @@ async function mountTopPageParts(): Promise<void> {
   }
 }
 
-function getTopPageElements(): TopPageElements {
+function getTopPageElements(): MapPageElements {
   return {
     addButton: document.getElementById(
-      TOP_PAGE_ID.addButton,
+      MAP_PAGE_ID.addButton,
     ) as HTMLButtonElement | null,
-    logoWrap: document.getElementById(TOP_PAGE_ID.logoWrap),
+    logoWrap: document.getElementById(MAP_PAGE_ID.logoWrap),
     modeSwitch: document.getElementById(
-      TOP_PAGE_ID.modeSwitch,
+      MAP_PAGE_ID.modeSwitch,
     ) as HTMLInputElement | null,
-    stageMap: document.getElementById(TOP_PAGE_ID.stageMap),
-    stageMapContent: document.getElementById(TOP_PAGE_ID.stageMapContent),
+    stageMap: document.getElementById(MAP_PAGE_ID.stageMap),
+    stageMapContent: document.getElementById(MAP_PAGE_ID.stageMapContent),
     dbDownloadButton: document.getElementById(
-      TOP_PAGE_ID.dbDownloadButton,
+      MAP_PAGE_ID.dbDownloadButton,
     ) as HTMLButtonElement | null,
     dbUploadButton: document.getElementById(
-      TOP_PAGE_ID.dbUploadButton,
+      MAP_PAGE_ID.dbUploadButton,
     ) as HTMLButtonElement | null,
     dbUploadInput: document.getElementById(
-      TOP_PAGE_ID.dbUploadInput,
+      MAP_PAGE_ID.dbUploadInput,
     ) as HTMLInputElement | null,
     dbMaintButton: document.getElementById(
-      TOP_PAGE_ID.dbMaintButton,
+      MAP_PAGE_ID.dbMaintButton,
     ) as HTMLButtonElement | null,
-    selectedWorldName: document.getElementById(TOP_PAGE_ID.selectedWorldName),
-    worldLeftButton: document.getElementById(TOP_PAGE_ID.worldLeftButton),
-    worldRightButton: document.getElementById(TOP_PAGE_ID.worldRightButton),
+    selectedWorldName: document.getElementById(MAP_PAGE_ID.selectedWorldName),
+    worldLeftButton: document.getElementById(MAP_PAGE_ID.worldLeftButton),
+    worldRightButton: document.getElementById(MAP_PAGE_ID.worldRightButton),
     bgmButton: document.getElementById(
-      TOP_PAGE_ID.bgmButton,
+      MAP_PAGE_ID.bgmButton,
     ) as HTMLButtonElement | null,
   };
 }
 
-function createTopPageContext(elements: TopPageElements): TopPageContext {
+function createTopPageContext(elements: MapPageElements): TopPageContext {
   const fileStore = createFileStoreGateway();
   const bgmAudio = createTopPageBgmAudio();
   return {
@@ -292,7 +292,7 @@ function createTopPageContext(elements: TopPageElements): TopPageContext {
 }
 
 function createTopPageMapViewport(
-  elements: TopPageElements,
+  elements: MapPageElements,
 ): MapViewportController {
   // ビューポートはパン/ズームを担当し、座標は常にコンテンツ基準で扱う。
   return createMapViewportController({
@@ -311,8 +311,8 @@ function createTopPageMapViewport(
       }
 
       return (
-        document.body.classList.contains(PAGE_CLASS.editMode) &&
-        !!event.target.closest(PAGE_SELECTOR.stageObject)
+        document.body.classList.contains(MAPPAGE_CLASS.editMode) &&
+        !!event.target.closest(MAPPAGE_SELECTOR.stageObject)
       );
     },
   });
@@ -422,7 +422,7 @@ async function rerenderStagesFromDb(): Promise<void> {
   const cntx = context;
 
   const current = Array.from(
-    document.querySelectorAll(PAGE_SELECTOR.stageObject),
+    document.querySelectorAll(MAPPAGE_SELECTOR.stageObject),
   );
   for (const el of current) {
     el.remove();

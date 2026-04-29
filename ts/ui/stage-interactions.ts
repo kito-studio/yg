@@ -1,4 +1,4 @@
-import { PAGE_CLASS } from "../dom/page";
+import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
 
 type StageMapViewport = {
@@ -48,7 +48,7 @@ export function createStageInteractionHandlers(
   } = options;
 
   function onStageClick(event: MouseEvent): void {
-    if (!document.body.classList.contains(PAGE_CLASS.viewMode)) {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.viewMode)) {
       return;
     }
 
@@ -76,7 +76,7 @@ export function createStageInteractionHandlers(
   }
 
   function onStageDoubleClick(event: MouseEvent): void {
-    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
       return;
     }
 
@@ -94,7 +94,7 @@ export function createStageInteractionHandlers(
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (!document.body.classList.contains(PAGE_CLASS.editMode)) {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
       return;
     }
 
