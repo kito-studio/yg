@@ -1,6 +1,6 @@
 import { insertHtmlPart, isLocal } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
-import { setAppStateText } from "./data/yg-idb";
+import { getAppStateText, setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
@@ -36,6 +36,7 @@ import {
   saveStageFromElement,
   StageRecord,
 } from "./obj/stage";
+import { TaskRecord } from "./obj/task";
 import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
@@ -61,8 +62,8 @@ type MapPageContext = {
   worlds: WorldRecord[];
   world: WorldRecord | null;
   stages: StageRecord[];
-  selectedWorldId: string;
-  selectedStageId: string;
+  stage: StageRecord | null;
+  tasks: TaskRecord[];
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
@@ -148,8 +149,8 @@ async function initMapPage(): Promise<void> {
 
     const nextOrd = getVisibleStages(cntx).length + 1;
     const stageRecord = createNewStageRecord(nextOrd);
-    stageRecord.wId = cntx.selectedWorldId;
-    stageRecord.parentStgId = cntx.selectedStageId;
+    stageRecord.wId = cntx.world?.wId || "";
+    stageRecord.parentStgId = cntx.stage?.stgId || "";
     const stageObject = createStageButton(stageRecord, cntx);
 
     appendStageObject(stageObject, cntx);
@@ -197,9 +198,9 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     stageDialog: createStageDialog(fileStore),
     stageHandlers: createStageHandlers(),
     world: null,
+    stage: null,
     stages: [],
-    selectedWorldId: "",
-    selectedStageId: "",
+    tasks: [],
     worlds: [],
     bgmAudio,
     fileStore,
@@ -219,17 +220,16 @@ async function setupHeader(
     onSelect: async (nextId) => {
       const currentStage = getCurrentStage(cntx);
       if (!currentStage) {
-        cntx.selectedWorldId = nextId;
         cntx.world = cntx.worlds.find((world) => world.wId === nextId) || null;
-        cntx.selectedStageId = "";
+        cntx.stage = null;
         await setAppStateText("worlds", nextId);
         await setAppStateText("stages", null);
         await rerenderStagesFromDb();
         return;
       }
 
-      cntx.selectedStageId = nextId;
-      await setAppStateText("stages", nextId);
+      cntx.stage = cntx.stages.find((stage) => stage.stgId === nextId) || null;
+      await setAppStateText("stages", cntx.stage?.stgId || null);
       await rerenderStagesFromDb();
     },
   });
@@ -254,7 +254,8 @@ function createStageHandlers(): ReturnType<
       if (!context) {
         return;
       }
-      context.selectedStageId = stgId;
+      context.stage =
+        context.stages.find((stage) => stage.stgId === stgId) || null;
       await rerenderStagesFromDb();
     },
     saveStageFromElement: async (target) => {
@@ -327,19 +328,16 @@ function getNewStageAnchorPoint(cntx: MapPageContext): {
 
 async function syncHeaderSelection(cntx: MapPageContext): Promise<void> {
   cntx.worlds = await loadWorlds();
-  const world = await loadSelectedWorld();
-  cntx.selectedWorldId = world?.wId || cntx.worlds[0]?.wId || "";
-  cntx.world = world;
+  cntx.world = (await loadSelectedWorld()) || cntx.worlds[0] || null;
+  cntx.stage = null;
   // URLパラメータからのディープリンクのみ反映する。
-  // savedStageId は stages ロード前にセットすると no_world になるため、
-  // rerenderStagesFromDb 内で解決する。
+  // stages はまだロード前なので appState に退避し、rerenderStagesFromDb 内で解決する。
   const queryStageId = String(
     new URLSearchParams(window.location.search).get("stgId") || "",
   ).trim();
   if (queryStageId) {
-    cntx.selectedStageId = queryStageId;
+    await setAppStateText("stages", queryStageId);
   }
-  // renderCurrentHeaderLabel は stages ロード前に呼ばない。rerenderStagesFromDb 内で呼ばれる。
 }
 
 function renderCurrentHeaderLabel(
@@ -393,9 +391,11 @@ async function rerenderStagesFromDb(): Promise<void> {
 
   const stages = await loadStages();
   cntx.stages = stages;
-  cntx.selectedStageId = resolveSelectedStageId(cntx);
+  cntx.stage = await resolveSelectedStage(cntx);
   cntx.world =
-    cntx.worlds.find((world) => world.wId === cntx.selectedWorldId) || null;
+    cntx.worlds.find((world) => world.wId === cntx.world?.wId) ||
+    cntx.worlds[0] ||
+    null;
 
   await applyCurrentMapBackground(cntx);
   renderCurrentHeaderLabel(cntx, cntx.elements.selectedWorldName);
@@ -408,16 +408,16 @@ async function rerenderStagesFromDb(): Promise<void> {
 }
 
 function getVisibleStages(cntx: MapPageContext): StageRecord[] {
+  const selectedWorldId = cntx.world?.wId || "";
+  const selectedStageId = cntx.stage?.stgId || "";
   return cntx.stages
-    .filter((stage) => stage.wId === cntx.selectedWorldId)
-    .filter((stage) => stage.parentStgId === cntx.selectedStageId)
+    .filter((stage) => stage.wId === selectedWorldId)
+    .filter((stage) => stage.parentStgId === selectedStageId)
     .sort((a, b) => a.ord - b.ord);
 }
 
 function getCurrentStage(cntx: MapPageContext): StageRecord | null {
-  return (
-    cntx.stages.find((stage) => stage.stgId === cntx.selectedStageId) || null
-  );
+  return cntx.stage;
 }
 
 function getHeaderItems(
@@ -442,20 +442,25 @@ function getHeaderItems(
 }
 
 function getHeaderSelectedId(cntx: MapPageContext): string {
-  return cntx.selectedStageId || cntx.selectedWorldId;
+  return cntx.stage?.stgId || cntx.world?.wId || "";
 }
 
-function resolveSelectedStageId(cntx: MapPageContext): string {
-  const selected = cntx.stages.find(
-    (stage) => stage.stgId === cntx.selectedStageId,
-  );
+async function resolveSelectedStage(
+  cntx: MapPageContext,
+): Promise<StageRecord | null> {
+  const savedStageId = String((await getAppStateText("stages")) || "").trim();
+  if (!savedStageId) {
+    return null;
+  }
+
+  const selected = cntx.stages.find((stage) => stage.stgId === savedStageId);
   if (!selected) {
-    return "";
+    return null;
   }
-  if (selected.wId !== cntx.selectedWorldId) {
-    return "";
+  if (selected.wId !== (cntx.world?.wId || "")) {
+    return null;
   }
-  return selected.stgId;
+  return selected;
 }
 
 async function applyCurrentMapBackground(cntx: MapPageContext): Promise<void> {
@@ -493,7 +498,9 @@ async function stepOutSelection(): Promise<void> {
     return;
   }
 
-  context.selectedStageId = currentStage.parentStgId || "";
-  await setAppStateText("stages", context.selectedStageId || null);
+  context.stage =
+    context.stages.find((stage) => stage.stgId === currentStage.parentStgId) ||
+    null;
+  await setAppStateText("stages", context.stage?.stgId || null);
   await rerenderStagesFromDb();
 }
