@@ -1,13 +1,13 @@
 import { FileStoreGateway } from "../data/file-store";
 import { PAGE_CLASS, PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
-import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../top-page/constants";
+import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
 import {
   buildStageId,
   clampProgress,
   getHpColor,
   normalizeHexColor,
-} from "../top-page/stage-model";
+} from "../map/stage-model";
 
 export type StageObjectHandlers = {
   onPointerDown: (event: PointerEvent) => void;
@@ -114,6 +114,7 @@ export async function applyStageImageVisual(
   sideImage.hidden = false;
   sideImageImg.src = objectUrl;
 }
+
 export function createNewStageRecord(ord: number): StageRecord {
   // 新規ステージの既定値を1か所に集約して調整しやすくする。
   const now = Date.now();
@@ -139,6 +140,7 @@ export function createNewStageRecord(ord: number): StageRecord {
     t_u: now,
   };
 }
+
 export type StageRecord = {
   stgId: string;
   wId: string;

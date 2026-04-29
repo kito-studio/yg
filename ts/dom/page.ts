@@ -18,6 +18,7 @@ export const PAGE_SELECTOR = {
   stageObjectSideImageImg: `.${PAGE_CLASS.stageObjectSideImageImg}`,
   stageDialogShell: `.${PAGE_CLASS.stageDialogShell}`,
 } as const;
+
 export type TopPageElements = {
   addButton: HTMLButtonElement | null;
   logoWrap: HTMLElement | null;
@@ -33,3 +34,43 @@ export type TopPageElements = {
   worldRightButton: HTMLElement | null;
   bgmButton: HTMLButtonElement | null;
 };
+export const TOP_PAGE_ID = {
+  addButton: "addStageBtn",
+  logoWrap: "logoWrap",
+  modeSwitch: "modeSwitch",
+  stageMap: "stageMap",
+  stageMapContent: "stageMapContent",
+  dbDownloadButton: "dbDownloadBtn",
+  dbUploadButton: "dbUploadBtn",
+  dbUploadInput: "dbUploadInput",
+  dbMaintButton: "dbMaintBtn",
+  selectedWorldName: "selectedWorldName",
+  worldLeftButton: "prev",
+  worldRightButton: "next",
+  dialog: "stageSettingsDialog",
+  dialogBackdrop: "stageDialogBackdrop",
+  dialogTitle: "stageDialogTitle",
+  dialogTabBasic: "stageDialogTabBasic",
+  dialogTabImage: "stageDialogTabImage",
+  dialogPanelBasic: "stageDialogPanelBasic",
+  dialogPanelImage: "stageDialogPanelImage",
+  progressRange: "stageProgressRange",
+  progressBarFill: "stageProgressBarFill",
+  progressValue: "stageProgressValue",
+  nameInput: "stageNameInput",
+  descInput: "stageDescInput",
+  colorInput: "stageColorInput",
+  stageImageFileInput: "stageImageFileInput",
+  stageImagePickButton: "stageImagePickBtn",
+  stageImageClearButton: "stageImageClearBtn",
+  stageImageSaveButton: "stageImageSaveBtn",
+  stageImageCurrent: "stageImageCurrent",
+  mapImageFileInput: "mapImageFileInput",
+  mapImagePickButton: "mapImagePickBtn",
+  mapImageClearButton: "mapImageClearBtn",
+  mapImageSaveButton: "mapImageSaveBtn",
+  mapImageCurrent: "mapImageCurrent",
+  cancelButton: "stageDialogCancel",
+  saveButton: "stageDialogSave",
+  bgmButton: "bgmBtn",
+} as const;

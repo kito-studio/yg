@@ -1,4 +1,4 @@
-import { TOP_PAGE_ID } from "../dom/top-page";
+import { TOP_PAGE_ID } from "../dom/page";
 
 export function getStageDialogElements() {
   // ダイアログに必要なDOM参照をまとめて取得する。

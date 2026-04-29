@@ -2,21 +2,14 @@ import { insertHtmlPart } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
-import { PAGE_CLASS, PAGE_SELECTOR, TopPageElements } from "./dom/page";
-import { TOP_PAGE_ID } from "./dom/top-page";
+import {
+  PAGE_CLASS,
+  PAGE_SELECTOR,
+  TOP_PAGE_ID,
+  TopPageElements,
+} from "./dom/page";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
-import {
-  applyStageVisuals,
-  createNewStageRecord,
-  createStageObject,
-  StageRecord,
-} from "./obj/stage-object";
-import { setupLoopAudioToggle } from "./sound/audio";
-import {
-  createTopPageBgmAudio,
-  playTopPageButtonSound,
-} from "./sound/top-page";
 import {
   LOGO_DISMISS_TIMEOUT_MS,
   LOGO_FADE_DURATION_MS,
@@ -27,21 +20,32 @@ import {
   MAX_MAP_SCALE,
   MIN_MAP_SCALE,
   STAGE_MAP_CONTENT_SIZE,
-} from "./top-page/constants";
+} from "./map/constants";
 import {
   revealWorld,
   shouldSkipIntro,
   waitForMapRevealComplete,
-} from "./top-page/reveal";
+} from "./map/reveal";
 import {
   loadSelectedWorld,
   loadStages,
   loadWorlds,
   saveStageFromElement,
   WorldHeaderRecord,
-} from "./top-page/stage-db";
-import { createStageDialogController } from "./top-page/stage-dialog";
-import { getStageDialogElements } from "./top-page/stage-dialog-elements";
+} from "./map/stage-db";
+import { createStageDialogController } from "./map/stage-dialog";
+import { getStageDialogElements } from "./map/stage-dialog-elements";
+import {
+  applyStageVisuals,
+  createNewStageRecord,
+  createStageObject,
+  StageRecord,
+} from "./obj/stage";
+import { setupLoopAudioToggle } from "./sound/audio";
+import {
+  createTopPageBgmAudio,
+  playTopPageButtonSound,
+} from "./sound/top-page";
 import {
   hideElementOnLocalHost,
   renderHeaderSelectedLabel,

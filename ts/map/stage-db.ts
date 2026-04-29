@@ -5,7 +5,7 @@ import {
   transactionDone,
 } from "../data/yg-idb";
 import { openYGDatabase } from "../init-db";
-import { StageRecord } from "../obj/stage-object";
+import { StageRecord } from "../obj/stage";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "./constants";
 import {
   clampProgress,

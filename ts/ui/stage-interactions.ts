@@ -1,5 +1,5 @@
 import { PAGE_CLASS } from "../dom/page";
-import { beginStageDrag } from "../top-page/drag";
+import { beginStageDrag } from "../map/drag";
 
 type StageMapViewport = {
   isClickSuppressed: () => boolean;

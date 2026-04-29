@@ -1,7 +1,7 @@
 import { FileStoreGateway } from "../data/file-store";
 import { PAGE_SELECTOR } from "../dom/page";
 import { t } from "../i18n";
-import { applyStageImageVisual, applyStageVisuals } from "../obj/stage-object";
+import { applyStageImageVisual, applyStageVisuals } from "../obj/stage";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
