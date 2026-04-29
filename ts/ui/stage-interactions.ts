@@ -1,5 +1,13 @@
+import { setAppStateText } from "../data/yg-idb";
+import { context, MapPageContext, rerenderStagesFromDb } from "../map";
 import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
+import {
+  applyStageVisuals,
+  createStageObject,
+  saveStageFromElement,
+  StageRecord,
+} from "../obj/stage";
 
 type StageMapViewport = {
   isClickSuppressed: () => boolean;
@@ -132,4 +140,48 @@ export function createStageInteractionHandlers(
     onPointerDown,
     beginDrag,
   };
+}
+export function createStageButton(
+  stage: StageRecord,
+  cntx: MapPageContext,
+): HTMLButtonElement {
+  const stageObject = createStageObject(stage, {
+    onPointerDown: cntx.stageHandlers.onPointerDown,
+    onDoubleClick: cntx.stageHandlers.onStageDoubleClick,
+    onClick: cntx.stageHandlers.onStageClick,
+  });
+  applyStageVisuals(stageObject, cntx.fileStore);
+  return stageObject;
+}
+
+export function appendStageObject(
+  target: HTMLButtonElement,
+  cntx: MapPageContext,
+): void {
+  if (cntx.elements.stageMapContent instanceof HTMLElement) {
+    cntx.elements.stageMapContent.append(target);
+    return;
+  }
+  document.body.append(target);
+}
+export function createStageHandlers(): ReturnType<
+  typeof createStageInteractionHandlers
+> {
+  return createStageInteractionHandlers({
+    getContext: () => context,
+    saveSelectedStageId: async (stgId) => {
+      await setAppStateText("stages", stgId);
+    },
+    navigateToStage: async (stgId) => {
+      if (!context) {
+        return;
+      }
+      context.stage =
+        context.stages.find((stage) => stage.stgId === stgId) || null;
+      await rerenderStagesFromDb();
+    },
+    saveStageFromElement: async (target) => {
+      await saveStageFromElement(target);
+    },
+  });
 }

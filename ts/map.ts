@@ -22,7 +22,6 @@ import {
   MAPPAGE_SELECTOR,
   MapPageElements,
 } from "./map/dom";
-import { createMapObjectElement } from "./map/object-view";
 import {
   revealWorld,
   shouldSkipIntro,
@@ -30,21 +29,13 @@ import {
 } from "./map/reveal";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
-import { getElementPosition } from "./map/stage-model";
 import {
-  applyStageVisuals,
   createNewStageRecord,
-  createStageObject,
   loadStages,
   saveStageFromElement,
   StageRecord,
 } from "./obj/stage";
-import {
-  createNewTaskRecord,
-  loadTasks,
-  TaskRecord,
-  upsertTask,
-} from "./obj/task";
+import { createNewTaskRecord, loadTasks, TaskRecord } from "./obj/task";
 import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
@@ -58,12 +49,23 @@ import {
   createMapViewportController,
   MapViewportController,
 } from "./ui/map-viewport";
-import { createStageInteractionHandlers } from "./ui/stage-interactions";
-import { createTaskInteractionHandlers } from "./ui/task-interactions";
+import {
+  appendStageObject,
+  createStageButton,
+  createStageHandlers,
+  createStageInteractionHandlers,
+} from "./ui/stage-interactions";
+import {
+  appendTaskObject,
+  createTaskButton,
+  createTaskHandlers,
+  createTaskInteractionHandlers,
+  saveTaskFromElement,
+} from "./ui/task-interactions";
 import { lg } from "./util/log";
 
 // －－－ 地図画面要素 －－－
-type MapPageContext = {
+export type MapPageContext = {
   elements: MapPageElements;
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
@@ -78,7 +80,7 @@ type MapPageContext = {
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
-let context: MapPageContext | null = null;
+export let context: MapPageContext | null = null;
 
 // －－－ 初期化－－－
 void initMapPage();
@@ -308,47 +310,6 @@ async function setupHeader(
   }
 }
 
-function createStageHandlers(): ReturnType<
-  typeof createStageInteractionHandlers
-> {
-  return createStageInteractionHandlers({
-    getContext: () => context,
-    saveSelectedStageId: async (stgId) => {
-      await setAppStateText("stages", stgId);
-    },
-    navigateToStage: async (stgId) => {
-      if (!context) {
-        return;
-      }
-      context.stage =
-        context.stages.find((stage) => stage.stgId === stgId) || null;
-      await rerenderStagesFromDb();
-    },
-    saveStageFromElement: async (target) => {
-      await saveStageFromElement(target);
-    },
-  });
-}
-
-function createTaskHandlers(): ReturnType<
-  typeof createTaskInteractionHandlers
-> {
-  return createTaskInteractionHandlers({
-    getContext: () => context,
-    saveTaskFromElement: async (target) => {
-      if (!context) {
-        return;
-      }
-      await saveTaskFromElement(target, context);
-    },
-    onAfterDragEnd: async () => {
-      await rerenderStagesFromDb();
-    },
-    // Task dialog is not implemented yet. Keep the hook for parity with stages.
-    onOpenTaskEditor: async () => {},
-  });
-}
-
 function createMapViewport(elements: MapPageElements): MapViewportController {
   // ビューポートはパン/ズームを担当し、座標は常にコンテンツ基準で扱う。
   return createMapViewportController({
@@ -445,108 +406,7 @@ function renderCurrentHeaderLabel(
   });
 }
 
-function createStageButton(
-  stage: StageRecord,
-  cntx: MapPageContext,
-): HTMLButtonElement {
-  const stageObject = createStageObject(stage, {
-    onPointerDown: cntx.stageHandlers.onPointerDown,
-    onDoubleClick: cntx.stageHandlers.onStageDoubleClick,
-    onClick: cntx.stageHandlers.onStageClick,
-  });
-  applyStageVisuals(stageObject, cntx.fileStore);
-  return stageObject;
-}
-
-function appendStageObject(
-  target: HTMLButtonElement,
-  cntx: MapPageContext,
-): void {
-  if (cntx.elements.stageMapContent instanceof HTMLElement) {
-    cntx.elements.stageMapContent.append(target);
-    return;
-  }
-  document.body.append(target);
-}
-
-function createTaskButton(
-  task: TaskRecord,
-  cntx: MapPageContext,
-): HTMLButtonElement {
-  const taskObject = createMapObjectElement({
-    className: `${MAPPAGE_CLASS.stageObject} ${MAPPAGE_CLASS.taskObject}`,
-    label: task.nm,
-    ariaLabel: task.nm || t("add_task"),
-    baseColor: task.clr || "#6fd3ff",
-    dataset: {
-      taskId: task.tkId,
-      taskWorldId: task.wId,
-      taskStageId: task.stgId || "",
-      taskOrd: String(task.ord),
-      taskColor: task.clr,
-    },
-    // タスクでも同構造を維持しておくと、画像/HP表現を差し込む拡張が容易。
-    withSideImage: true,
-    withHpGauge: true,
-  });
-  taskObject.addEventListener("pointerdown", cntx.taskHandlers.onPointerDown);
-  taskObject.addEventListener("dblclick", cntx.taskHandlers.onTaskDoubleClick);
-  taskObject.addEventListener("click", cntx.taskHandlers.onTaskClick);
-  return taskObject;
-}
-
-function appendTaskObject(
-  target: HTMLButtonElement,
-  cntx: MapPageContext,
-): void {
-  if (cntx.elements.stageMapContent instanceof HTMLElement) {
-    cntx.elements.stageMapContent.append(target);
-    return;
-  }
-  document.body.append(target);
-}
-
-async function saveTaskFromElement(
-  target: HTMLButtonElement,
-  cntx: MapPageContext,
-  ordOverride?: number,
-): Promise<void> {
-  const tkId = String(target.dataset.taskId || "").trim();
-  const wId = String(
-    target.dataset.taskWorldId || cntx.world?.wId || "",
-  ).trim();
-  const stgIdText = String(
-    target.dataset.taskStageId || cntx.stage?.stgId || "",
-  ).trim();
-  const stgId = stgIdText || null;
-  const nm = String(target.dataset.stageLabel || "").trim();
-  if (!tkId || !wId || !nm) {
-    return;
-  }
-
-  const ordFromData = Number.parseInt(target.dataset.taskOrd || "", 10);
-  const ord = Number.isFinite(ordOverride)
-    ? Number(ordOverride)
-    : Number.isFinite(ordFromData)
-      ? ordFromData
-      : 0;
-  const current = cntx.tasks.find((task) => task.tkId === tkId);
-  const pos = getElementPosition(target);
-
-  await upsertTask({
-    ...(current || createNewTaskRecord(ord || 1)),
-    tkId,
-    wId,
-    stgId,
-    ord,
-    nm,
-    clr: String(target.dataset.taskColor || current?.clr || "#6fd3ff"),
-    x: pos.x,
-    y: pos.y,
-  });
-}
-
-async function rerenderStagesFromDb(): Promise<void> {
+export async function rerenderStagesFromDb(): Promise<void> {
   if (!context) {
     return;
   }
