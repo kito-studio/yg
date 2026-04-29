@@ -370,6 +370,7 @@ body.world-active:not(.edit-mode) .add-task-btn {
   touch-action: none;
   overflow: visible;
   z-index: 8;
+  filter: drop-shadow(0 0 12px rgba(32, 0, 64, 0.9));
 }
 
 .stage-object-side-image {
@@ -389,7 +390,6 @@ body.world-active:not(.edit-mode) .add-task-btn {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
 }
 
 .stage-object-side-image-img[hidden] {
@@ -404,7 +404,6 @@ body.world-active:not(.edit-mode) .add-task-btn {
   background-position: calc(var(--sprite-col, 0) * -1 * var(--sprite-cell-size))
     calc(var(--sprite-row, 0) * -1 * var(--sprite-cell-size));
   --sprite-tone-filter: none;
-  filter: var(--sprite-tone-filter) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
 }
 
 .stage-object-side-image-sprite.sprite-tone-red {
