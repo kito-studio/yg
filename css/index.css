@@ -66,6 +66,12 @@ body.world-active .page-header {
   transition-delay: 120ms;
 }
 
+.page-header * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  cursor: pointer;
+}
+
 .page-header-value {
   font-size: 18px;
   letter-spacing: 0.03em;

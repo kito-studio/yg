@@ -40,7 +40,6 @@ type StageDialogControllerOptions = {
   elements: StageDialogElements;
   fileStore: FileStoreGateway;
   saveStageFromElement: (target: HTMLButtonElement) => Promise<void>;
-  playButtonSound: () => void;
 };
 
 export type StageDialogController = {
@@ -52,8 +51,7 @@ export type StageDialogController = {
 export function createStageDialogController(
   options: StageDialogControllerOptions,
 ): StageDialogController {
-  const { elements, fileStore, saveStageFromElement, playButtonSound } =
-    options;
+  const { elements, fileStore, saveStageFromElement } = options;
   const {
     dialog,
     backdrop,

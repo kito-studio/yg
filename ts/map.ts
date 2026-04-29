@@ -42,10 +42,7 @@ import {
   StageRecord,
 } from "./obj/stage";
 import { setupLoopAudioToggle } from "./sound/audio";
-import {
-  createTopPageBgmAudio,
-  playTopPageButtonSound,
-} from "./sound/top-page";
+import { createTopPageBgmAudio } from "./sound/top-page";
 import {
   hideElementOnLocalHost,
   renderHeaderSelectedLabel,
@@ -93,10 +90,6 @@ const stageHandlers = createStageInteractionHandlers({
 });
 
 void initTopPage();
-
-function playButtonSound(): void {
-  playTopPageButtonSound();
-}
 
 async function initTopPage(): Promise<void> {
   // 先にHTML断片を組み立ててから、挙動を配線する。
@@ -327,7 +320,6 @@ function createTopPageStageDialog(
     saveStageFromElement: async (target) => {
       await saveStageFromElement(target);
     },
-    playButtonSound,
   });
 }
 
