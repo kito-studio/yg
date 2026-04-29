@@ -320,7 +320,7 @@ async function deleteRow(tableName: string, pkValue: unknown): Promise<void> {
   try {
     const tx = db.transaction(tableName, "readwrite");
     const store = tx.objectStore(tableName);
-    await requestToPromise(store.delete(pkValue));
+    await requestToPromise(store.delete(pkValue as IDBValidKey));
     await transactionDone(tx);
   } finally {
     db.close();
@@ -367,7 +367,7 @@ async function deleteSelectedRows(tableName: string): Promise<void> {
       if (!map.has(token)) {
         continue;
       }
-      await requestToPromise(store.delete(map.get(token)));
+      await requestToPromise(store.delete(map.get(token) as IDBValidKey));
     }
     await transactionDone(tx);
   } finally {
