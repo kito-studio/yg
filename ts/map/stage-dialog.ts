@@ -6,6 +6,7 @@ import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
+import { setMapObjectLabel } from "./object-view";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
 
 type StageDialogElements = {
@@ -564,7 +565,7 @@ export function createStageDialogController(
       Number.parseInt(progressRange.value, 10),
     );
 
-    editingStage.dataset.stageLabel = nextName;
+    setMapObjectLabel(editingStage, nextName);
     editingStage.dataset.stageDesc = nextDesc;
     editingStage.dataset.stageColor = nextColor;
     editingStage.dataset.stageProgress = String(nextProgress);

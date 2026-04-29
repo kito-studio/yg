@@ -52,6 +52,7 @@ export const MAPPAGE_CLASS = {
   viewMode: "view-mode",
   stageObject: "stage-object",
   taskObject: "task-object",
+  stageObjectLabel: "stage-object-label",
   stageObjectSideImage: "stage-object-side-image",
   stageObjectSideImageImg: "stage-object-side-image-img",
   stageObjectSideImageSprite: "stage-object-side-image-sprite",
@@ -65,6 +66,7 @@ export const MAPPAGE_CLASS = {
 export const MAPPAGE_SELECTOR = {
   stageObject: `.${MAPPAGE_CLASS.stageObject}`,
   taskObject: `.${MAPPAGE_CLASS.taskObject}`,
+  stageObjectLabel: `.${MAPPAGE_CLASS.stageObjectLabel}`,
   stageObjectHpFill: `.${MAPPAGE_CLASS.stageObjectHpFill}`,
   stageObjectSideImage: `.${MAPPAGE_CLASS.stageObjectSideImage}`,
   stageObjectSideImageImg: `.${MAPPAGE_CLASS.stageObjectSideImageImg}`,

@@ -50,6 +50,11 @@ export function createMapObjectElement(
     target.append(sideImage);
   }
 
+  const label = document.createElement("span");
+  label.className = MAPPAGE_CLASS.stageObjectLabel;
+  label.textContent = options.label;
+  target.append(label);
+
   if (options.withHpGauge) {
     const hp = document.createElement("span");
     hp.className = MAPPAGE_CLASS.stageObjectHp;
@@ -72,4 +77,17 @@ export function createMapObjectElement(
   }
 
   return target;
+}
+
+export function setMapObjectLabel(
+  target: HTMLButtonElement,
+  labelText: string,
+): void {
+  target.dataset.stageLabel = labelText;
+  const label = target.querySelector(
+    `.${MAPPAGE_CLASS.stageObjectLabel}`,
+  ) as HTMLElement | null;
+  if (label) {
+    label.textContent = labelText;
+  }
 }

@@ -359,15 +359,13 @@ body.world-active:not(.edit-mode) .add-task-btn {
 
 .stage-object {
   position: absolute;
-  width: 256px;
-  height: 32px;
-  border-radius: 10%;
-  border: 5px double rgba(192, 128, 0, 0.85);
-  background: white;
-  opacity: 0.95;
-  box-shadow:
-    0 12px 20px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.16);
+  width: 156px;
+  height: 188px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  opacity: 1;
+  box-shadow: none;
   cursor: grab;
   touch-action: none;
   overflow: visible;
@@ -376,12 +374,12 @@ body.world-active:not(.edit-mode) .add-task-btn {
 
 .stage-object-side-image {
   position: absolute;
-  left: calc(100% + 8px);
-  top: 50%;
+  left: 50%;
+  top: 10px;
   width: 128px;
   height: 128px;
-  transform: translateY(-50%);
-  overflow: hidden;
+  transform: translateX(-50%);
+  overflow: visible;
   pointer-events: none;
   --sprite-cell-size: 128px;
 }
@@ -391,6 +389,7 @@ body.world-active:not(.edit-mode) .add-task-btn {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
 }
 
 .stage-object-side-image-img[hidden] {
@@ -404,29 +403,41 @@ body.world-active:not(.edit-mode) .add-task-btn {
     calc(var(--sprite-rows, 12) * var(--sprite-cell-size));
   background-position: calc(var(--sprite-col, 0) * -1 * var(--sprite-cell-size))
     calc(var(--sprite-row, 0) * -1 * var(--sprite-cell-size));
+  --sprite-tone-filter: none;
+  filter: var(--sprite-tone-filter) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
 }
 
 .stage-object-side-image-sprite.sprite-tone-red {
-  filter: hue-rotate(90deg);
+  --sprite-tone-filter: hue-rotate(90deg);
 }
 
 .stage-object-side-image-sprite.sprite-tone-dark {
-  filter: brightness(0.5) contrast(1.2);
+  --sprite-tone-filter: brightness(0.5) contrast(1.2);
 }
 
 body.view-mode .stage-object {
   cursor: default;
 }
 
-.stage-object::before {
-  content: attr(data-stage-label);
+.stage-object-label {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 145px;
+  transform: translateX(-50%);
+  width: calc(100% - 18px);
+  padding: 3px 8px;
+  border: 3px double rgba(192, 128, 0, 0.9);
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+  text-align: center;
   font-weight: 700;
   font-size: 13px;
   color: #3e1f06;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
@@ -439,15 +450,13 @@ body.view-mode .stage-object {
 
 .stage-object.dragging {
   cursor: grabbing;
-  box-shadow:
-    0 15px 25px rgba(0, 0, 0, 0.42),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+  box-shadow: none;
 }
 
 .stage-object-hp {
   position: absolute;
   left: 50%;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   transform: translateX(-50%);
   width: 128px;
   height: 16px;
