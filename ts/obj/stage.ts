@@ -4,6 +4,7 @@ import { t } from "../i18n";
 import { openYGDatabase } from "../init-db";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
+import { createMapObjectElement } from "../map/object-view";
 import {
   clampProgress,
   getElementPosition,
@@ -49,45 +50,31 @@ export function createStageObject(
   stage: StageRecord,
   handlers: StageObjectHandlers,
 ): HTMLButtonElement {
-  const el = document.createElement("button");
-  el.type = "button";
-  el.className = MAPPAGE_CLASS.stageObject;
-  el.dataset.stageId = stage.stgId;
-  el.dataset.stageWorldId = stage.wId;
-  el.dataset.parentStageId = stage.parentStgId || "";
-  el.dataset.stageLabel = stage.nm;
-  el.dataset.stageOrd = String(stage.ord);
-  el.dataset.stageDesc = stage.desc;
-  el.dataset.stageColor = normalizeHexColor(stage.baseColor);
-  el.dataset.stageProgress = String(stage.progress);
-  el.dataset.stageImgPath = stage.imgPath;
-  el.dataset.stageMapImgPath = stage.mapImgPath;
-  el.title = stage.desc || t("stage_no_desc");
-  el.setAttribute("aria-label", t("stage_object_aria", { name: stage.nm }));
-
-  const sideImage = document.createElement("span");
-  sideImage.className = MAPPAGE_CLASS.stageObjectSideImage;
-  sideImage.setAttribute("aria-hidden", "true");
-
-  const sideImageImg = document.createElement("img");
-  sideImageImg.className = MAPPAGE_CLASS.stageObjectSideImageImg;
-  sideImageImg.alt = "";
-  sideImage.append(sideImageImg);
-  el.append(sideImage);
-
-  const hp = document.createElement("span");
-  hp.className = MAPPAGE_CLASS.stageObjectHp;
-  hp.setAttribute("aria-hidden", "true");
-
-  const hpFill = document.createElement("span");
-  hpFill.className = MAPPAGE_CLASS.stageObjectHpFill;
-  hp.append(hpFill);
-  el.append(hp);
-
-  el.addEventListener("pointerdown", handlers.onPointerDown);
-  el.addEventListener("dblclick", handlers.onDoubleClick);
-  el.addEventListener("click", handlers.onClick);
-  return el;
+  return createMapObjectElement({
+    className: MAPPAGE_CLASS.stageObject,
+    label: stage.nm,
+    ariaLabel: t("stage_object_aria", { name: stage.nm }),
+    title: stage.desc || t("stage_no_desc"),
+    baseColor: normalizeHexColor(stage.baseColor),
+    dataset: {
+      stageId: stage.stgId,
+      stageWorldId: stage.wId,
+      parentStageId: stage.parentStgId || "",
+      stageOrd: String(stage.ord),
+      stageDesc: stage.desc,
+      stageColor: normalizeHexColor(stage.baseColor),
+      stageProgress: String(stage.progress),
+      stageImgPath: stage.imgPath,
+      stageMapImgPath: stage.mapImgPath,
+    },
+    handlers: {
+      onPointerDown: handlers.onPointerDown,
+      onDoubleClick: handlers.onDoubleClick,
+      onClick: handlers.onClick,
+    },
+    withSideImage: true,
+    withHpGauge: true,
+  });
 }
 
 export function applyStageVisuals(

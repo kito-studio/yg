@@ -4,6 +4,7 @@ import { getAppStateText, setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
 import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
+import { addMapObjectWithDrag } from "./map/add-object";
 import {
   LOGO_DISMISS_TIMEOUT_MS,
   LOGO_FADE_DURATION_MS,
@@ -21,7 +22,7 @@ import {
   MAPPAGE_SELECTOR,
   MapPageElements,
 } from "./map/dom";
-import { beginStageDrag } from "./map/drag";
+import { createMapObjectElement } from "./map/object-view";
 import {
   revealWorld,
   shouldSkipIntro,
@@ -58,6 +59,7 @@ import {
   MapViewportController,
 } from "./ui/map-viewport";
 import { createStageInteractionHandlers } from "./ui/stage-interactions";
+import { createTaskInteractionHandlers } from "./ui/task-interactions";
 import { lg } from "./util/log";
 
 // －－－ 地図画面要素 －－－
@@ -66,6 +68,7 @@ type MapPageContext = {
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
   stageHandlers: ReturnType<typeof createStageInteractionHandlers>;
+  taskHandlers: ReturnType<typeof createTaskInteractionHandlers>;
   worlds: WorldRecord[];
   world: WorldRecord | null;
   stages: StageRecord[];
@@ -150,55 +153,77 @@ async function initMapPage(): Promise<void> {
   });
 
   elements.addButton?.addEventListener("click", async () => {
-    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
-      return;
-    }
     if (!context) {
       return;
     }
     const cntx = context;
 
-    const nextOrd = getVisibleStages(cntx).length + 1;
-    const stageRecord = createNewStageRecord(nextOrd);
-    stageRecord.wId = cntx.world?.wId || "";
-    stageRecord.parentStgId = cntx.stage?.stgId || null;
-    const stageObject = createStageButton(stageRecord, cntx);
-
-    appendStageObject(stageObject, cntx);
-
-    const point = getNewStageAnchorPoint(cntx);
-    cntx.mapViewport.placeElementWithinContent(stageObject, point.x, point.y);
-
-    await saveStageFromElement(stageObject, nextOrd);
-    cntx.stageHandlers.beginDrag(stageObject);
+    await addMapObjectWithDrag({
+      isEditMode: () =>
+        document.body.classList.contains(MAPPAGE_CLASS.editMode),
+      resolveNextOrd: () => getVisibleStages(cntx).length + 1,
+      createRecord: (nextOrd) => {
+        const stageRecord = createNewStageRecord(nextOrd);
+        stageRecord.wId = cntx.world?.wId || "";
+        stageRecord.parentStgId = cntx.stage?.stgId || null;
+        return stageRecord;
+      },
+      createElement: (stageRecord) => createStageButton(stageRecord, cntx),
+      appendElement: (stageObject) => {
+        appendStageObject(stageObject, cntx);
+      },
+      getAnchorPoint: () => getNewStageAnchorPoint(cntx),
+      placeElement: (stageObject, x, y) => {
+        cntx.mapViewport.placeElementWithinContent(stageObject, x, y);
+      },
+      saveElement: async (stageObject, _record, nextOrd) => {
+        await saveStageFromElement(stageObject, nextOrd);
+      },
+      startAdjust: (stageObject) => {
+        cntx.stageHandlers.beginDrag(stageObject);
+      },
+    });
   });
 
   elements.addTaskButton?.addEventListener("click", async () => {
-    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
-      return;
-    }
     if (!context) {
       return;
     }
     const cntx = context;
-    if (!cntx.world) {
-      window.alert(t("no_world"));
-      return;
-    }
 
-    const nextOrd = getVisibleTasks(cntx).length + 1;
-    const taskRecord = createNewTaskRecord(nextOrd);
-    taskRecord.wId = cntx.world.wId;
-    taskRecord.stgId = cntx.stage?.stgId || null;
-    const taskObject = createTaskButton(taskRecord, cntx);
-    appendTaskObject(taskObject, cntx);
-
-    const point = getNewStageAnchorPoint(cntx);
-    cntx.mapViewport.placeElementWithinContent(taskObject, point.x, point.y);
-
-    await saveTaskFromElement(taskObject, cntx, nextOrd);
-    cntx.tasks.push(taskRecord);
-    beginTaskDrag(taskObject, cntx);
+    await addMapObjectWithDrag({
+      isEditMode: () =>
+        document.body.classList.contains(MAPPAGE_CLASS.editMode),
+      canCreate: () => {
+        if (cntx.world) {
+          return true;
+        }
+        window.alert(t("no_world"));
+        return false;
+      },
+      resolveNextOrd: () => getVisibleTasks(cntx).length + 1,
+      createRecord: (nextOrd) => {
+        const taskRecord = createNewTaskRecord(nextOrd);
+        taskRecord.wId = cntx.world?.wId || "";
+        taskRecord.stgId = cntx.stage?.stgId || null;
+        return taskRecord;
+      },
+      createElement: (taskRecord) => createTaskButton(taskRecord, cntx),
+      appendElement: (taskObject) => {
+        appendTaskObject(taskObject, cntx);
+      },
+      getAnchorPoint: () => getNewStageAnchorPoint(cntx),
+      placeElement: (taskObject, x, y) => {
+        cntx.mapViewport.placeElementWithinContent(taskObject, x, y);
+      },
+      saveElement: async (taskObject, taskRecord, nextOrd) => {
+        await saveTaskFromElement(taskObject, cntx, nextOrd);
+        cntx.tasks.push(taskRecord);
+      },
+      startAdjust: (taskObject) => {
+        cntx.taskHandlers.beginDrag(taskObject);
+      },
+    });
   });
 }
 
@@ -236,6 +261,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     mapViewport: createMapViewport(elements),
     stageDialog: createStageDialog(fileStore),
     stageHandlers: createStageHandlers(),
+    taskHandlers: createTaskHandlers(),
     world: null,
     stage: null,
     stages: [],
@@ -301,6 +327,25 @@ function createStageHandlers(): ReturnType<
     saveStageFromElement: async (target) => {
       await saveStageFromElement(target);
     },
+  });
+}
+
+function createTaskHandlers(): ReturnType<
+  typeof createTaskInteractionHandlers
+> {
+  return createTaskInteractionHandlers({
+    getContext: () => context,
+    saveTaskFromElement: async (target) => {
+      if (!context) {
+        return;
+      }
+      await saveTaskFromElement(target, context);
+    },
+    onAfterDragEnd: async () => {
+      await rerenderStagesFromDb();
+    },
+    // Task dialog is not implemented yet. Keep the hook for parity with stages.
+    onOpenTaskEditor: async () => {},
   });
 }
 
@@ -428,24 +473,25 @@ function createTaskButton(
   task: TaskRecord,
   cntx: MapPageContext,
 ): HTMLButtonElement {
-  const taskObject = document.createElement("button");
-  taskObject.type = "button";
-  taskObject.className = `${MAPPAGE_CLASS.stageObject} ${MAPPAGE_CLASS.taskObject}`;
-  taskObject.dataset.taskId = task.tkId;
-  taskObject.dataset.taskWorldId = task.wId;
-  taskObject.dataset.taskStageId = task.stgId || "";
-  taskObject.dataset.taskOrd = String(task.ord);
-  taskObject.dataset.taskColor = task.clr;
-  taskObject.dataset.stageLabel = task.nm;
-  taskObject.style.setProperty("--stage-base-color", task.clr || "#6fd3ff");
-  taskObject.setAttribute("aria-label", task.nm || t("add_task"));
-  taskObject.addEventListener("pointerdown", (event) => {
-    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
-      return;
-    }
-    event.stopPropagation();
-    beginTaskDrag(taskObject, cntx, event);
+  const taskObject = createMapObjectElement({
+    className: `${MAPPAGE_CLASS.stageObject} ${MAPPAGE_CLASS.taskObject}`,
+    label: task.nm,
+    ariaLabel: task.nm || t("add_task"),
+    baseColor: task.clr || "#6fd3ff",
+    dataset: {
+      taskId: task.tkId,
+      taskWorldId: task.wId,
+      taskStageId: task.stgId || "",
+      taskOrd: String(task.ord),
+      taskColor: task.clr,
+    },
+    // タスクでも同構造を維持しておくと、画像/HP表現を差し込む拡張が容易。
+    withSideImage: true,
+    withHpGauge: true,
   });
+  taskObject.addEventListener("pointerdown", cntx.taskHandlers.onPointerDown);
+  taskObject.addEventListener("dblclick", cntx.taskHandlers.onTaskDoubleClick);
+  taskObject.addEventListener("click", cntx.taskHandlers.onTaskClick);
   return taskObject;
 }
 
@@ -458,22 +504,6 @@ function appendTaskObject(
     return;
   }
   document.body.append(target);
-}
-
-function beginTaskDrag(
-  target: HTMLButtonElement,
-  cntx: MapPageContext,
-  startEvent?: PointerEvent,
-): void {
-  beginStageDrag({
-    target,
-    mapViewport: cntx.mapViewport,
-    startEvent,
-    onDragEnd: async (dragTarget) => {
-      await saveTaskFromElement(dragTarget, cntx);
-      await rerenderStagesFromDb();
-    },
-  });
 }
 
 async function saveTaskFromElement(
