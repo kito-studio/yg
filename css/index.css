@@ -359,16 +359,12 @@ body.world-active:not(.edit-mode) .add-task-btn {
 
 .stage-object {
   position: absolute;
-  width: 158px;
-  height: 74px;
+  width: 256px;
+  height: 32px;
   border-radius: 20%;
   border: 3px solid rgba(255, 255, 255, 0.85);
-  background: radial-gradient(
-    circle at 32% 26%,
-    #fff6cc 4%,
-    var(--stage-base-color, #ffc96b) 46%,
-    #7a4213 100%
-  );
+  background: white;
+  opacity: 0.95;
   box-shadow:
     0 12px 20px rgba(0, 0, 0, 0.35),
     inset 0 0 0 2px rgba(255, 255, 255, 0.16);
@@ -382,16 +378,12 @@ body.world-active:not(.edit-mode) .add-task-btn {
   position: absolute;
   left: calc(100% + 8px);
   top: 50%;
-  width: 64px;
-  height: 64px;
+  width: 128px;
+  height: 128px;
   transform: translateY(-50%);
-  border-radius: 10px;
-  border: 2px solid rgba(255, 240, 204, 0.8);
-  background: rgba(26, 18, 10, 0.85);
-  box-shadow: 0 10px 16px rgba(0, 0, 0, 0.32);
   overflow: hidden;
   pointer-events: none;
-  --sprite-cell-size: 64px;
+  --sprite-cell-size: 128px;
 }
 
 .stage-object-side-image-img {
@@ -408,11 +400,9 @@ body.world-active:not(.edit-mode) .add-task-btn {
 .stage-object-side-image-sprite {
   background-image: var(--sprite-sheet-url);
   background-repeat: no-repeat;
-  background-size:
-    calc(var(--sprite-cols, 12) * var(--sprite-cell-size))
+  background-size: calc(var(--sprite-cols, 12) * var(--sprite-cell-size))
     calc(var(--sprite-rows, 12) * var(--sprite-cell-size));
-  background-position:
-    calc(var(--sprite-col, 0) * -1 * var(--sprite-cell-size))
+  background-position: calc(var(--sprite-col, 0) * -1 * var(--sprite-cell-size))
     calc(var(--sprite-row, 0) * -1 * var(--sprite-cell-size));
 }
 
@@ -459,8 +449,8 @@ body.view-mode .stage-object {
   left: 50%;
   top: calc(100% + 6px);
   transform: translateX(-50%);
-  width: 76px;
-  height: 11px;
+  width: 128px;
+  height: 16px;
   border-radius: 999px;
   background: rgba(21, 14, 8, 0.92);
   border: 1px solid rgba(255, 220, 162, 0.55);
