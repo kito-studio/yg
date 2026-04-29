@@ -1,11 +1,6 @@
 import { StageRecord } from "../obj/stage";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "./constants";
 
-export function buildStageId(): string {
-  const rand = Math.random().toString(36).slice(2, 8);
-  return `stg_${Date.now()}_${rand}`;
-}
-
 export function getElementPosition(target: HTMLElement): {
   x: number;
   y: number;

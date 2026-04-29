@@ -1,4 +1,5 @@
 import { DB_DEF, DB_NM, DB_VERSION } from "./db_def";
+import { buildWorldId } from "./obj/world";
 
 type SchemaText = string;
 type DBDefMap = Record<string, SchemaText>;
@@ -91,11 +92,6 @@ function waitTransaction(tx: IDBTransaction): Promise<void> {
     tx.onerror = () =>
       reject(tx.error || new Error("IndexedDB transaction failed"));
   });
-}
-
-function buildWorldId(): string {
-  const rand = Math.random().toString(36).slice(2, 8);
-  return `w_${Date.now()}_${rand}`;
 }
 
 async function seedInitialWorldAndStateIfNeeded(

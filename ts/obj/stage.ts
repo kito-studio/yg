@@ -1,13 +1,17 @@
 import { FileStoreGateway } from "../data/file-store";
+import { requestToPromise, transactionDone } from "../data/yg-idb";
 import { t } from "../i18n";
+import { openYGDatabase } from "../init-db";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
 import {
-  buildStageId,
   clampProgress,
+  getElementPosition,
   getHpColor,
   normalizeHexColor,
+  normalizeStageRow,
 } from "../map/stage-model";
+import { buildId } from "./common";
 
 export type StageRecord = {
   stgId: string;
@@ -30,6 +34,10 @@ export type StageRecord = {
   t_c: number;
   t_u: number;
 };
+
+export function buildStageId(): string {
+  return buildId("stg");
+}
 
 export type StageObjectHandlers = {
   onPointerDown: (event: PointerEvent) => void;
@@ -161,4 +169,95 @@ export function createNewStageRecord(ord: number): StageRecord {
     t_c: now,
     t_u: now,
   };
+}
+export async function loadStages(): Promise<StageRecord[]> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("stages", "readonly");
+    const store = tx.objectStore("stages");
+    const rows = (await requestToPromise(
+      store.getAll(),
+    )) as Partial<StageRecord>[];
+
+    return rows
+      .filter((row) => typeof row.stgId === "string")
+      .map((row, index) => normalizeStageRow(row, index))
+      .sort((a, b) => a.ord - b.ord);
+  } finally {
+    db.close();
+  }
+}
+export async function saveStageFromElement(
+  target: HTMLButtonElement,
+  ordOverride?: number,
+): Promise<void> {
+  const stgId = target.dataset.stageId;
+  const wId = String(target.dataset.stageWorldId || "").trim();
+  const parentStgId = String(target.dataset.parentStageId || "").trim();
+  const stageName = target.dataset.stageLabel;
+  const stageDesc = target.dataset.stageDesc || "";
+  const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
+  const stageProgress = Number.parseInt(
+    target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
+    10,
+  );
+  const stageImgPath = String(target.dataset.stageImgPath || "").trim();
+  const stageMapImgPath = String(target.dataset.stageMapImgPath || "").trim();
+  if (!stgId || !stageName) {
+    return;
+  }
+
+  const pos = getElementPosition(target);
+  const ordFromData = Number.parseInt(target.dataset.stageOrd || "", 10);
+  const ord = Number.isFinite(ordOverride)
+    ? Number(ordOverride)
+    : Number.isFinite(ordFromData)
+      ? ordFromData
+      : 0;
+
+  target.dataset.stageOrd = String(ord);
+
+  const now = Date.now();
+  await upsertStage({
+    stgId,
+    wId,
+    parentStgId,
+    ord,
+    nm: stageName,
+    desc: stageDesc,
+    baseColor: stageColor,
+    progress: clampProgress(stageProgress),
+    imgPath: stageImgPath,
+    mapImgPath: stageMapImgPath,
+    x: pos.x,
+    y: pos.y,
+    w: STAGE_DEFAULT_SIZE,
+    h: STAGE_DEFAULT_SIZE,
+    rot: 0,
+    mode: "edit",
+    isLocked: 0,
+    t_c: now,
+    t_u: now,
+  });
+}
+export async function upsertStage(record: StageRecord): Promise<void> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("stages", "readwrite");
+    const store = tx.objectStore("stages");
+    const existing = (await requestToPromise(store.get(record.stgId))) as
+      | Partial<StageRecord>
+      | undefined;
+
+    const merged: StageRecord = {
+      ...record,
+      t_c: existing?.t_c ?? record.t_c,
+      t_u: Date.now(),
+    };
+
+    await requestToPromise(store.put(merged));
+    await transactionDone(tx);
+  } finally {
+    db.close();
+  }
 }

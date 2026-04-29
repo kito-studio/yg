@@ -26,21 +26,17 @@ import {
   shouldSkipIntro,
   waitForMapRevealComplete,
 } from "./map/reveal";
-import {
-  loadSelectedWorld,
-  loadStages,
-  loadWorlds,
-  saveStageFromElement,
-  WorldHeaderRecord,
-} from "./map/stage-db";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
 import {
   applyStageVisuals,
   createNewStageRecord,
   createStageObject,
+  loadStages,
+  saveStageFromElement,
   StageRecord,
 } from "./obj/stage";
+import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio } from "./sound/top-page";
 import {
@@ -56,21 +52,21 @@ import {
 } from "./ui/map-viewport";
 import { createStageInteractionHandlers } from "./ui/stage-interactions";
 
-// －－－ 世界地図画面の構成 －－－
-type TopPageContext = {
+// －－－ 地図画面要素 －－－
+type MapPageContext = {
   elements: MapPageElements;
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
-  world: WorldHeaderRecord | null;
+  world: WorldRecord | null;
   stages: StageRecord[];
   selectedWorldId: string;
   selectedStageId: string;
-  worldItems: WorldHeaderRecord[];
+  worldItems: WorldRecord[];
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
 
-let context: TopPageContext | null = null;
+let context: MapPageContext | null = null;
 
 const stageHandlers = createStageInteractionHandlers({
   getContext: () => context,
@@ -267,7 +263,7 @@ function getTopPageElements(): MapPageElements {
   };
 }
 
-function createTopPageContext(elements: MapPageElements): TopPageContext {
+function createTopPageContext(elements: MapPageElements): MapPageContext {
   const fileStore = createFileStoreGateway();
   const bgmAudio = createTopPageBgmAudio();
   return {
@@ -436,26 +432,26 @@ async function rerenderStagesFromDb(): Promise<void> {
   }
 }
 
-function getVisibleStages(cntx: TopPageContext): StageRecord[] {
+function getVisibleStages(cntx: MapPageContext): StageRecord[] {
   return cntx.stages
     .filter((stage) => stage.wId === cntx.selectedWorldId)
     .filter((stage) => stage.parentStgId === cntx.selectedStageId)
     .sort((a, b) => a.ord - b.ord);
 }
 
-function getCurrentStage(cntx: TopPageContext): StageRecord | null {
+function getCurrentStage(cntx: MapPageContext): StageRecord | null {
   return (
     cntx.stages.find((stage) => stage.stgId === cntx.selectedStageId) || null
   );
 }
 
 function getHeaderItems(
-  cntx: TopPageContext,
+  cntx: MapPageContext,
 ): Array<{ id: string; label: string }> {
   const currentStage = getCurrentStage(cntx);
   if (!currentStage) {
     return cntx.worldItems.map((world) => ({
-      id: world.wId,
+      id: world.wId || "",
       label: world.nm || world.wId,
     }));
   }
@@ -465,16 +461,16 @@ function getHeaderItems(
     .filter((stage) => stage.parentStgId === currentStage.parentStgId)
     .sort((a, b) => a.ord - b.ord)
     .map((stage) => ({
-      id: stage.stgId,
+      id: stage.stgId || "",
       label: stage.nm || stage.stgId,
     }));
 }
 
-function getHeaderSelectedId(cntx: TopPageContext): string {
+function getHeaderSelectedId(cntx: MapPageContext): string {
   return cntx.selectedStageId || cntx.selectedWorldId;
 }
 
-function resolveSelectedStageId(cntx: TopPageContext): string {
+function resolveSelectedStageId(cntx: MapPageContext): string {
   const selected = cntx.stages.find(
     (stage) => stage.stgId === cntx.selectedStageId,
   );
