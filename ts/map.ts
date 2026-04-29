@@ -50,6 +50,7 @@ import {
   MapViewportController,
 } from "./ui/map-viewport";
 import { createStageInteractionHandlers } from "./ui/stage-interactions";
+import { lg } from "./util/log";
 
 // －－－ 地図画面要素 －－－
 type MapPageContext = {
@@ -70,18 +71,19 @@ let context: MapPageContext | null = null;
 // －－－ 初期化－－－
 void initMapPage();
 async function initMapPage(): Promise<void> {
+  lg("initMapPage");
   // 先にHTML断片を組み立ててから、挙動を配線する。
   await mountMapPageParts();
   // CSS IDなどを参照しやすくする
   const elements = getMapPageElements();
-  // 地図画面要素の初期化と集約
+  // 地図画面要素の初期化
   context = createMapPageContext(elements);
+  lg(context, "createMapPageContext");
 
   // 翻訳
   applyI18n();
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
 
-  context.mapViewport.setup();
   context.stageDialog.bindEvents();
 
   setupBackupToolbar({
@@ -100,9 +102,11 @@ async function initMapPage(): Promise<void> {
     restoreSuccessMessage: t("restore_success"),
     restoreFailedFallbackMessage: t("restore_failed"),
   });
+  lg(context, "setupWorldHeader");
 
   await ensureYGDatabase();
   await setupWorldHeader(elements);
+  context.mapViewport.setup();
 
   // イントロ演出とマップ表示待機を分離し、ステージ描画がCSS遷移と競合しないようにする。
   await revealWorld({
@@ -180,6 +184,9 @@ async function mountMapPageParts(): Promise<void> {
   }
 }
 
+/**
+ * 地図画面要素の初期化
+ */
 function createMapPageContext(elements: MapPageElements): MapPageContext {
   const fileStore = createFileStoreGateway();
   const bgmAudio = createMapPageBgmAudio();
