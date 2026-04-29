@@ -75,3 +75,34 @@ export type MapPageElements = {
   worldRightButton: HTMLElement | null;
   bgmButton: HTMLButtonElement | null;
 };
+export function getMapPageElements(): MapPageElements {
+  return {
+    addButton: document.getElementById(
+      MAP_PAGE_ID.addButton,
+    ) as HTMLButtonElement | null,
+    logoWrap: document.getElementById(MAP_PAGE_ID.logoWrap),
+    modeSwitch: document.getElementById(
+      MAP_PAGE_ID.modeSwitch,
+    ) as HTMLInputElement | null,
+    stageMap: document.getElementById(MAP_PAGE_ID.stageMap),
+    stageMapContent: document.getElementById(MAP_PAGE_ID.stageMapContent),
+    dbDownloadButton: document.getElementById(
+      MAP_PAGE_ID.dbDownloadButton,
+    ) as HTMLButtonElement | null,
+    dbUploadButton: document.getElementById(
+      MAP_PAGE_ID.dbUploadButton,
+    ) as HTMLButtonElement | null,
+    dbUploadInput: document.getElementById(
+      MAP_PAGE_ID.dbUploadInput,
+    ) as HTMLInputElement | null,
+    dbMaintButton: document.getElementById(
+      MAP_PAGE_ID.dbMaintButton,
+    ) as HTMLButtonElement | null,
+    selectedWorldName: document.getElementById(MAP_PAGE_ID.selectedWorldName),
+    worldLeftButton: document.getElementById(MAP_PAGE_ID.worldLeftButton),
+    worldRightButton: document.getElementById(MAP_PAGE_ID.worldRightButton),
+    bgmButton: document.getElementById(
+      MAP_PAGE_ID.bgmButton,
+    ) as HTMLButtonElement | null,
+  };
+}

@@ -16,7 +16,7 @@ import {
   STAGE_MAP_CONTENT_SIZE,
 } from "./map/constants";
 import {
-  MAP_PAGE_ID,
+  getMapPageElements,
   MAPPAGE_CLASS,
   MAPPAGE_SELECTOR,
   MapPageElements,
@@ -66,14 +66,14 @@ type MapPageContext = {
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
-
 let context: MapPageContext | null = null;
 
+// －－－ 初期化－－－
 void initMapPage();
-
 async function initMapPage(): Promise<void> {
   // 先にHTML断片を組み立ててから、挙動を配線する。
   await mountMapPageParts();
+  // CSS IDなどを参照しやすくする
   const elements = getMapPageElements();
   context = createMapPageContext(elements);
 
@@ -157,6 +157,43 @@ async function initMapPage(): Promise<void> {
   });
 }
 
+/**
+ * HTML部品を組み立てる
+ */
+async function mountMapPageParts(): Promise<void> {
+  // z-indexとオーバーレイの重なりを壊さないよう、固定順序で挿入する。
+  const partNames = [
+    "logo",
+    "info",
+    "header",
+    "control",
+    "world_map",
+    "stage_dialog",
+  ];
+
+  for (const partName of partNames) {
+    await insertHtmlPart(partName, document.body);
+  }
+}
+
+function createMapPageContext(elements: MapPageElements): MapPageContext {
+  const fileStore = createFileStoreGateway();
+  const bgmAudio = createMapPageBgmAudio();
+  return {
+    elements,
+    mapViewport: createMapViewport(elements),
+    stageDialog: createStageDialog(fileStore),
+    stageHandlers: createStageHandlers(),
+    world: null,
+    stages: [],
+    selectedWorldId: "",
+    selectedStageId: "",
+    worldItems: [],
+    bgmAudio,
+    fileStore,
+  };
+}
+
 async function setupWorldHeader(elements: MapPageElements): Promise<void> {
   if (!context) {
     return;
@@ -194,72 +231,6 @@ async function setupWorldHeader(elements: MapPageElements): Promise<void> {
       void stepOutSelection();
     });
   }
-}
-
-async function mountMapPageParts(): Promise<void> {
-  // z-indexとオーバーレイの重なりを壊さないよう、固定順序で挿入する。
-  const partNames = [
-    "logo",
-    "info",
-    "header",
-    "control",
-    "world_map",
-    "stage_dialog",
-  ];
-
-  for (const partName of partNames) {
-    await insertHtmlPart(partName, document.body);
-  }
-}
-
-function getMapPageElements(): MapPageElements {
-  return {
-    addButton: document.getElementById(
-      MAP_PAGE_ID.addButton,
-    ) as HTMLButtonElement | null,
-    logoWrap: document.getElementById(MAP_PAGE_ID.logoWrap),
-    modeSwitch: document.getElementById(
-      MAP_PAGE_ID.modeSwitch,
-    ) as HTMLInputElement | null,
-    stageMap: document.getElementById(MAP_PAGE_ID.stageMap),
-    stageMapContent: document.getElementById(MAP_PAGE_ID.stageMapContent),
-    dbDownloadButton: document.getElementById(
-      MAP_PAGE_ID.dbDownloadButton,
-    ) as HTMLButtonElement | null,
-    dbUploadButton: document.getElementById(
-      MAP_PAGE_ID.dbUploadButton,
-    ) as HTMLButtonElement | null,
-    dbUploadInput: document.getElementById(
-      MAP_PAGE_ID.dbUploadInput,
-    ) as HTMLInputElement | null,
-    dbMaintButton: document.getElementById(
-      MAP_PAGE_ID.dbMaintButton,
-    ) as HTMLButtonElement | null,
-    selectedWorldName: document.getElementById(MAP_PAGE_ID.selectedWorldName),
-    worldLeftButton: document.getElementById(MAP_PAGE_ID.worldLeftButton),
-    worldRightButton: document.getElementById(MAP_PAGE_ID.worldRightButton),
-    bgmButton: document.getElementById(
-      MAP_PAGE_ID.bgmButton,
-    ) as HTMLButtonElement | null,
-  };
-}
-
-function createMapPageContext(elements: MapPageElements): MapPageContext {
-  const fileStore = createFileStoreGateway();
-  const bgmAudio = createMapPageBgmAudio();
-  return {
-    elements,
-    mapViewport: createMapViewport(elements),
-    stageDialog: createStageDialog(fileStore),
-    stageHandlers: createStageHandlers(),
-    world: null,
-    stages: [],
-    selectedWorldId: "",
-    selectedStageId: "",
-    worldItems: [],
-    bgmAudio,
-    fileStore,
-  };
 }
 
 function createStageHandlers(): ReturnType<
