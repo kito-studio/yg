@@ -391,6 +391,7 @@ body.world-active:not(.edit-mode) .add-task-btn {
   box-shadow: 0 10px 16px rgba(0, 0, 0, 0.32);
   overflow: hidden;
   pointer-events: none;
+  --sprite-cell-size: 64px;
 }
 
 .stage-object-side-image-img {
@@ -398,6 +399,29 @@ body.world-active:not(.edit-mode) .add-task-btn {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.stage-object-side-image-img[hidden] {
+  display: none;
+}
+
+.stage-object-side-image-sprite {
+  background-image: var(--sprite-sheet-url);
+  background-repeat: no-repeat;
+  background-size:
+    calc(var(--sprite-cols, 12) * var(--sprite-cell-size))
+    calc(var(--sprite-rows, 12) * var(--sprite-cell-size));
+  background-position:
+    calc(var(--sprite-col, 0) * -1 * var(--sprite-cell-size))
+    calc(var(--sprite-row, 0) * -1 * var(--sprite-cell-size));
+}
+
+.stage-object-side-image-sprite.sprite-tone-red {
+  filter: hue-rotate(90deg);
+}
+
+.stage-object-side-image-sprite.sprite-tone-dark {
+  filter: brightness(0.5) contrast(1.2);
 }
 
 body.view-mode .stage-object {

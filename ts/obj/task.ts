@@ -23,6 +23,9 @@ export type TaskRecord = {
   iconFId: string;
   beforeFId: string;
   afterFId: string;
+  spriteCol: number;
+  spriteRow: number;
+  spriteTone: string;
   x: number;
   y: number;
   w: number;
@@ -62,6 +65,9 @@ export function createNewTaskRecord(ord: number): TaskRecord {
     iconFId: "",
     beforeFId: "",
     afterFId: "",
+    spriteCol: 0,
+    spriteRow: 0,
+    spriteTone: "none",
     x: 0,
     y: 0,
     w: STAGE_DEFAULT_SIZE,
@@ -118,6 +124,18 @@ export async function loadTasks(): Promise<TaskRecord[]> {
           iconFId: String(row.iconFId || "").trim(),
           beforeFId: String(row.beforeFId || "").trim(),
           afterFId: String(row.afterFId || "").trim(),
+          spriteCol: Number.isFinite(Number(row.spriteCol))
+            ? Math.max(0, Number(row.spriteCol))
+            : 0,
+          spriteRow: Number.isFinite(Number(row.spriteRow))
+            ? Math.max(0, Number(row.spriteRow))
+            : 0,
+          spriteTone: (() => {
+            const tone = String(row.spriteTone || "")
+              .trim()
+              .toLowerCase();
+            return tone === "red" || tone === "dark" ? tone : "none";
+          })(),
           x: Number.isFinite(Number(row.x)) ? Number(row.x) : 0,
           y: Number.isFinite(Number(row.y)) ? Number(row.y) : 0,
           w: Number.isFinite(Number(row.w))

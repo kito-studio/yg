@@ -48,7 +48,7 @@ export const DB_DEF = {
   // mode: edit | run
   // isLocked: 配布マップなど編集不可時に1
   stages:
-    "stgId, wId, parentStgId, [wId+ord], [wId+parentStgId], [parentStgId+ord], ord, cat, nm, desc, mode, isLocked, status, progress, imgPath, mapImgPath, coverFId, bgFId, bgmFId, x, y, w, h, rot, clr, memo, t_c, t_u",
+    "stgId, wId, parentStgId, [wId+ord], [wId+parentStgId], [parentStgId+ord], ord, cat, nm, desc, mode, isLocked, status, progress, imgPath, mapImgPath, spriteCol, spriteRow, spriteTone, coverFId, bgFId, bgmFId, x, y, w, h, rot, clr, memo, t_c, t_u",
 
   // ⚔️ タスク（index.html 内のステージ詳細）
   // wId: 所属世界ID
@@ -56,7 +56,7 @@ export const DB_DEF = {
   // state: todo | doing | done | sealed
   // requiresApproval: 第三者承認が必要なタスクに1
   tasks:
-    "tkId, wId, stgId, [wId+ord], [wId+state], [wId+stgId], [stgId+ord], [stgId+state], ord, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, x, y, w, h, rot, clr, vis, isLocked, memo, t_c, t_u",
+    "tkId, wId, stgId, [wId+ord], [wId+state], [wId+stgId], [stgId+ord], [stgId+state], ord, cat, nm, desc, state, hpMax, hpNow, progress, enemyNm, dueY, dueM, dueD, requiresApproval, iconFId, beforeFId, afterFId, spriteCol, spriteRow, spriteTone, x, y, w, h, rot, clr, vis, isLocked, memo, t_c, t_u",
 
   // ⛓️ 依存関係（同一ステージ内の任意タスク間）
   // relType: blocks | unlocks | recommends

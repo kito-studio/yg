@@ -6,6 +6,10 @@ import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
 import { createMapObjectElement } from "../map/object-view";
 import {
+  applySpriteCellVisual,
+  clearSpriteCellVisual,
+} from "../map/sprite-sheet";
+import {
   clampProgress,
   getElementPosition,
   getHpColor,
@@ -25,6 +29,9 @@ export type StageRecord = {
   progress: number;
   imgPath: string;
   mapImgPath: string;
+  spriteCol: number;
+  spriteRow: number;
+  spriteTone: string;
   x: number;
   y: number;
   w: number;
@@ -66,6 +73,9 @@ export function createStageObject(
       stageProgress: String(stage.progress),
       stageImgPath: stage.imgPath,
       stageMapImgPath: stage.mapImgPath,
+      stageSpriteCol: String(stage.spriteCol),
+      stageSpriteRow: String(stage.spriteRow),
+      stageSpriteTone: stage.spriteTone,
     },
     handlers: {
       onPointerDown: handlers.onPointerDown,
@@ -116,20 +126,70 @@ export async function applyStageImageVisual(
 
   const fId = String(target.dataset.stageImgPath || "").trim();
   if (!fId) {
-    sideImage.hidden = true;
-    sideImageImg.removeAttribute("src");
+    applyStageSpriteFallback(target);
     return;
   }
 
   const objectUrl = await fileStore.getObjectUrlForFile(fId);
   if (!objectUrl) {
-    sideImage.hidden = true;
-    sideImageImg.removeAttribute("src");
+    applyStageSpriteFallback(target);
     return;
   }
 
+  clearSpriteCellVisual(target);
   sideImage.hidden = false;
+  sideImageImg.hidden = false;
   sideImageImg.src = objectUrl;
+}
+
+function applyStageSpriteFallback(target: HTMLButtonElement): void {
+  const spriteCol = parseSpriteCellValue(target.dataset.stageSpriteCol, 0);
+  const spriteRow = parseSpriteCellValue(target.dataset.stageSpriteRow, -1);
+  const spriteTone = normalizeSpriteTone(target.dataset.stageSpriteTone);
+
+  const ord = Number.parseInt(target.dataset.stageOrd || "1", 10);
+  const normalizedOrd = Number.isFinite(ord) && ord > 0 ? ord : 1;
+
+  // 2~4行目(0-based: 1~3)の1列目(0-based: 0)をステージ用の既定枠として使う。
+  const resolvedCol = spriteCol;
+  const resolvedRow =
+    spriteRow >= 0 ? spriteRow : ((normalizedOrd - 1) % 3) + 1;
+
+  target.dataset.stageSpriteCol = String(resolvedCol);
+  target.dataset.stageSpriteRow = String(resolvedRow);
+  target.dataset.stageSpriteTone = spriteTone;
+
+  applySpriteCellVisual(target, {
+    col: resolvedCol,
+    row: resolvedRow,
+    tone: spriteTone,
+  });
+}
+
+function parseSpriteCellValue(
+  value: string | undefined,
+  fallback: number,
+): number {
+  const parsed = Number.parseInt(String(value || "").trim(), 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function normalizeSpriteTone(
+  value: string | undefined,
+): "none" | "red" | "dark" {
+  const tone = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (tone === "red") {
+    return "red";
+  }
+  if (tone === "dark") {
+    return "dark";
+  }
+  return "none";
 }
 
 export function createNewStageRecord(ord: number): StageRecord {
@@ -146,6 +206,9 @@ export function createNewStageRecord(ord: number): StageRecord {
     progress: DEFAULT_PROGRESS,
     imgPath: "",
     mapImgPath: "",
+    spriteCol: 0,
+    spriteRow: 1,
+    spriteTone: "none",
     x: 0,
     y: 0,
     w: STAGE_DEFAULT_SIZE,
@@ -191,6 +254,9 @@ export async function saveStageFromElement(
   );
   const stageImgPath = String(target.dataset.stageImgPath || "").trim();
   const stageMapImgPath = String(target.dataset.stageMapImgPath || "").trim();
+  const stageSpriteCol = parseSpriteCellValue(target.dataset.stageSpriteCol, 0);
+  const stageSpriteRow = parseSpriteCellValue(target.dataset.stageSpriteRow, 1);
+  const stageSpriteTone = normalizeSpriteTone(target.dataset.stageSpriteTone);
   if (!stgId || !stageName) {
     return;
   }
@@ -204,6 +270,9 @@ export async function saveStageFromElement(
       : 0;
 
   target.dataset.stageOrd = String(ord);
+  target.dataset.stageSpriteCol = String(stageSpriteCol);
+  target.dataset.stageSpriteRow = String(stageSpriteRow);
+  target.dataset.stageSpriteTone = stageSpriteTone;
 
   const now = Date.now();
   await upsertStage({
@@ -217,6 +286,9 @@ export async function saveStageFromElement(
     progress: clampProgress(stageProgress),
     imgPath: stageImgPath,
     mapImgPath: stageMapImgPath,
+    spriteCol: stageSpriteCol,
+    spriteRow: stageSpriteRow,
+    spriteTone: stageSpriteTone,
     x: pos.x,
     y: pos.y,
     w: STAGE_DEFAULT_SIZE,

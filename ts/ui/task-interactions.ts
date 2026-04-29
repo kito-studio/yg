@@ -4,6 +4,7 @@ import { MapPageContext } from "../map/constants";
 import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
 import { createMapObjectElement } from "../map/object-view";
+import { applySpriteCellVisual } from "../map/sprite-sheet";
 import { getElementPosition } from "../map/stage-model";
 import { createNewTaskRecord, TaskRecord, upsertTask } from "../obj/task";
 
@@ -150,6 +151,10 @@ export function createTaskButton(
       taskStageId: task.stgId || "",
       taskOrd: String(task.ord),
       taskColor: task.clr,
+      taskState: task.state,
+      taskSpriteCol: String(task.spriteCol),
+      taskSpriteRow: String(task.spriteRow),
+      taskSpriteTone: task.spriteTone,
     },
     // タスクでも同構造を維持しておくと、画像/HP表現を差し込む拡張が容易。
     withSideImage: true,
@@ -158,7 +163,57 @@ export function createTaskButton(
   taskObject.addEventListener("pointerdown", cntx.taskHandlers.onPointerDown);
   taskObject.addEventListener("dblclick", cntx.taskHandlers.onTaskDoubleClick);
   taskObject.addEventListener("click", cntx.taskHandlers.onTaskClick);
+  applyTaskSpriteVisual(taskObject, task);
   return taskObject;
+}
+
+function applyTaskSpriteVisual(
+  target: HTMLButtonElement,
+  task: TaskRecord,
+): void {
+  const ord = Number.isFinite(task.ord) && task.ord > 0 ? task.ord : 1;
+  const col = Number.isFinite(task.spriteCol)
+    ? Math.max(0, Number(task.spriteCol))
+    : (ord - 1) % 12;
+  const row = Number.isFinite(task.spriteRow)
+    ? Math.max(0, Number(task.spriteRow))
+    : 0;
+  const tone =
+    normalizeSpriteTone(task.spriteTone) || resolveTaskTone(task.state);
+
+  target.dataset.taskSpriteCol = String(col);
+  target.dataset.taskSpriteRow = String(row);
+  target.dataset.taskSpriteTone = tone;
+
+  applySpriteCellVisual(target, {
+    // 1行目(0-based: row=0)をタスク用に使う。
+    col,
+    row,
+    tone,
+  });
+}
+
+function normalizeSpriteTone(value: string): "none" | "red" | "dark" | "" {
+  const tone = String(value || "")
+    .trim()
+    .toLowerCase();
+  if (tone === "none" || tone === "red" || tone === "dark") {
+    return tone;
+  }
+  return "";
+}
+
+function resolveTaskTone(state: string): "none" | "red" | "dark" {
+  const normalized = String(state || "")
+    .trim()
+    .toLowerCase();
+  if (normalized === "doing" || normalized === "in_progress") {
+    return "red";
+  }
+  if (normalized === "done" || normalized === "closed") {
+    return "dark";
+  }
+  return "none";
 }
 export function appendTaskObject(
   target: HTMLButtonElement,
@@ -194,8 +249,25 @@ export async function saveTaskFromElement(
     : Number.isFinite(ordFromData)
       ? ordFromData
       : 0;
+  const spriteCol = Number.isFinite(
+    Number.parseInt(target.dataset.taskSpriteCol || "", 10),
+  )
+    ? Math.max(0, Number.parseInt(target.dataset.taskSpriteCol || "0", 10))
+    : Math.max(0, (ord || 1) - 1) % 12;
+  const spriteRow = Number.isFinite(
+    Number.parseInt(target.dataset.taskSpriteRow || "", 10),
+  )
+    ? Math.max(0, Number.parseInt(target.dataset.taskSpriteRow || "0", 10))
+    : 0;
+  const spriteTone =
+    normalizeSpriteTone(target.dataset.taskSpriteTone || "") ||
+    resolveTaskTone(String(target.dataset.taskState || ""));
   const current = cntx.tasks.find((task) => task.tkId === tkId);
   const pos = getElementPosition(target);
+
+  target.dataset.taskSpriteCol = String(spriteCol);
+  target.dataset.taskSpriteRow = String(spriteRow);
+  target.dataset.taskSpriteTone = spriteTone;
 
   await upsertTask({
     ...(current || createNewTaskRecord(ord || 1)),
@@ -205,6 +277,9 @@ export async function saveTaskFromElement(
     ord,
     nm,
     clr: String(target.dataset.taskColor || current?.clr || "#6fd3ff"),
+    spriteCol,
+    spriteRow,
+    spriteTone,
     x: pos.x,
     y: pos.y,
   });

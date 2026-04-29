@@ -66,6 +66,17 @@ export function normalizeStageRow(
   const safeProgress = clampProgress(
     Number.isFinite(row.progress) ? Number(row.progress) : DEFAULT_PROGRESS,
   );
+  const safeSpriteCol = Number.isFinite(row.spriteCol)
+    ? Math.max(0, Number(row.spriteCol))
+    : 0;
+  const safeSpriteRow = Number.isFinite(row.spriteRow)
+    ? Math.max(0, Number(row.spriteRow))
+    : ((safeOrd - 1) % 3) + 1;
+  const rawTone = String(row.spriteTone || "")
+    .trim()
+    .toLowerCase();
+  const safeSpriteTone =
+    rawTone === "red" || rawTone === "dark" ? rawTone : "none";
 
   return {
     stgId: row.stgId as string,
@@ -83,6 +94,9 @@ export function normalizeStageRow(
     progress: safeProgress,
     imgPath: typeof row.imgPath === "string" ? row.imgPath : "",
     mapImgPath: typeof row.mapImgPath === "string" ? row.mapImgPath : "",
+    spriteCol: safeSpriteCol,
+    spriteRow: safeSpriteRow,
+    spriteTone: safeSpriteTone,
     x: Number.isFinite(row.x) ? Number(row.x) : 0,
     y: Number.isFinite(row.y) ? Number(row.y) : 0,
     w: Number.isFinite(row.w) ? Number(row.w) : STAGE_DEFAULT_SIZE,
