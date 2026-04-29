@@ -530,7 +530,8 @@ body.view-mode .stage-object {
 
 .stage-dialog-tab {
   border: 1px solid rgba(255, 215, 146, 0.3);
-  border-radius: 999px;
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
   background: rgba(31, 21, 12, 0.9);
   color: rgba(255, 227, 182, 0.86);
   font-size: 13px;
