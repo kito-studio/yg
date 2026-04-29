@@ -131,12 +131,11 @@ body.world-active.edit-mode .stage-map {
 #info {
   position: absolute;
   left: 30%;
-  top: 5%;
+  top: 10%;
   padding: 20px;
   z-index: 11;
   background-color: lightpink;
   color: black;
-  opacity: 0;
   border-radius: 30px;
   pointer-events: none;
   transform: translateY(8px);
@@ -146,7 +145,6 @@ body.world-active.edit-mode .stage-map {
 }
 
 body.world-active #info {
-  opacity: 0.9;
   pointer-events: auto;
   transform: translateY(0);
   transition-delay: 120ms;

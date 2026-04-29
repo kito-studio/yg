@@ -48,6 +48,10 @@ function getCycledId(ids: string[], currentId: string, delta: number): string {
   return ids[nextIndex];
 }
 
+function isLocalHost(): boolean {
+  return isLocalHostName(window.location.hostname);
+}
+
 function isLocalHostName(host: string): boolean {
   return (
     host === "localhost" ||
@@ -55,18 +59,6 @@ function isLocalHostName(host: string): boolean {
     host === "::1" ||
     host.endsWith(".local")
   );
-}
-
-export function hideElementOnLocalHost(elementId: string): void {
-  if (!isLocalHostName(window.location.hostname)) {
-    return;
-  }
-
-  const target = document.getElementById(elementId);
-  if (!target) {
-    return;
-  }
-  target.style.display = "none";
 }
 
 export function setupModeSwitch(options: ModeSwitchOptions): void {

@@ -1,4 +1,4 @@
-import { insertHtmlPart } from "./core";
+import { insertHtmlPart, isLocal } from "./core";
 import { createFileStoreGateway, FileStoreGateway } from "./data/file-store";
 import { setAppStateText } from "./data/yg-idb";
 import { downloadYGBackupJson, restoreYGBackupFromFile } from "./db-backup";
@@ -40,7 +40,6 @@ import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
-  hideElementOnLocalHost,
   renderHeaderSelectedLabel,
   setupBackupToolbar,
   setupHeaderSwitch,
@@ -81,7 +80,6 @@ async function initMapPage(): Promise<void> {
   // 翻訳
   applyI18n();
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
-  hideElementOnLocalHost("info");
 
   context.mapViewport.setup();
   context.stageDialog.bindEvents();
@@ -166,14 +164,18 @@ async function mountMapPageParts(): Promise<void> {
   // z-indexとオーバーレイの重なりを壊さないよう、固定順序で挿入する。
   const partNames = [
     "logo",
-    "info",
     "header",
     "control",
     "world_map",
     "stage_dialog",
+    "info",
   ];
 
   for (const partName of partNames) {
+    // 開発環境ではinfoを通常表示しない
+    if (partName === "info" && isLocal()) {
+      continue;
+    }
     await insertHtmlPart(partName, document.body);
   }
 }
