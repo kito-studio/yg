@@ -166,7 +166,7 @@ async function mountMapPageParts(): Promise<void> {
     "logo",
     "header",
     "control",
-    "world_map",
+    "map",
     "stage_dialog",
     "info",
   ];
