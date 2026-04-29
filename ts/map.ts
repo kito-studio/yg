@@ -75,9 +75,11 @@ async function initMapPage(): Promise<void> {
   await mountMapPageParts();
   // CSS IDなどを参照しやすくする
   const elements = getMapPageElements();
+  // 地図画面要素の初期化と集約
   context = createMapPageContext(elements);
 
-  applyI18n(document);
+  // 翻訳
+  applyI18n();
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
   hideElementOnLocalHost("info");
 

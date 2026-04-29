@@ -40,7 +40,7 @@ async function initDbMaint(): Promise<void> {
     return;
   }
 
-  applyI18n(document);
+  applyI18n();
 
   await ensureYGDatabase();
 

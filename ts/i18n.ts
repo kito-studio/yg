@@ -248,10 +248,10 @@ export function t(key: string, vars?: Vars): string {
   });
 }
 
-export function applyI18n(root: ParentNode = document): void {
+export function applyI18n(): void {
   document.documentElement.lang = currentLang;
 
-  const textNodes = root.querySelectorAll<HTMLElement>("[data-i18n]");
+  const textNodes = document.querySelectorAll<HTMLElement>("[data-i18n]");
   for (const el of textNodes) {
     const key = el.dataset.i18n;
     if (!key) {
@@ -260,7 +260,7 @@ export function applyI18n(root: ParentNode = document): void {
     el.textContent = t(key);
   }
 
-  const ariaNodes = root.querySelectorAll<HTMLElement>(
+  const ariaNodes = document.querySelectorAll<HTMLElement>(
     "[data-i18n-aria-label]",
   );
   for (const el of ariaNodes) {
@@ -271,7 +271,8 @@ export function applyI18n(root: ParentNode = document): void {
     el.setAttribute("aria-label", t(key));
   }
 
-  const titleNodes = root.querySelectorAll<HTMLElement>("[data-i18n-title]");
+  const titleNodes =
+    document.querySelectorAll<HTMLElement>("[data-i18n-title]");
   for (const el of titleNodes) {
     const key = el.dataset.i18nTitle;
     if (!key) {
@@ -280,7 +281,7 @@ export function applyI18n(root: ParentNode = document): void {
     el.setAttribute("title", t(key));
   }
 
-  const placeholderNodes = root.querySelectorAll<HTMLElement>(
+  const placeholderNodes = document.querySelectorAll<HTMLElement>(
     "[data-i18n-placeholder]",
   );
   for (const el of placeholderNodes) {
@@ -293,7 +294,8 @@ export function applyI18n(root: ParentNode = document): void {
     }
   }
 
-  const valueNodes = root.querySelectorAll<HTMLElement>("[data-i18n-value]");
+  const valueNodes =
+    document.querySelectorAll<HTMLElement>("[data-i18n-value]");
   for (const el of valueNodes) {
     const key = el.dataset.i18nValue;
     if (!key) {
@@ -304,7 +306,7 @@ export function applyI18n(root: ParentNode = document): void {
     }
   }
 
-  const altNodes = root.querySelectorAll<HTMLElement>("[data-i18n-alt]");
+  const altNodes = document.querySelectorAll<HTMLElement>("[data-i18n-alt]");
   for (const el of altNodes) {
     const key = el.dataset.i18nAlt;
     if (!key) {
