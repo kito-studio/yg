@@ -456,7 +456,7 @@ body.view-mode .stage-object {
 .stage-object-hp {
   position: absolute;
   left: 50%;
-  top: calc(100% + 8px);
+  top: calc(100%);
   transform: translateX(-50%);
   width: 128px;
   height: 16px;
