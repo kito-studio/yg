@@ -21,6 +21,7 @@ import {
   MAPPAGE_SELECTOR,
   MapPageElements,
 } from "./map/dom";
+import { beginStageDrag } from "./map/drag";
 import {
   revealWorld,
   shouldSkipIntro,
@@ -28,6 +29,7 @@ import {
 } from "./map/reveal";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
+import { getElementPosition } from "./map/stage-model";
 import {
   applyStageVisuals,
   createNewStageRecord,
@@ -36,7 +38,12 @@ import {
   saveStageFromElement,
   StageRecord,
 } from "./obj/stage";
-import { TaskRecord } from "./obj/task";
+import {
+  createNewTaskRecord,
+  loadTasks,
+  TaskRecord,
+  upsertTask,
+} from "./obj/task";
 import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
@@ -64,6 +71,7 @@ type MapPageContext = {
   stages: StageRecord[];
   stage: StageRecord | null;
   tasks: TaskRecord[];
+  lastPointerClient: { x: number; y: number } | null;
   bgmAudio: HTMLAudioElement;
   fileStore: FileStoreGateway;
 };
@@ -109,6 +117,9 @@ async function initMapPage(): Promise<void> {
   await setupHeader(cntx, elements);
   lg(cntx, "setupHeader");
   cntx.mapViewport.setup();
+  cntx.elements.stageMap?.addEventListener("pointermove", (event) => {
+    cntx.lastPointerClient = { x: event.clientX, y: event.clientY };
+  });
 
   // イントロ演出とマップ表示待機を分離し、ステージ描画がCSS遷移と競合しないようにする。
   await revealWorld({
@@ -150,7 +161,7 @@ async function initMapPage(): Promise<void> {
     const nextOrd = getVisibleStages(cntx).length + 1;
     const stageRecord = createNewStageRecord(nextOrd);
     stageRecord.wId = cntx.world?.wId || "";
-    stageRecord.parentStgId = cntx.stage?.stgId || "";
+    stageRecord.parentStgId = cntx.stage?.stgId || null;
     const stageObject = createStageButton(stageRecord, cntx);
 
     appendStageObject(stageObject, cntx);
@@ -160,6 +171,34 @@ async function initMapPage(): Promise<void> {
 
     await saveStageFromElement(stageObject, nextOrd);
     cntx.stageHandlers.beginDrag(stageObject);
+  });
+
+  elements.addTaskButton?.addEventListener("click", async () => {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+      return;
+    }
+    if (!context) {
+      return;
+    }
+    const cntx = context;
+    if (!cntx.world) {
+      window.alert(t("no_world"));
+      return;
+    }
+
+    const nextOrd = getVisibleTasks(cntx).length + 1;
+    const taskRecord = createNewTaskRecord(nextOrd);
+    taskRecord.wId = cntx.world.wId;
+    taskRecord.stgId = cntx.stage?.stgId || null;
+    const taskObject = createTaskButton(taskRecord, cntx);
+    appendTaskObject(taskObject, cntx);
+
+    const point = getNewStageAnchorPoint(cntx);
+    cntx.mapViewport.placeElementWithinContent(taskObject, point.x, point.y);
+
+    await saveTaskFromElement(taskObject, cntx, nextOrd);
+    cntx.tasks.push(taskRecord);
+    beginTaskDrag(taskObject, cntx);
   });
 }
 
@@ -171,7 +210,7 @@ async function mountMapPageParts(): Promise<void> {
   const partNames = [
     "logo",
     "header",
-    "control",
+    "toolbox",
     "map",
     "stage_dialog",
     "info",
@@ -201,6 +240,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     stage: null,
     stages: [],
     tasks: [],
+    lastPointerClient: null,
     worlds: [],
     bgmAudio,
     fileStore,
@@ -306,6 +346,14 @@ function getNewStageAnchorPoint(cntx: MapPageContext): {
   y: number;
 } {
   const { logoWrap, stageMap } = cntx.elements;
+
+  if (cntx.lastPointerClient) {
+    return cntx.mapViewport.viewportPointToContentPoint(
+      cntx.lastPointerClient.x,
+      cntx.lastPointerClient.y,
+    );
+  }
+
   // イントロ表示中は、ロゴ領域の下端付近に新規ステージを置く。
   if (logoWrap instanceof HTMLElement && document.body.contains(logoWrap)) {
     const rect = logoWrap.getBoundingClientRect();
@@ -376,6 +424,98 @@ function appendStageObject(
   document.body.append(target);
 }
 
+function createTaskButton(
+  task: TaskRecord,
+  cntx: MapPageContext,
+): HTMLButtonElement {
+  const taskObject = document.createElement("button");
+  taskObject.type = "button";
+  taskObject.className = `${MAPPAGE_CLASS.stageObject} ${MAPPAGE_CLASS.taskObject}`;
+  taskObject.dataset.taskId = task.tkId;
+  taskObject.dataset.taskWorldId = task.wId;
+  taskObject.dataset.taskStageId = task.stgId || "";
+  taskObject.dataset.taskOrd = String(task.ord);
+  taskObject.dataset.taskColor = task.clr;
+  taskObject.dataset.stageLabel = task.nm;
+  taskObject.style.setProperty("--stage-base-color", task.clr || "#6fd3ff");
+  taskObject.setAttribute("aria-label", task.nm || t("add_task"));
+  taskObject.addEventListener("pointerdown", (event) => {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+      return;
+    }
+    event.stopPropagation();
+    beginTaskDrag(taskObject, cntx, event);
+  });
+  return taskObject;
+}
+
+function appendTaskObject(
+  target: HTMLButtonElement,
+  cntx: MapPageContext,
+): void {
+  if (cntx.elements.stageMapContent instanceof HTMLElement) {
+    cntx.elements.stageMapContent.append(target);
+    return;
+  }
+  document.body.append(target);
+}
+
+function beginTaskDrag(
+  target: HTMLButtonElement,
+  cntx: MapPageContext,
+  startEvent?: PointerEvent,
+): void {
+  beginStageDrag({
+    target,
+    mapViewport: cntx.mapViewport,
+    startEvent,
+    onDragEnd: async (dragTarget) => {
+      await saveTaskFromElement(dragTarget, cntx);
+      await rerenderStagesFromDb();
+    },
+  });
+}
+
+async function saveTaskFromElement(
+  target: HTMLButtonElement,
+  cntx: MapPageContext,
+  ordOverride?: number,
+): Promise<void> {
+  const tkId = String(target.dataset.taskId || "").trim();
+  const wId = String(
+    target.dataset.taskWorldId || cntx.world?.wId || "",
+  ).trim();
+  const stgIdText = String(
+    target.dataset.taskStageId || cntx.stage?.stgId || "",
+  ).trim();
+  const stgId = stgIdText || null;
+  const nm = String(target.dataset.stageLabel || "").trim();
+  if (!tkId || !wId || !nm) {
+    return;
+  }
+
+  const ordFromData = Number.parseInt(target.dataset.taskOrd || "", 10);
+  const ord = Number.isFinite(ordOverride)
+    ? Number(ordOverride)
+    : Number.isFinite(ordFromData)
+      ? ordFromData
+      : 0;
+  const current = cntx.tasks.find((task) => task.tkId === tkId);
+  const pos = getElementPosition(target);
+
+  await upsertTask({
+    ...(current || createNewTaskRecord(ord || 1)),
+    tkId,
+    wId,
+    stgId,
+    ord,
+    nm,
+    clr: String(target.dataset.taskColor || current?.clr || "#6fd3ff"),
+    x: pos.x,
+    y: pos.y,
+  });
+}
+
 async function rerenderStagesFromDb(): Promise<void> {
   if (!context) {
     return;
@@ -386,11 +526,22 @@ async function rerenderStagesFromDb(): Promise<void> {
     document.querySelectorAll(MAPPAGE_SELECTOR.stageObject),
   );
   for (const el of current) {
+    if (el.classList.contains(MAPPAGE_CLASS.taskObject)) {
+      continue;
+    }
+    el.remove();
+  }
+
+  const currentTasks = Array.from(
+    document.querySelectorAll(MAPPAGE_SELECTOR.taskObject),
+  );
+  for (const el of currentTasks) {
     el.remove();
   }
 
   const stages = await loadStages();
   cntx.stages = stages;
+  cntx.tasks = await loadTasks();
   cntx.stage = await resolveSelectedStage(cntx);
   cntx.world =
     cntx.worlds.find((world) => world.wId === cntx.world?.wId) ||
@@ -405,14 +556,37 @@ async function rerenderStagesFromDb(): Promise<void> {
     appendStageObject(stageObject, cntx);
     cntx.mapViewport.placeElementWithinContent(stageObject, stage.x, stage.y);
   }
+
+  for (const task of getVisibleTasks(cntx)) {
+    const taskObject = createTaskButton(task, cntx);
+    appendTaskObject(taskObject, cntx);
+    cntx.mapViewport.placeElementWithinContent(taskObject, task.x, task.y);
+  }
+}
+
+function getVisibleTasks(cntx: MapPageContext): TaskRecord[] {
+  const selectedWorldId = cntx.world?.wId || "";
+  const selectedStageId = cntx.stage?.stgId || null;
+  return cntx.tasks
+    .filter((task) => task.wId === selectedWorldId)
+    .filter(
+      (task) =>
+        (task.stgId || null) === selectedStageId ||
+        (selectedStageId === null && task.stgId === ""),
+    )
+    .sort((a, b) => a.ord - b.ord);
 }
 
 function getVisibleStages(cntx: MapPageContext): StageRecord[] {
   const selectedWorldId = cntx.world?.wId || "";
-  const selectedStageId = cntx.stage?.stgId || "";
+  const selectedStageId = cntx.stage?.stgId || null;
   return cntx.stages
     .filter((stage) => stage.wId === selectedWorldId)
-    .filter((stage) => stage.parentStgId === selectedStageId)
+    .filter(
+      (stage) =>
+        (stage.parentStgId || null) === selectedStageId ||
+        (selectedStageId === null && stage.parentStgId === ""),
+    )
     .sort((a, b) => a.ord - b.ord);
 }
 

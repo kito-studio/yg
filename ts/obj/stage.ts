@@ -16,7 +16,7 @@ import { buildId } from "./common";
 export type StageRecord = {
   stgId: string;
   wId: string;
-  parentStgId: string;
+  parentStgId: string | null;
   ord: number;
   nm: string;
   desc: string;
@@ -54,7 +54,7 @@ export function createStageObject(
   el.className = MAPPAGE_CLASS.stageObject;
   el.dataset.stageId = stage.stgId;
   el.dataset.stageWorldId = stage.wId;
-  el.dataset.parentStageId = stage.parentStgId;
+  el.dataset.parentStageId = stage.parentStgId || "";
   el.dataset.stageLabel = stage.nm;
   el.dataset.stageOrd = String(stage.ord);
   el.dataset.stageDesc = stage.desc;
@@ -151,7 +151,7 @@ export function createNewStageRecord(ord: number): StageRecord {
   return {
     stgId: buildStageId(),
     wId: "",
-    parentStgId: "",
+    parentStgId: null,
     ord,
     nm: `ST${ord}`,
     desc: "",
@@ -193,7 +193,8 @@ export async function saveStageFromElement(
 ): Promise<void> {
   const stgId = target.dataset.stageId;
   const wId = String(target.dataset.stageWorldId || "").trim();
-  const parentStgId = String(target.dataset.parentStageId || "").trim();
+  const parentStgIdText = String(target.dataset.parentStageId || "").trim();
+  const parentStgId = parentStgIdText || null;
   const stageName = target.dataset.stageLabel;
   const stageDesc = target.dataset.stageDesc || "";
   const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");

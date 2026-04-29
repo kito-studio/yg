@@ -70,7 +70,12 @@ export function normalizeStageRow(
   return {
     stgId: row.stgId as string,
     wId: typeof row.wId === "string" ? row.wId : "",
-    parentStgId: typeof row.parentStgId === "string" ? row.parentStgId : "",
+    parentStgId:
+      typeof row.parentStgId === "string"
+        ? row.parentStgId
+        : row.parentStgId == null
+          ? null
+          : "",
     ord: safeOrd,
     nm: safeName,
     desc: safeDesc,

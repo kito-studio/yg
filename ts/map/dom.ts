@@ -1,5 +1,6 @@
 export const MAP_PAGE_ID = {
   addButton: "addStageBtn",
+  addTaskButton: "addTaskBtn",
   logoWrap: "logoWrap",
   modeSwitch: "modeSwitch",
   stageMap: "stageMap",
@@ -45,6 +46,7 @@ export const MAPPAGE_CLASS = {
   editMode: "edit-mode",
   viewMode: "view-mode",
   stageObject: "stage-object",
+  taskObject: "task-object",
   stageObjectSideImage: "stage-object-side-image",
   stageObjectSideImageImg: "stage-object-side-image-img",
   stageObjectHp: "stage-object-hp",
@@ -54,6 +56,7 @@ export const MAPPAGE_CLASS = {
 
 export const MAPPAGE_SELECTOR = {
   stageObject: `.${MAPPAGE_CLASS.stageObject}`,
+  taskObject: `.${MAPPAGE_CLASS.taskObject}`,
   stageObjectHpFill: `.${MAPPAGE_CLASS.stageObjectHpFill}`,
   stageObjectSideImage: `.${MAPPAGE_CLASS.stageObjectSideImage}`,
   stageObjectSideImageImg: `.${MAPPAGE_CLASS.stageObjectSideImageImg}`,
@@ -62,6 +65,7 @@ export const MAPPAGE_SELECTOR = {
 
 export type MapPageElements = {
   addButton: HTMLButtonElement | null;
+  addTaskButton: HTMLButtonElement | null;
   logoWrap: HTMLElement | null;
   modeSwitch: HTMLInputElement | null;
   stageMap: HTMLElement | null;
@@ -79,6 +83,9 @@ export function getMapPageElements(): MapPageElements {
   return {
     addButton: document.getElementById(
       MAP_PAGE_ID.addButton,
+    ) as HTMLButtonElement | null,
+    addTaskButton: document.getElementById(
+      MAP_PAGE_ID.addTaskButton,
     ) as HTMLButtonElement | null,
     logoWrap: document.getElementById(MAP_PAGE_ID.logoWrap),
     modeSwitch: document.getElementById(

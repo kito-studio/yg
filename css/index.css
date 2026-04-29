@@ -265,7 +265,8 @@ body.world-active .control-stack {
   opacity: 1;
 }
 
-.add-stage-btn {
+.add-stage-btn,
+.add-task-btn {
   width: 52px;
   height: 52px;
   border: 0;
@@ -282,6 +283,16 @@ body.world-active .control-stack {
     opacity 280ms ease,
     transform 280ms ease,
     filter 180ms ease;
+}
+
+.add-stage-btn {
+  color: #2b1a0c;
+  background: linear-gradient(180deg, #ffd778, #ffbb53);
+}
+
+.add-task-btn {
+  color: #0f2a33;
+  background: linear-gradient(180deg, #9ce7ff, #56c9f3);
 }
 
 .db-io-row {
@@ -323,22 +334,26 @@ body.world-active .control-stack {
   filter: brightness(1.08);
 }
 
-body.world-active.edit-mode .add-stage-btn {
+body.world-active.edit-mode .add-stage-btn,
+body.world-active.edit-mode .add-task-btn {
   opacity: 1;
   transform: translateY(0);
 }
 
-body.world-active:not(.edit-mode) .add-stage-btn {
+body.world-active:not(.edit-mode) .add-stage-btn,
+body.world-active:not(.edit-mode) .add-task-btn {
   opacity: 0;
   transform: translateY(6px);
   pointer-events: none;
 }
 
-.add-stage-btn:hover {
+.add-stage-btn:hover,
+.add-task-btn:hover {
   filter: brightness(1.05);
 }
 
-.add-stage-btn:active {
+.add-stage-btn:active,
+.add-task-btn:active {
   transform: translateY(1px);
 }
 
@@ -399,6 +414,13 @@ body.view-mode .stage-object {
   font-size: 13px;
   color: #3e1f06;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.task-object {
+  border-color: rgba(228, 248, 255, 0.9);
+  box-shadow:
+    0 12px 20px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 2px rgba(230, 248, 255, 0.22);
 }
 
 .stage-object.dragging {
