@@ -1,5 +1,6 @@
 import { setAppStateText } from "../data/yg-idb";
-import { context, MapPageContext, rerenderStagesFromDb } from "../map";
+import { context, rerenderStagesFromDb } from "../map";
+import { MapPageContext } from "../map/constants";
 import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
 import {

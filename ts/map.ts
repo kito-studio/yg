@@ -6,12 +6,11 @@ import { applyI18n, t } from "./i18n";
 import { ensureYGDatabase } from "./init-db";
 import { addMapObjectWithDrag } from "./map/add-object";
 import {
-  LOGO_DISMISS_TIMEOUT_MS,
-  LOGO_FADE_DURATION_MS,
   MAP_INERTIA_FRICTION,
   MAP_INERTIA_MIN_SPEED,
   MAP_PAN_THRESHOLD_PX,
   MAP_ZOOM_SENSITIVITY,
+  MapPageContext,
   MAX_MAP_SCALE,
   MIN_MAP_SCALE,
   STAGE_MAP_CONTENT_SIZE,
@@ -22,11 +21,7 @@ import {
   MAPPAGE_SELECTOR,
   MapPageElements,
 } from "./map/dom";
-import {
-  revealWorld,
-  shouldSkipIntro,
-  waitForMapRevealComplete,
-} from "./map/reveal";
+import { intro, waitForMapRevealComplete } from "./map/reveal";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
 import {
@@ -36,7 +31,7 @@ import {
   StageRecord,
 } from "./obj/stage";
 import { createNewTaskRecord, loadTasks, TaskRecord } from "./obj/task";
-import { loadSelectedWorld, loadWorlds, WorldRecord } from "./obj/world";
+import { loadSelectedWorld, loadWorlds } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
@@ -53,33 +48,15 @@ import {
   appendStageObject,
   createStageButton,
   createStageHandlers,
-  createStageInteractionHandlers,
 } from "./ui/stage-interactions";
 import {
   appendTaskObject,
   createTaskButton,
   createTaskHandlers,
-  createTaskInteractionHandlers,
   saveTaskFromElement,
 } from "./ui/task-interactions";
 import { lg } from "./util/log";
 
-// －－－ 地図画面要素 －－－
-export type MapPageContext = {
-  elements: MapPageElements;
-  mapViewport: MapViewportController;
-  stageDialog: ReturnType<typeof createStageDialogController>;
-  stageHandlers: ReturnType<typeof createStageInteractionHandlers>;
-  taskHandlers: ReturnType<typeof createTaskInteractionHandlers>;
-  worlds: WorldRecord[];
-  world: WorldRecord | null;
-  stages: StageRecord[];
-  stage: StageRecord | null;
-  tasks: TaskRecord[];
-  lastPointerClient: { x: number; y: number } | null;
-  bgmAudio: HTMLAudioElement;
-  fileStore: FileStoreGateway;
-};
 export let context: MapPageContext | null = null;
 
 // －－－ 初期化－－－
@@ -127,13 +104,8 @@ async function initMapPage(): Promise<void> {
   });
 
   // イントロ演出とマップ表示待機を分離し、ステージ描画がCSS遷移と競合しないようにする。
-  await revealWorld({
-    logoElement: elements.logoWrap,
-    skipIntro: shouldSkipIntro(document.referrer, window.location.hostname),
-    dismissTimeoutMs: LOGO_DISMISS_TIMEOUT_MS,
-    fadeDurationMs: LOGO_FADE_DURATION_MS,
-    exitingClass: MAPPAGE_CLASS.logoExiting,
-    activeClass: MAPPAGE_CLASS.worldActive,
+  await intro({
+    logoWrap: elements.logoWrap,
   });
 
   setupLoopAudioToggle({

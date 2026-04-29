@@ -1,3 +1,6 @@
+import { LOGO_DISMISS_TIMEOUT_MS, LOGO_FADE_DURATION_MS } from "./constants";
+import { MAPPAGE_CLASS } from "./dom";
+
 type RevealWorldOptions = {
   logoElement: HTMLElement | null;
   skipIntro: boolean;
@@ -15,6 +18,20 @@ type WaitForMapRevealOptions = {
 
 export function shouldSkipIntro(referrer: string, hostname: string): boolean {
   return !!(referrer && referrer.includes(hostname));
+}
+
+export async function intro(elements: {
+  logoWrap: HTMLElement | null;
+}): Promise<void> {
+  // イントロ演出とマップ表示待機を分離し、ステージ描画がCSS遷移と競合しないようにする。
+  await revealWorld({
+    logoElement: elements.logoWrap,
+    skipIntro: shouldSkipIntro(document.referrer, window.location.hostname),
+    dismissTimeoutMs: LOGO_DISMISS_TIMEOUT_MS,
+    fadeDurationMs: LOGO_FADE_DURATION_MS,
+    exitingClass: MAPPAGE_CLASS.logoExiting,
+    activeClass: MAPPAGE_CLASS.worldActive,
+  });
 }
 
 export async function revealWorld(options: RevealWorldOptions): Promise<void> {
