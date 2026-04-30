@@ -37,7 +37,6 @@ import { loadSelectedWorld, loadWorlds } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
-  renderHeaderSelectedLabel,
   setupHeaderSwitch,
   setupModeSwitch,
   setupToolbar,
@@ -394,13 +393,17 @@ async function syncHeaderSelection(cntx: MapPageContext): Promise<void> {
 function renderCurrentHeaderLabel(
   cntx: MapPageContext,
   selectedWorldNameEl: HTMLElement | null,
+  selectedStageNameEl: HTMLElement | null,
 ): void {
-  renderHeaderSelectedLabel({
-    labelElement: selectedWorldNameEl,
-    items: getHeaderItems(cntx),
-    selectedId: getHeaderSelectedId(cntx),
-    emptyLabel: t("no_world"),
-  });
+  const worldLabel = cntx.world?.nm || cntx.world?.wId || t("no_world");
+  if (selectedWorldNameEl instanceof HTMLElement) {
+    selectedWorldNameEl.textContent = worldLabel;
+  }
+
+  if (selectedStageNameEl instanceof HTMLElement) {
+    const stageLabel = cntx.stage?.nm || cntx.stage?.stgId || "";
+    selectedStageNameEl.textContent = stageLabel ? ` > ${stageLabel}` : "";
+  }
 }
 
 export async function rerenderStagesFromDb(): Promise<void> {
@@ -436,7 +439,11 @@ export async function rerenderStagesFromDb(): Promise<void> {
     null;
 
   await applyCurrentMapBackground(cntx);
-  renderCurrentHeaderLabel(cntx, cntx.elements.selectedWorldName);
+  renderCurrentHeaderLabel(
+    cntx,
+    cntx.elements.selectedWorldName,
+    cntx.elements.selectedStageName,
+  );
 
   for (const stage of getVisibleStages(cntx)) {
     const stageObject = createStageButton(stage, cntx);

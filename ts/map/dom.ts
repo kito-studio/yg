@@ -10,6 +10,7 @@ export const MAP_PAGE_ID = {
   dbUploadInput: "dbUploadInput",
   dbMaintButton: "dbMaintBtn",
   selectedWorldName: "selectedWorldName",
+  selectedStageName: "selectedStageName",
   worldLeftButton: "prev",
   worldRightButton: "next",
   dialog: "stageSettingsDialog",
@@ -115,6 +116,7 @@ export type MapPageElements = {
   dbUploadInput: HTMLInputElement | null;
   dbMaintButton: HTMLButtonElement | null;
   selectedWorldName: HTMLElement | null;
+  selectedStageName: HTMLElement | null;
   worldLeftButton: HTMLElement | null;
   worldRightButton: HTMLElement | null;
   bgmButton: HTMLButtonElement | null;
@@ -146,6 +148,7 @@ export function getMapPageElements(): MapPageElements {
       MAP_PAGE_ID.dbMaintButton,
     ) as HTMLButtonElement | null,
     selectedWorldName: document.getElementById(MAP_PAGE_ID.selectedWorldName),
+    selectedStageName: document.getElementById(MAP_PAGE_ID.selectedStageName),
     worldLeftButton: document.getElementById(MAP_PAGE_ID.worldLeftButton),
     worldRightButton: document.getElementById(MAP_PAGE_ID.worldRightButton),
     bgmButton: document.getElementById(
