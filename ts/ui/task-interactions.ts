@@ -1,11 +1,19 @@
+import { FileStoreGateway } from "../data/file-store";
 import { t } from "../i18n";
 import { context, rerenderStagesFromDb } from "../map";
 import { MapPageContext } from "../map/constants";
-import { MAPPAGE_CLASS } from "../map/dom";
+import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
 import { createMapObjectElement } from "../map/object-view";
-import { applySpriteCellVisual } from "../map/sprite-sheet";
-import { clampProgress, getElementPosition } from "../map/stage-model";
+import {
+  applySpriteCellVisual,
+  clearSpriteCellVisual,
+} from "../map/sprite-sheet";
+import {
+  clampProgress,
+  getElementPosition,
+  getHpColor,
+} from "../map/stage-model";
 import { createNewTaskRecord, TaskRecord, upsertTask } from "../obj/task";
 
 type TaskMapViewport = {
@@ -166,8 +174,123 @@ export function createTaskButton(
   taskObject.addEventListener("pointerdown", cntx.taskHandlers.onPointerDown);
   taskObject.addEventListener("dblclick", cntx.taskHandlers.onTaskDoubleClick);
   taskObject.addEventListener("click", cntx.taskHandlers.onTaskClick);
-  applyTaskSpriteVisual(taskObject, task);
+  applyTaskVisuals(taskObject, task, cntx.fileStore);
   return taskObject;
+}
+
+function applyTaskVisuals(
+  target: HTMLButtonElement,
+  task: TaskRecord,
+  fileStore: FileStoreGateway,
+): void {
+  const color = String(task.clr || "#6fd3ff").trim() || "#6fd3ff";
+  const progress = clampProgress(Number(task.progress));
+  const hpFill = target.querySelector(
+    MAPPAGE_SELECTOR.stageObjectHpFill,
+  ) as HTMLElement | null;
+
+  target.style.setProperty("--stage-base-color", color);
+  if (hpFill) {
+    hpFill.style.width = `${progress}%`;
+    hpFill.style.backgroundColor = getHpColor(progress);
+  }
+
+  void applyTaskImageVisual(target, fileStore);
+}
+
+function parseTaskSpriteCell(
+  value: string | undefined,
+  fallback: number,
+): number {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.max(0, parsed);
+}
+
+function applyTaskSpriteFallback(target: HTMLButtonElement): void {
+  const ord = Number.parseInt(String(target.dataset.taskOrd || "1"), 10);
+  const safeOrd = Number.isFinite(ord) && ord > 0 ? ord : 1;
+  const col = parseTaskSpriteCell(
+    target.dataset.taskSpriteCol,
+    (safeOrd - 1) % 12,
+  );
+  const row = parseTaskSpriteCell(target.dataset.taskSpriteRow, 0);
+  const tone =
+    normalizeSpriteTone(target.dataset.taskSpriteTone || "") ||
+    resolveTaskTone(String(target.dataset.taskState || ""));
+
+  target.dataset.taskSpriteCol = String(col);
+  target.dataset.taskSpriteRow = String(row);
+  target.dataset.taskSpriteTone = tone;
+
+  applySpriteCellVisual(target, {
+    col,
+    row,
+    tone,
+  });
+}
+
+async function applyTaskImageVisual(
+  target: HTMLButtonElement,
+  fileStore: FileStoreGateway,
+): Promise<void> {
+  const sideImage = target.querySelector(
+    MAPPAGE_SELECTOR.stageObjectSideImage,
+  ) as HTMLElement | null;
+  const sideImageImg = target.querySelector(
+    MAPPAGE_SELECTOR.stageObjectSideImageImg,
+  ) as HTMLImageElement | null;
+  if (!sideImage || !sideImageImg) {
+    return;
+  }
+
+  const fId = String(target.dataset.taskImgPath || "").trim();
+  if (!fId) {
+    applyTaskSpriteFallback(target);
+    return;
+  }
+
+  const objectUrl = await fileStore.getObjectUrlForFile(fId);
+  if (!objectUrl) {
+    applyTaskSpriteFallback(target);
+    return;
+  }
+
+  const spriteMeta = await fileStore.getSpriteMetaForFile(fId);
+  if (spriteMeta) {
+    const col = Math.min(
+      parseTaskSpriteCell(target.dataset.taskSpriteCol, 0),
+      Math.max(0, spriteMeta.nw - 1),
+    );
+    const row = Math.min(
+      parseTaskSpriteCell(target.dataset.taskSpriteRow, 0),
+      Math.max(0, spriteMeta.nh - 1),
+    );
+    const tone =
+      normalizeSpriteTone(target.dataset.taskSpriteTone || "") ||
+      resolveTaskTone(String(target.dataset.taskState || ""));
+
+    target.dataset.taskSpriteCol = String(col);
+    target.dataset.taskSpriteRow = String(row);
+    target.dataset.taskSpriteTone = tone;
+
+    applySpriteCellVisual(target, {
+      col,
+      row,
+      tone,
+      sheetUrl: objectUrl,
+      columns: spriteMeta.nw,
+      rows: spriteMeta.nh,
+    });
+    return;
+  }
+
+  clearSpriteCellVisual(target);
+  sideImage.hidden = false;
+  sideImageImg.hidden = false;
+  sideImageImg.src = objectUrl;
 }
 
 function applyTaskSpriteVisual(
