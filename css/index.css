@@ -880,7 +880,7 @@ body.view-mode .task-object {
   z-index: 500;
   clip-path: circle(0% at 50% 50%);
   pointer-events: none;
-  transition: clip-path 360ms ease-in-out;
+  transition: clip-path 600ms ease-in-out;
 }
 
 .weight-total-row {
