@@ -10,6 +10,7 @@ import {
   normalizeImageBrightness,
   normalizeImageContrast,
   normalizeImageHue,
+  renderSpriteCellDataUrl,
 } from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
@@ -101,6 +102,7 @@ export function createTaskDialogController(
   } = elements;
 
   let editingTask: HTMLButtonElement | null = null;
+  let currentTaskSpriteMeta: SpriteFileMeta | null = null;
   const DEFAULT_SPRITE_GRID = 12;
 
   const frame = createBasicImageDialogFrame({
@@ -168,7 +170,28 @@ export function createTaskDialogController(
     }
 
     const objectUrl = await fileStore.getObjectUrlForFile(path);
-    taskImagePreview.src = objectUrl || path;
+    const resolvedUrl = objectUrl || path;
+    let finalSrc = resolvedUrl;
+    if (currentTaskSpriteMeta) {
+      const row = Number.parseInt(
+        editingTask?.dataset.taskSpriteRow || "0",
+        10,
+      );
+      const col = Number.parseInt(
+        editingTask?.dataset.taskSpriteCol || "0",
+        10,
+      );
+      const cellDataUrl = await renderSpriteCellDataUrl(
+        resolvedUrl,
+        currentTaskSpriteMeta,
+        row,
+        col,
+      );
+      if (cellDataUrl) {
+        finalSrc = cellDataUrl;
+      }
+    }
+    taskImagePreview.src = finalSrc;
     taskImagePreview.style.filter = buildImageFilterCss(filterValues);
     taskImagePreview.hidden = false;
   }
@@ -184,6 +207,7 @@ export function createTaskDialogController(
     target: HTMLButtonElement | null,
     spriteMeta: SpriteFileMeta | null,
   ): void {
+    currentTaskSpriteMeta = spriteMeta;
     if (
       !(taskSpriteCoordGroup instanceof HTMLElement) ||
       !(taskSpriteRowInput instanceof HTMLInputElement) ||
@@ -334,16 +358,16 @@ export function createTaskDialogController(
       imgContrast,
     );
 
+    const spriteMeta = imgPath
+      ? await fileStore.getSpriteMetaForFile(imgPath)
+      : null;
+    updateSpriteCoordinateInputs(target, spriteMeta);
+
     await updateTaskImagePreview(imgPath, {
       hue: imgHue,
       brightness: imgBrightness,
       contrast: imgContrast,
     });
-
-    const spriteMeta = imgPath
-      ? await fileStore.getSpriteMetaForFile(imgPath)
-      : null;
-    updateSpriteCoordinateInputs(target, spriteMeta);
   }
 
   async function saveImageTabSelection(): Promise<void> {
@@ -790,6 +814,15 @@ export function createTaskDialogController(
 
     const handleSpritePlacementInput = () => {
       syncSpritePlacementFromInputs();
+      if (editingTask) {
+        void updateTaskImagePreview(editingTask.dataset.taskImgPath || "", {
+          hue: normalizeImageHue(editingTask.dataset.taskImgHue),
+          brightness: normalizeImageBrightness(
+            editingTask.dataset.taskImgBrightness,
+          ),
+          contrast: normalizeImageContrast(editingTask.dataset.taskImgContrast),
+        });
+      }
     };
 
     if (taskSpriteRowInput instanceof HTMLInputElement) {

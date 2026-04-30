@@ -11,6 +11,7 @@ import {
   normalizeImageBrightness,
   normalizeImageContrast,
   normalizeImageHue,
+  renderSpriteCellDataUrl,
 } from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
@@ -126,6 +127,7 @@ export function createStageDialogController(
   } = elements;
 
   let editingStage: HTMLButtonElement | null = null;
+  let currentStageSpriteMeta: SpriteFileMeta | null = null;
   const DEFAULT_SPRITE_GRID = 12;
 
   const frame = createBasicImageDialogFrame({
@@ -176,10 +178,24 @@ export function createStageDialogController(
     }
   }
 
+  function buildStageImgSpriteClip():
+    | { meta: SpriteFileMeta; row: number; col: number }
+    | undefined {
+    if (!currentStageSpriteMeta || !editingStage) {
+      return undefined;
+    }
+    return {
+      meta: currentStageSpriteMeta,
+      row: Number.parseInt(editingStage.dataset.stageSpriteRow || "0", 10),
+      col: Number.parseInt(editingStage.dataset.stageSpriteCol || "0", 10),
+    };
+  }
+
   async function updateImagePreview(
     previewElement: HTMLElement | null,
     fId: string,
     filterValues: { hue: number; brightness: number; contrast: number },
+    spriteClip?: { meta: SpriteFileMeta; row: number; col: number },
   ): Promise<void> {
     if (!(previewElement instanceof HTMLImageElement)) {
       return;
@@ -194,7 +210,20 @@ export function createStageDialogController(
     }
 
     const objectUrl = await fileStore.getObjectUrlForFile(path);
-    previewElement.src = objectUrl || path;
+    const resolvedUrl = objectUrl || path;
+    let finalSrc = resolvedUrl;
+    if (spriteClip) {
+      const cellDataUrl = await renderSpriteCellDataUrl(
+        resolvedUrl,
+        spriteClip.meta,
+        spriteClip.row,
+        spriteClip.col,
+      );
+      if (cellDataUrl) {
+        finalSrc = cellDataUrl;
+      }
+    }
+    previewElement.src = finalSrc;
     previewElement.style.filter = buildImageFilterCss(filterValues);
     previewElement.hidden = false;
   }
@@ -210,6 +239,7 @@ export function createStageDialogController(
     target: HTMLButtonElement | null,
     spriteMeta: SpriteFileMeta | null,
   ): void {
+    currentStageSpriteMeta = spriteMeta;
     if (
       !(stageSpriteCoordGroup instanceof HTMLElement) ||
       !(stageSpriteRowInput instanceof HTMLInputElement) ||
@@ -404,21 +434,26 @@ export function createStageDialogController(
       mapImgContrast,
     );
 
-    await updateImagePreview(stageImagePreview, stageImgPath, {
-      hue: stageImgHue,
-      brightness: stageImgBrightness,
-      contrast: stageImgContrast,
-    });
+    const spriteMeta = stageImgPath
+      ? await fileStore.getSpriteMetaForFile(stageImgPath)
+      : null;
+    updateSpriteCoordinateInputs(target, spriteMeta);
+
+    await updateImagePreview(
+      stageImagePreview,
+      stageImgPath,
+      {
+        hue: stageImgHue,
+        brightness: stageImgBrightness,
+        contrast: stageImgContrast,
+      },
+      buildStageImgSpriteClip(),
+    );
     await updateImagePreview(mapImagePreview, mapImgPath, {
       hue: mapImgHue,
       brightness: mapImgBrightness,
       contrast: mapImgContrast,
     });
-
-    const spriteMeta = stageImgPath
-      ? await fileStore.getSpriteMetaForFile(stageImgPath)
-      : null;
-    updateSpriteCoordinateInputs(target, spriteMeta);
   }
 
   async function saveImageTabSelection(kind: "stage" | "map"): Promise<void> {
@@ -479,13 +514,20 @@ export function createStageDialogController(
       syncSpritePlacementFromInputs();
       stageImageCurrent.textContent = fId;
       await applyStageImageVisual(editingStage, fileStore);
-      await updateImagePreview(stageImagePreview, fId, {
-        hue: normalizeImageHue(editingStage.dataset.stageImgHue),
-        brightness: normalizeImageBrightness(
-          editingStage.dataset.stageImgBrightness,
-        ),
-        contrast: normalizeImageContrast(editingStage.dataset.stageImgContrast),
-      });
+      await updateImagePreview(
+        stageImagePreview,
+        fId,
+        {
+          hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+          brightness: normalizeImageBrightness(
+            editingStage.dataset.stageImgBrightness,
+          ),
+          contrast: normalizeImageContrast(
+            editingStage.dataset.stageImgContrast,
+          ),
+        },
+        buildStageImgSpriteClip(),
+      );
     } else {
       editingStage.dataset.stageMapImgPath = fId;
       if (mapImageHueInput instanceof HTMLInputElement) {
@@ -737,15 +779,20 @@ export function createStageDialogController(
               stageImageCurrent.textContent = row.fId;
             }
             await applyStageImageVisual(editingStage, fileStore);
-            await updateImagePreview(stageImagePreview, row.fId, {
-              hue: normalizeImageHue(editingStage.dataset.stageImgHue),
-              brightness: normalizeImageBrightness(
-                editingStage.dataset.stageImgBrightness,
-              ),
-              contrast: normalizeImageContrast(
-                editingStage.dataset.stageImgContrast,
-              ),
-            });
+            await updateImagePreview(
+              stageImagePreview,
+              row.fId,
+              {
+                hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+                brightness: normalizeImageBrightness(
+                  editingStage.dataset.stageImgBrightness,
+                ),
+                contrast: normalizeImageContrast(
+                  editingStage.dataset.stageImgContrast,
+                ),
+              },
+              buildStageImgSpriteClip(),
+            );
           } else {
             editingStage.dataset.stageMapImgPath = row.fId;
             if (mapImageHueInput instanceof HTMLInputElement) {
@@ -947,6 +994,20 @@ export function createStageDialogController(
       syncSpritePlacementFromInputs();
       if (editingStage) {
         void applyStageImageVisual(editingStage, fileStore);
+        void updateImagePreview(
+          stageImagePreview,
+          editingStage.dataset.stageImgPath || "",
+          {
+            hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+            brightness: normalizeImageBrightness(
+              editingStage.dataset.stageImgBrightness,
+            ),
+            contrast: normalizeImageContrast(
+              editingStage.dataset.stageImgContrast,
+            ),
+          },
+          buildStageImgSpriteClip(),
+        );
       }
     };
 
@@ -1012,6 +1073,7 @@ export function createStageDialogController(
               editingStage.dataset.stageImgContrast,
             ),
           },
+          buildStageImgSpriteClip(),
         );
       });
     }
@@ -1051,6 +1113,7 @@ export function createStageDialogController(
               editingStage.dataset.stageImgContrast,
             ),
           },
+          buildStageImgSpriteClip(),
         );
       });
     }
@@ -1092,6 +1155,7 @@ export function createStageDialogController(
             ),
             contrast: next,
           },
+          buildStageImgSpriteClip(),
         );
       });
     }

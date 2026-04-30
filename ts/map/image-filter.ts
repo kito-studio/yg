@@ -1,3 +1,5 @@
+import type { SpriteFileMeta } from "../data/file-store";
+
 export type ImageFilterValues = {
   hue: number;
   brightness: number;
@@ -56,4 +58,45 @@ export function buildImageFilterCss(
   );
 
   return filters.join(" ");
+}
+
+export async function renderSpriteCellDataUrl(
+  srcUrl: string,
+  meta: SpriteFileMeta,
+  row: number,
+  col: number,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = meta.unit_w;
+        canvas.height = meta.unit_h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        const safeRow = Math.max(0, Math.min(row, meta.nh - 1));
+        const safeCol = Math.max(0, Math.min(col, meta.nw - 1));
+        ctx.drawImage(
+          img,
+          safeCol * meta.unit_w,
+          safeRow * meta.unit_h,
+          meta.unit_w,
+          meta.unit_h,
+          0,
+          0,
+          meta.unit_w,
+          meta.unit_h,
+        );
+        resolve(canvas.toDataURL());
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = srcUrl;
+  });
 }
