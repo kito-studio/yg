@@ -15,6 +15,7 @@ import {
   getHpColor,
   normalizeHexColor,
   normalizeStageRow,
+  progressToHp,
 } from "../map/stage-model";
 import { buildId } from "./common";
 
@@ -95,7 +96,8 @@ export function applyStageVisuals(
   const progress = clampProgress(
     Number.parseInt(target.dataset.stageProgress || `${DEFAULT_PROGRESS}`, 10),
   );
-  const hpColor = getHpColor(progress);
+  const hp = progressToHp(progress);
+  const hpColor = getHpColor(hp);
 
   target.style.setProperty("--stage-base-color", color);
 
@@ -103,7 +105,7 @@ export function applyStageVisuals(
     MAPPAGE_SELECTOR.stageObjectHpFill,
   ) as HTMLElement | null;
   if (hpFill) {
-    hpFill.style.width = `${progress}%`;
+    hpFill.style.width = `${hp}%`;
     hpFill.style.backgroundColor = hpColor;
   }
 

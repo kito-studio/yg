@@ -20,6 +20,10 @@ export function clampProgress(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
+export function progressToHp(progress: number): number {
+  return clampProgress(100 - clampProgress(progress));
+}
+
 export function getHpColor(value: number): string {
   if (value > 75) {
     return "#4dd26d";

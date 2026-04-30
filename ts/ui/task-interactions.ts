@@ -13,6 +13,7 @@ import {
   clampProgress,
   getElementPosition,
   getHpColor,
+  progressToHp,
 } from "../map/stage-model";
 import { createNewTaskRecord, TaskRecord, upsertTask } from "../obj/task";
 
@@ -185,14 +186,15 @@ function applyTaskVisuals(
 ): void {
   const color = String(task.clr || "#6fd3ff").trim() || "#6fd3ff";
   const progress = clampProgress(Number(task.progress));
+  const hp = progressToHp(progress);
   const hpFill = target.querySelector(
     MAPPAGE_SELECTOR.stageObjectHpFill,
   ) as HTMLElement | null;
 
   target.style.setProperty("--stage-base-color", color);
   if (hpFill) {
-    hpFill.style.width = `${progress}%`;
-    hpFill.style.backgroundColor = getHpColor(progress);
+    hpFill.style.width = `${hp}%`;
+    hpFill.style.backgroundColor = getHpColor(hp);
   }
 
   void applyTaskImageVisual(target, fileStore);
