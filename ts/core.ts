@@ -1,6 +1,39 @@
 import { createAccessToken } from "./access";
 import { lg } from "./util/log";
 
+const htmlPartsRaw = import.meta.glob("../html_part/*.html", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+}) as Record<string, string>;
+
+const staticAssetUrls = import.meta.glob(
+  ["../img/**/*.{png,jpg,jpeg,webp,gif,svg}", "../wav/**/*.{wav,mp3,ogg,m4a}"],
+  {
+    eager: true,
+    import: "default",
+  },
+) as Record<string, string>;
+
+function resolveBundledAssetPath(relativePath: string): string | null {
+  const normalized = relativePath.replace(/^\.\//, "");
+  const key = `../${normalized}`;
+  return staticAssetUrls[key] || null;
+}
+
+function rewriteBundledPartAssetPaths(html: string): string {
+  return html.replace(
+    /(src|href)=(["'])(\.\/(?:img|wav)\/[^"']+)\2/g,
+    (match, attr: string, quote: string, path: string) => {
+      const resolved = resolveBundledAssetPath(path);
+      if (!resolved) {
+        return match;
+      }
+      return `${attr}=${quote}${resolved}${quote}`;
+    },
+  );
+}
+
 (() => {
   if (isLocal()) {
     lg(
@@ -30,6 +63,16 @@ export async function insertHtmlPart(
   url: string,
   target: HTMLElement,
 ): Promise<void> {
+  const bundledKey = `../html_part/${url}.html`;
+  const bundledHtml = htmlPartsRaw[bundledKey];
+  if (typeof bundledHtml === "string" && bundledHtml.length > 0) {
+    target.insertAdjacentHTML(
+      "beforeend",
+      rewriteBundledPartAssetPaths(bundledHtml),
+    );
+    return;
+  }
+
   const uri = `/yg/html_part/${url}.html`;
   const res = await fetch(uri);
   if (!res.ok) {

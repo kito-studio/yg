@@ -78,6 +78,11 @@ import {
 } from "./ui/task-interactions";
 import { lg } from "./util/log";
 
+const fallbackWorldMapImageUrl = new URL(
+  "../img/world_map/fantasy1_e.jpg",
+  import.meta.url,
+).toString();
+
 export let context: MapPageContext | null = null;
 
 // －－－ 初期化－－－
@@ -770,7 +775,7 @@ async function applyCurrentMapBackground(cntx: MapPageContext): Promise<void> {
     "saturate(1.08) contrast(1.02)",
   );
   if (!path) {
-    image.src = "./img/world_map/fantasy1_e.jpg";
+    image.src = fallbackWorldMapImageUrl;
     return;
   }
 
