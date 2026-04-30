@@ -3,7 +3,6 @@ import { t } from "../i18n";
 import { playAudio } from "../sound/audio";
 import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
-import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
 import {
   buildImageFilterCss,
@@ -13,7 +12,7 @@ import {
   renderSpriteCellDataUrl,
 } from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
-import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
+import { normalizeHexColor } from "./stage-model";
 
 type TaskDialogElements = {
   dialog: HTMLElement | null;
@@ -23,9 +22,6 @@ type TaskDialogElements = {
   tabImage: HTMLElement | null;
   panelBasic: HTMLElement | null;
   panelImage: HTMLElement | null;
-  progressRange: HTMLElement | null;
-  progressBarFill: HTMLElement | null;
-  progressValue: HTMLElement | null;
   nameInput: HTMLElement | null;
   descInput: HTMLElement | null;
   colorInput: HTMLElement | null;
@@ -74,9 +70,6 @@ export function createTaskDialogController(
     tabImage,
     panelBasic,
     panelImage,
-    progressRange,
-    progressBarFill,
-    progressValue,
     nameInput,
     descInput,
     colorInput,
@@ -117,27 +110,6 @@ export function createTaskDialogController(
       editingTask = null;
     },
   });
-
-  function updateProgressPreview(value: number): void {
-    const safeValue = clampProgress(value);
-    const hpColor = getHpColor(safeValue);
-
-    if (progressBarFill instanceof HTMLElement) {
-      progressBarFill.style.width = `${safeValue}%`;
-      progressBarFill.style.background = hpColor;
-    }
-
-    if (progressValue instanceof HTMLElement) {
-      progressValue.textContent = `${safeValue}%`;
-      progressValue.style.color = hpColor;
-    }
-
-    if (progressRange instanceof HTMLInputElement) {
-      const trackColor = "rgba(12, 8, 4, 0.9)";
-      const fillColor = "#9b60d0";
-      progressRange.style.background = `linear-gradient(to right, ${fillColor} ${safeValue}%, ${trackColor} ${safeValue}%)`;
-    }
-  }
 
   function syncFilterPair(
     textInput: HTMLInputElement | null,
@@ -682,7 +654,6 @@ export function createTaskDialogController(
   async function onSave(): Promise<void> {
     if (
       !editingTask ||
-      !(progressRange instanceof HTMLInputElement) ||
       !(nameInput instanceof HTMLInputElement) ||
       !(descInput instanceof HTMLTextAreaElement) ||
       !(colorInput instanceof HTMLInputElement)
@@ -695,9 +666,6 @@ export function createTaskDialogController(
       nameInput.value.trim() || editingTask.dataset.stageLabel || "TK";
     const nextDesc = descInput.value.trim();
     const nextColor = normalizeHexColor(colorInput.value);
-    const nextProgress = clampProgress(
-      Number.parseInt(progressRange.value, 10),
-    );
     const imgHue =
       taskImageHueInput instanceof HTMLInputElement
         ? normalizeImageHue(taskImageHueInput.value)
@@ -714,7 +682,6 @@ export function createTaskDialogController(
     setMapObjectLabel(editingTask, nextName);
     editingTask.dataset.taskDesc = nextDesc;
     editingTask.dataset.taskColor = nextColor;
-    editingTask.dataset.taskProgress = String(nextProgress);
     editingTask.dataset.taskImgHue = String(imgHue);
     editingTask.dataset.taskImgBrightness = String(imgBrightness);
     editingTask.dataset.taskImgContrast = String(imgContrast);
@@ -734,12 +701,6 @@ export function createTaskDialogController(
   }
 
   function bindEvents(): void {
-    if (progressRange instanceof HTMLInputElement) {
-      progressRange.addEventListener("input", () => {
-        updateProgressPreview(Number.parseInt(progressRange.value, 10));
-      });
-    }
-
     if (
       taskImageFileInput instanceof HTMLInputElement &&
       taskImageClearButton instanceof HTMLButtonElement
@@ -958,7 +919,6 @@ export function createTaskDialogController(
 
   function open(target: HTMLButtonElement): void {
     if (
-      !(progressRange instanceof HTMLInputElement) ||
       !(nameInput instanceof HTMLInputElement) ||
       !(descInput instanceof HTMLTextAreaElement) ||
       !(colorInput instanceof HTMLInputElement)
@@ -972,15 +932,10 @@ export function createTaskDialogController(
     const label = target.dataset.stageLabel || "TK";
     const desc = target.dataset.taskDesc || "";
     const color = normalizeHexColor(target.dataset.taskColor || "#6fd3ff");
-    const progress = clampProgress(
-      Number.parseInt(target.dataset.taskProgress || `${DEFAULT_PROGRESS}`, 10),
-    );
 
     nameInput.value = label;
     descInput.value = desc;
     colorInput.value = color;
-    progressRange.value = String(progress);
-    updateProgressPreview(progress);
     frame.setTab("basic");
     void syncImageTabFromTask(target);
     frame.open();
