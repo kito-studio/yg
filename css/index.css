@@ -370,12 +370,12 @@ body.world-active:not(.edit-mode) .add-task-btn {
   touch-action: none;
   overflow: visible;
   z-index: 8;
-  filter: drop-shadow(0 0 12px rgba(32, 0, 64, 0.9));
+  filter: drop-shadow(0 0 8px rgba(32, 0, 64, 0.9));
 }
 .stage-object {
   border: 5px double rgba(128, 128, 0, 0.35);
-  border-radius: 12%;
-  background: rgba(0, 0, 0, 0.28);
+  border-radius: 48%;
+  background: rgba(64, 0, 0, 0.3);
 }
 .task-object {
   border: none;
