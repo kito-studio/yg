@@ -28,6 +28,15 @@ export function getTaskDialogElements() {
       TASK_DIALOG_ID.taskImageSaveButton,
     ),
     taskImageCurrent: document.getElementById(TASK_DIALOG_ID.taskImageCurrent),
+    taskImageHueInput: document.getElementById(
+      TASK_DIALOG_ID.taskImageHueInput,
+    ),
+    taskImageBrightnessInput: document.getElementById(
+      TASK_DIALOG_ID.taskImageBrightnessInput,
+    ),
+    taskImageContrastInput: document.getElementById(
+      TASK_DIALOG_ID.taskImageContrastInput,
+    ),
     taskSpriteToggle: document.getElementById(TASK_DIALOG_ID.taskSpriteToggle),
     taskSpriteMetaInfo: document.getElementById(
       TASK_DIALOG_ID.taskSpriteMetaInfo,

@@ -5,6 +5,11 @@ import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
 
@@ -27,6 +32,9 @@ type TaskDialogElements = {
   taskImageClearButton: HTMLElement | null;
   taskImageSaveButton: HTMLElement | null;
   taskImageCurrent: HTMLElement | null;
+  taskImageHueInput: HTMLElement | null;
+  taskImageBrightnessInput: HTMLElement | null;
+  taskImageContrastInput: HTMLElement | null;
   taskSpriteToggle: HTMLElement | null;
   taskSpriteMetaInfo: HTMLElement | null;
   taskSpriteCoordGroup: HTMLElement | null;
@@ -71,6 +79,9 @@ export function createTaskDialogController(
     taskImageClearButton,
     taskImageSaveButton,
     taskImageCurrent,
+    taskImageHueInput,
+    taskImageBrightnessInput,
+    taskImageContrastInput,
     taskSpriteToggle,
     taskSpriteMetaInfo,
     taskSpriteCoordGroup,
@@ -244,7 +255,25 @@ export function createTaskDialogController(
     taskImageFileInput.value = "";
 
     const imgPath = String(target.dataset.taskImgPath || "").trim();
+    const imgHue = normalizeImageHue(target.dataset.taskImgHue);
+    const imgBrightness = normalizeImageBrightness(
+      target.dataset.taskImgBrightness,
+    );
+    const imgContrast = normalizeImageContrast(target.dataset.taskImgContrast);
     taskImageCurrent.textContent = imgPath || "-";
+    target.dataset.taskImgHue = String(imgHue);
+    target.dataset.taskImgBrightness = String(imgBrightness);
+    target.dataset.taskImgContrast = String(imgContrast);
+
+    if (taskImageHueInput instanceof HTMLInputElement) {
+      taskImageHueInput.value = String(imgHue);
+    }
+    if (taskImageBrightnessInput instanceof HTMLInputElement) {
+      taskImageBrightnessInput.value = String(imgBrightness);
+    }
+    if (taskImageContrastInput instanceof HTMLInputElement) {
+      taskImageContrastInput.value = String(imgContrast);
+    }
 
     const spriteMeta = imgPath
       ? await fileStore.getSpriteMetaForFile(imgPath)
@@ -287,6 +316,21 @@ export function createTaskDialogController(
     }
 
     editingTask.dataset.taskImgPath = fId;
+    if (taskImageHueInput instanceof HTMLInputElement) {
+      editingTask.dataset.taskImgHue = String(
+        normalizeImageHue(taskImageHueInput.value),
+      );
+    }
+    if (taskImageBrightnessInput instanceof HTMLInputElement) {
+      editingTask.dataset.taskImgBrightness = String(
+        normalizeImageBrightness(taskImageBrightnessInput.value),
+      );
+    }
+    if (taskImageContrastInput instanceof HTMLInputElement) {
+      editingTask.dataset.taskImgContrast = String(
+        normalizeImageContrast(taskImageContrastInput.value),
+      );
+    }
     updateSpriteCoordinateInputs(editingTask, spriteMeta);
     syncSpritePlacementFromInputs();
     taskImageCurrent.textContent = fId;
@@ -488,6 +532,21 @@ export function createTaskDialogController(
           }
 
           editingTask.dataset.taskImgPath = row.fId;
+          if (taskImageHueInput instanceof HTMLInputElement) {
+            editingTask.dataset.taskImgHue = String(
+              normalizeImageHue(taskImageHueInput.value),
+            );
+          }
+          if (taskImageBrightnessInput instanceof HTMLInputElement) {
+            editingTask.dataset.taskImgBrightness = String(
+              normalizeImageBrightness(taskImageBrightnessInput.value),
+            );
+          }
+          if (taskImageContrastInput instanceof HTMLInputElement) {
+            editingTask.dataset.taskImgContrast = String(
+              normalizeImageContrast(taskImageContrastInput.value),
+            );
+          }
           updateSpriteCoordinateInputs(editingTask, row.spriteMeta);
           syncSpritePlacementFromInputs();
           if (taskImageCurrent instanceof HTMLElement) {
@@ -534,11 +593,26 @@ export function createTaskDialogController(
     const nextProgress = clampProgress(
       Number.parseInt(progressRange.value, 10),
     );
+    const imgHue =
+      taskImageHueInput instanceof HTMLInputElement
+        ? normalizeImageHue(taskImageHueInput.value)
+        : normalizeImageHue(editingTask.dataset.taskImgHue);
+    const imgBrightness =
+      taskImageBrightnessInput instanceof HTMLInputElement
+        ? normalizeImageBrightness(taskImageBrightnessInput.value)
+        : normalizeImageBrightness(editingTask.dataset.taskImgBrightness);
+    const imgContrast =
+      taskImageContrastInput instanceof HTMLInputElement
+        ? normalizeImageContrast(taskImageContrastInput.value)
+        : normalizeImageContrast(editingTask.dataset.taskImgContrast);
 
     setMapObjectLabel(editingTask, nextName);
     editingTask.dataset.taskDesc = nextDesc;
     editingTask.dataset.taskColor = nextColor;
     editingTask.dataset.taskProgress = String(nextProgress);
+    editingTask.dataset.taskImgHue = String(imgHue);
+    editingTask.dataset.taskImgBrightness = String(imgBrightness);
+    editingTask.dataset.taskImgContrast = String(imgContrast);
     syncSpritePlacementFromInputs();
     editingTask.title = nextDesc || t("stage_no_desc");
     editingTask.setAttribute(
@@ -654,6 +728,39 @@ export function createTaskDialogController(
     if (taskImageSaveButton instanceof HTMLButtonElement) {
       taskImageSaveButton.addEventListener("click", () => {
         void saveImageTabSelection();
+      });
+    }
+
+    if (taskImageHueInput instanceof HTMLInputElement) {
+      taskImageHueInput.addEventListener("input", () => {
+        if (!editingTask) {
+          return;
+        }
+        editingTask.dataset.taskImgHue = String(
+          normalizeImageHue(taskImageHueInput.value),
+        );
+      });
+    }
+
+    if (taskImageBrightnessInput instanceof HTMLInputElement) {
+      taskImageBrightnessInput.addEventListener("input", () => {
+        if (!editingTask) {
+          return;
+        }
+        editingTask.dataset.taskImgBrightness = String(
+          normalizeImageBrightness(taskImageBrightnessInput.value),
+        );
+      });
+    }
+
+    if (taskImageContrastInput instanceof HTMLInputElement) {
+      taskImageContrastInput.addEventListener("input", () => {
+        if (!editingTask) {
+          return;
+        }
+        editingTask.dataset.taskImgContrast = String(
+          normalizeImageContrast(taskImageContrastInput.value),
+        );
       });
     }
 

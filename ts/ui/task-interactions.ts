@@ -4,6 +4,12 @@ import { context, rerenderStagesFromDb } from "../map";
 import { MapPageContext } from "../map/constants";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
+import {
+  buildImageFilterCss,
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "../map/image-filter";
 import { createMapObjectElement } from "../map/object-view";
 import {
   applySpriteCellVisual,
@@ -189,6 +195,9 @@ export function createTaskButton(
       taskDesc: task.desc,
       taskProgress: String(task.progress),
       taskImgPath: task.iconFId,
+      taskImgHue: String(normalizeImageHue(task.iconHue)),
+      taskImgBrightness: String(normalizeImageBrightness(task.iconBrightness)),
+      taskImgContrast: String(normalizeImageContrast(task.iconContrast)),
       taskSpriteCol: String(task.spriteCol),
       taskSpriteRow: String(task.spriteRow),
       taskSpriteTone: task.spriteTone,
@@ -273,6 +282,20 @@ async function applyTaskImageVisual(
   if (!sideImage || !sideImageImg) {
     return;
   }
+
+  const imgHue = normalizeImageHue(target.dataset.taskImgHue);
+  const imgBrightness = normalizeImageBrightness(
+    target.dataset.taskImgBrightness,
+  );
+  const imgContrast = normalizeImageContrast(target.dataset.taskImgContrast);
+  target.dataset.taskImgHue = String(imgHue);
+  target.dataset.taskImgBrightness = String(imgBrightness);
+  target.dataset.taskImgContrast = String(imgContrast);
+  sideImage.style.filter = buildImageFilterCss({
+    hue: imgHue,
+    brightness: imgBrightness,
+    contrast: imgContrast,
+  });
 
   const fId = String(target.dataset.taskImgPath || "").trim();
   if (!fId) {
@@ -417,8 +440,20 @@ export async function saveTaskFromElement(
     normalizeSpriteTone(target.dataset.taskSpriteTone || "") ||
     resolveTaskTone(String(target.dataset.taskState || ""));
   const current = cntx.tasks.find((task) => task.tkId === tkId);
+  const iconHue = normalizeImageHue(
+    target.dataset.taskImgHue || current?.iconHue,
+  );
+  const iconBrightness = normalizeImageBrightness(
+    target.dataset.taskImgBrightness || current?.iconBrightness,
+  );
+  const iconContrast = normalizeImageContrast(
+    target.dataset.taskImgContrast || current?.iconContrast,
+  );
   const pos = getElementPosition(target);
 
+  target.dataset.taskImgHue = String(iconHue);
+  target.dataset.taskImgBrightness = String(iconBrightness);
+  target.dataset.taskImgContrast = String(iconContrast);
   target.dataset.taskSpriteCol = String(spriteCol);
   target.dataset.taskSpriteRow = String(spriteRow);
   target.dataset.taskSpriteTone = spriteTone;
@@ -437,6 +472,9 @@ export async function saveTaskFromElement(
         : (current?.progress ?? 0),
     ),
     iconFId: String(target.dataset.taskImgPath || current?.iconFId || ""),
+    iconHue,
+    iconBrightness,
+    iconContrast,
     clr: String(target.dataset.taskColor || current?.clr || "#6fd3ff"),
     spriteCol,
     spriteRow,

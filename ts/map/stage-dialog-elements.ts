@@ -29,6 +29,13 @@ export function getStageDialogElements() {
       MAP_PAGE_ID.stageImageSaveButton,
     ),
     stageImageCurrent: document.getElementById(MAP_PAGE_ID.stageImageCurrent),
+    stageImageHueInput: document.getElementById(MAP_PAGE_ID.stageImageHueInput),
+    stageImageBrightnessInput: document.getElementById(
+      MAP_PAGE_ID.stageImageBrightnessInput,
+    ),
+    stageImageContrastInput: document.getElementById(
+      MAP_PAGE_ID.stageImageContrastInput,
+    ),
     stageSpriteToggle: document.getElementById(MAP_PAGE_ID.stageSpriteToggle),
     stageSpriteMetaInfo: document.getElementById(
       MAP_PAGE_ID.stageSpriteMetaInfo,
@@ -49,6 +56,13 @@ export function getStageDialogElements() {
     ),
     mapImageSaveButton: document.getElementById(MAP_PAGE_ID.mapImageSaveButton),
     mapImageCurrent: document.getElementById(MAP_PAGE_ID.mapImageCurrent),
+    mapImageHueInput: document.getElementById(MAP_PAGE_ID.mapImageHueInput),
+    mapImageBrightnessInput: document.getElementById(
+      MAP_PAGE_ID.mapImageBrightnessInput,
+    ),
+    mapImageContrastInput: document.getElementById(
+      MAP_PAGE_ID.mapImageContrastInput,
+    ),
     cancelButton: document.getElementById(MAP_PAGE_ID.cancelButton),
     saveButton: document.getElementById(MAP_PAGE_ID.saveButton),
   };

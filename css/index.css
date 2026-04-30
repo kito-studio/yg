@@ -616,6 +616,29 @@ body.view-mode .task-object {
   color: rgba(255, 227, 182, 0.84);
 }
 
+.stage-image-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stage-image-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-image-filter-field label {
+  font-size: 12px;
+  color: rgba(255, 227, 182, 0.86);
+}
+
+.stage-image-filter-field input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
 .stage-sprite-toggle {
   display: inline-flex;
   align-items: center;

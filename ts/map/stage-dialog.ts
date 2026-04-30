@@ -6,6 +6,11 @@ import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
 
@@ -28,6 +33,9 @@ type StageDialogElements = {
   stageImageClearButton: HTMLElement | null;
   stageImageSaveButton: HTMLElement | null;
   stageImageCurrent: HTMLElement | null;
+  stageImageHueInput: HTMLElement | null;
+  stageImageBrightnessInput: HTMLElement | null;
+  stageImageContrastInput: HTMLElement | null;
   stageSpriteToggle: HTMLElement | null;
   stageSpriteMetaInfo: HTMLElement | null;
   stageSpriteCoordGroup: HTMLElement | null;
@@ -38,6 +46,9 @@ type StageDialogElements = {
   mapImageClearButton: HTMLElement | null;
   mapImageSaveButton: HTMLElement | null;
   mapImageCurrent: HTMLElement | null;
+  mapImageHueInput: HTMLElement | null;
+  mapImageBrightnessInput: HTMLElement | null;
+  mapImageContrastInput: HTMLElement | null;
   cancelButton: HTMLElement | null;
   saveButton: HTMLElement | null;
 };
@@ -77,6 +88,9 @@ export function createStageDialogController(
     stageImageClearButton,
     stageImageSaveButton,
     stageImageCurrent,
+    stageImageHueInput,
+    stageImageBrightnessInput,
+    stageImageContrastInput,
     stageSpriteToggle,
     stageSpriteMetaInfo,
     stageSpriteCoordGroup,
@@ -87,6 +101,9 @@ export function createStageDialogController(
     mapImageClearButton,
     mapImageSaveButton,
     mapImageCurrent,
+    mapImageHueInput,
+    mapImageBrightnessInput,
+    mapImageContrastInput,
     cancelButton,
     saveButton,
   } = elements;
@@ -259,8 +276,47 @@ export function createStageDialogController(
 
     const stageImgPath = String(target.dataset.stageImgPath || "").trim();
     const mapImgPath = String(target.dataset.stageMapImgPath || "").trim();
+    const stageImgHue = normalizeImageHue(target.dataset.stageImgHue);
+    const stageImgBrightness = normalizeImageBrightness(
+      target.dataset.stageImgBrightness,
+    );
+    const stageImgContrast = normalizeImageContrast(
+      target.dataset.stageImgContrast,
+    );
+    const mapImgHue = normalizeImageHue(target.dataset.stageMapImgHue);
+    const mapImgBrightness = normalizeImageBrightness(
+      target.dataset.stageMapImgBrightness,
+    );
+    const mapImgContrast = normalizeImageContrast(
+      target.dataset.stageMapImgContrast,
+    );
     stageImageCurrent.textContent = stageImgPath || "-";
     mapImageCurrent.textContent = mapImgPath || "-";
+    target.dataset.stageImgHue = String(stageImgHue);
+    target.dataset.stageImgBrightness = String(stageImgBrightness);
+    target.dataset.stageImgContrast = String(stageImgContrast);
+    target.dataset.stageMapImgHue = String(mapImgHue);
+    target.dataset.stageMapImgBrightness = String(mapImgBrightness);
+    target.dataset.stageMapImgContrast = String(mapImgContrast);
+
+    if (stageImageHueInput instanceof HTMLInputElement) {
+      stageImageHueInput.value = String(stageImgHue);
+    }
+    if (stageImageBrightnessInput instanceof HTMLInputElement) {
+      stageImageBrightnessInput.value = String(stageImgBrightness);
+    }
+    if (stageImageContrastInput instanceof HTMLInputElement) {
+      stageImageContrastInput.value = String(stageImgContrast);
+    }
+    if (mapImageHueInput instanceof HTMLInputElement) {
+      mapImageHueInput.value = String(mapImgHue);
+    }
+    if (mapImageBrightnessInput instanceof HTMLInputElement) {
+      mapImageBrightnessInput.value = String(mapImgBrightness);
+    }
+    if (mapImageContrastInput instanceof HTMLInputElement) {
+      mapImageContrastInput.value = String(mapImgContrast);
+    }
 
     const spriteMeta = stageImgPath
       ? await fileStore.getSpriteMetaForFile(stageImgPath)
@@ -307,12 +363,42 @@ export function createStageDialogController(
 
     if (kind === "stage") {
       editingStage.dataset.stageImgPath = fId;
+      if (stageImageHueInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageImgHue = String(
+          normalizeImageHue(stageImageHueInput.value),
+        );
+      }
+      if (stageImageBrightnessInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageImgBrightness = String(
+          normalizeImageBrightness(stageImageBrightnessInput.value),
+        );
+      }
+      if (stageImageContrastInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageImgContrast = String(
+          normalizeImageContrast(stageImageContrastInput.value),
+        );
+      }
       updateSpriteCoordinateInputs(editingStage, spriteMeta);
       syncSpritePlacementFromInputs();
       stageImageCurrent.textContent = fId;
       await applyStageImageVisual(editingStage, fileStore);
     } else {
       editingStage.dataset.stageMapImgPath = fId;
+      if (mapImageHueInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageMapImgHue = String(
+          normalizeImageHue(mapImageHueInput.value),
+        );
+      }
+      if (mapImageBrightnessInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageMapImgBrightness = String(
+          normalizeImageBrightness(mapImageBrightnessInput.value),
+        );
+      }
+      if (mapImageContrastInput instanceof HTMLInputElement) {
+        editingStage.dataset.stageMapImgContrast = String(
+          normalizeImageContrast(mapImageContrastInput.value),
+        );
+      }
       mapImageCurrent.textContent = fId;
     }
 
@@ -517,6 +603,21 @@ export function createStageDialogController(
 
           if (kind === "stage") {
             editingStage.dataset.stageImgPath = row.fId;
+            if (stageImageHueInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageImgHue = String(
+                normalizeImageHue(stageImageHueInput.value),
+              );
+            }
+            if (stageImageBrightnessInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageImgBrightness = String(
+                normalizeImageBrightness(stageImageBrightnessInput.value),
+              );
+            }
+            if (stageImageContrastInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageImgContrast = String(
+                normalizeImageContrast(stageImageContrastInput.value),
+              );
+            }
             updateSpriteCoordinateInputs(editingStage, row.spriteMeta);
             syncSpritePlacementFromInputs();
             if (stageImageCurrent instanceof HTMLElement) {
@@ -525,6 +626,21 @@ export function createStageDialogController(
             await applyStageImageVisual(editingStage, fileStore);
           } else {
             editingStage.dataset.stageMapImgPath = row.fId;
+            if (mapImageHueInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageMapImgHue = String(
+                normalizeImageHue(mapImageHueInput.value),
+              );
+            }
+            if (mapImageBrightnessInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageMapImgBrightness = String(
+                normalizeImageBrightness(mapImageBrightnessInput.value),
+              );
+            }
+            if (mapImageContrastInput instanceof HTMLInputElement) {
+              editingStage.dataset.stageMapImgContrast = String(
+                normalizeImageContrast(mapImageContrastInput.value),
+              );
+            }
             if (mapImageCurrent instanceof HTMLElement) {
               mapImageCurrent.textContent = row.fId;
             }
@@ -570,11 +686,41 @@ export function createStageDialogController(
     const nextProgress = clampProgress(
       Number.parseInt(progressRange.value, 10),
     );
+    const stageImgHue =
+      stageImageHueInput instanceof HTMLInputElement
+        ? normalizeImageHue(stageImageHueInput.value)
+        : normalizeImageHue(editingStage.dataset.stageImgHue);
+    const stageImgBrightness =
+      stageImageBrightnessInput instanceof HTMLInputElement
+        ? normalizeImageBrightness(stageImageBrightnessInput.value)
+        : normalizeImageBrightness(editingStage.dataset.stageImgBrightness);
+    const stageImgContrast =
+      stageImageContrastInput instanceof HTMLInputElement
+        ? normalizeImageContrast(stageImageContrastInput.value)
+        : normalizeImageContrast(editingStage.dataset.stageImgContrast);
+    const mapImgHue =
+      mapImageHueInput instanceof HTMLInputElement
+        ? normalizeImageHue(mapImageHueInput.value)
+        : normalizeImageHue(editingStage.dataset.stageMapImgHue);
+    const mapImgBrightness =
+      mapImageBrightnessInput instanceof HTMLInputElement
+        ? normalizeImageBrightness(mapImageBrightnessInput.value)
+        : normalizeImageBrightness(editingStage.dataset.stageMapImgBrightness);
+    const mapImgContrast =
+      mapImageContrastInput instanceof HTMLInputElement
+        ? normalizeImageContrast(mapImageContrastInput.value)
+        : normalizeImageContrast(editingStage.dataset.stageMapImgContrast);
 
     setMapObjectLabel(editingStage, nextName);
     editingStage.dataset.stageDesc = nextDesc;
     editingStage.dataset.stageColor = nextColor;
     editingStage.dataset.stageProgress = String(nextProgress);
+    editingStage.dataset.stageImgHue = String(stageImgHue);
+    editingStage.dataset.stageImgBrightness = String(stageImgBrightness);
+    editingStage.dataset.stageImgContrast = String(stageImgContrast);
+    editingStage.dataset.stageMapImgHue = String(mapImgHue);
+    editingStage.dataset.stageMapImgBrightness = String(mapImgBrightness);
+    editingStage.dataset.stageMapImgContrast = String(mapImgContrast);
     syncSpritePlacementFromInputs();
     editingStage.title = nextDesc || t("stage_no_desc");
     editingStage.setAttribute(
@@ -708,9 +854,78 @@ export function createStageDialogController(
       });
     }
 
+    if (stageImageHueInput instanceof HTMLInputElement) {
+      stageImageHueInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageImgHue = String(
+          normalizeImageHue(stageImageHueInput.value),
+        );
+        void applyStageImageVisual(editingStage, fileStore);
+      });
+    }
+
+    if (stageImageBrightnessInput instanceof HTMLInputElement) {
+      stageImageBrightnessInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageImgBrightness = String(
+          normalizeImageBrightness(stageImageBrightnessInput.value),
+        );
+        void applyStageImageVisual(editingStage, fileStore);
+      });
+    }
+
+    if (stageImageContrastInput instanceof HTMLInputElement) {
+      stageImageContrastInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageImgContrast = String(
+          normalizeImageContrast(stageImageContrastInput.value),
+        );
+        void applyStageImageVisual(editingStage, fileStore);
+      });
+    }
+
     if (mapImageSaveButton instanceof HTMLButtonElement) {
       mapImageSaveButton.addEventListener("click", () => {
         void saveImageTabSelection("map");
+      });
+    }
+
+    if (mapImageHueInput instanceof HTMLInputElement) {
+      mapImageHueInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageMapImgHue = String(
+          normalizeImageHue(mapImageHueInput.value),
+        );
+      });
+    }
+
+    if (mapImageBrightnessInput instanceof HTMLInputElement) {
+      mapImageBrightnessInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageMapImgBrightness = String(
+          normalizeImageBrightness(mapImageBrightnessInput.value),
+        );
+      });
+    }
+
+    if (mapImageContrastInput instanceof HTMLInputElement) {
+      mapImageContrastInput.addEventListener("input", () => {
+        if (!editingStage) {
+          return;
+        }
+        editingStage.dataset.stageMapImgContrast = String(
+          normalizeImageContrast(mapImageContrastInput.value),
+        );
       });
     }
 

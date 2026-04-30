@@ -4,6 +4,12 @@ import { t } from "../i18n";
 import { openYGDatabase } from "../init-db";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "../map/constants";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "../map/dom";
+import {
+  buildImageFilterCss,
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "../map/image-filter";
 import { createMapObjectElement } from "../map/object-view";
 import {
   applySpriteCellVisual,
@@ -29,7 +35,13 @@ export type StageRecord = {
   baseColor: string;
   progress: number;
   imgPath: string;
+  imgHue: number;
+  imgBrightness: number;
+  imgContrast: number;
   mapImgPath: string;
+  mapImgHue: number;
+  mapImgBrightness: number;
+  mapImgContrast: number;
   spriteCol: number;
   spriteRow: number;
   spriteTone: string;
@@ -73,7 +85,15 @@ export function createStageObject(
       stageColor: normalizeHexColor(stage.baseColor),
       stageProgress: String(stage.progress),
       stageImgPath: stage.imgPath,
+      stageImgHue: String(normalizeImageHue(stage.imgHue)),
+      stageImgBrightness: String(normalizeImageBrightness(stage.imgBrightness)),
+      stageImgContrast: String(normalizeImageContrast(stage.imgContrast)),
       stageMapImgPath: stage.mapImgPath,
+      stageMapImgHue: String(normalizeImageHue(stage.mapImgHue)),
+      stageMapImgBrightness: String(
+        normalizeImageBrightness(stage.mapImgBrightness),
+      ),
+      stageMapImgContrast: String(normalizeImageContrast(stage.mapImgContrast)),
       stageSpriteCol: String(stage.spriteCol),
       stageSpriteRow: String(stage.spriteRow),
       stageSpriteTone: stage.spriteTone,
@@ -125,6 +145,20 @@ export async function applyStageImageVisual(
   if (!sideImage || !sideImageImg) {
     return;
   }
+
+  const imgHue = normalizeImageHue(target.dataset.stageImgHue);
+  const imgBrightness = normalizeImageBrightness(
+    target.dataset.stageImgBrightness,
+  );
+  const imgContrast = normalizeImageContrast(target.dataset.stageImgContrast);
+  target.dataset.stageImgHue = String(imgHue);
+  target.dataset.stageImgBrightness = String(imgBrightness);
+  target.dataset.stageImgContrast = String(imgContrast);
+  sideImage.style.filter = buildImageFilterCss({
+    hue: imgHue,
+    brightness: imgBrightness,
+    contrast: imgContrast,
+  });
 
   const fId = String(target.dataset.stageImgPath || "").trim();
   if (!fId) {
@@ -228,7 +262,13 @@ export function createNewStageRecord(ord: number): StageRecord {
     baseColor: "#ffc96b",
     progress: DEFAULT_PROGRESS,
     imgPath: "",
+    imgHue: 0,
+    imgBrightness: 1,
+    imgContrast: 1,
     mapImgPath: "",
+    mapImgHue: 0,
+    mapImgBrightness: 1,
+    mapImgContrast: 1,
     spriteCol: 0,
     spriteRow: 1,
     spriteTone: "none",
@@ -276,7 +316,21 @@ export async function saveStageFromElement(
     10,
   );
   const stageImgPath = String(target.dataset.stageImgPath || "").trim();
+  const stageImgHue = normalizeImageHue(target.dataset.stageImgHue);
+  const stageImgBrightness = normalizeImageBrightness(
+    target.dataset.stageImgBrightness,
+  );
+  const stageImgContrast = normalizeImageContrast(
+    target.dataset.stageImgContrast,
+  );
   const stageMapImgPath = String(target.dataset.stageMapImgPath || "").trim();
+  const stageMapImgHue = normalizeImageHue(target.dataset.stageMapImgHue);
+  const stageMapImgBrightness = normalizeImageBrightness(
+    target.dataset.stageMapImgBrightness,
+  );
+  const stageMapImgContrast = normalizeImageContrast(
+    target.dataset.stageMapImgContrast,
+  );
   const stageSpriteCol = parseSpriteCellValue(target.dataset.stageSpriteCol, 0);
   const stageSpriteRow = parseSpriteCellValue(target.dataset.stageSpriteRow, 1);
   const stageSpriteTone = normalizeSpriteTone(target.dataset.stageSpriteTone);
@@ -293,6 +347,12 @@ export async function saveStageFromElement(
       : 0;
 
   target.dataset.stageOrd = String(ord);
+  target.dataset.stageImgHue = String(stageImgHue);
+  target.dataset.stageImgBrightness = String(stageImgBrightness);
+  target.dataset.stageImgContrast = String(stageImgContrast);
+  target.dataset.stageMapImgHue = String(stageMapImgHue);
+  target.dataset.stageMapImgBrightness = String(stageMapImgBrightness);
+  target.dataset.stageMapImgContrast = String(stageMapImgContrast);
   target.dataset.stageSpriteCol = String(stageSpriteCol);
   target.dataset.stageSpriteRow = String(stageSpriteRow);
   target.dataset.stageSpriteTone = stageSpriteTone;
@@ -308,7 +368,13 @@ export async function saveStageFromElement(
     baseColor: stageColor,
     progress: clampProgress(stageProgress),
     imgPath: stageImgPath,
+    imgHue: stageImgHue,
+    imgBrightness: stageImgBrightness,
+    imgContrast: stageImgContrast,
     mapImgPath: stageMapImgPath,
+    mapImgHue: stageMapImgHue,
+    mapImgBrightness: stageMapImgBrightness,
+    mapImgContrast: stageMapImgContrast,
     spriteCol: stageSpriteCol,
     spriteRow: stageSpriteRow,
     spriteTone: stageSpriteTone,

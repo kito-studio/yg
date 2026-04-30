@@ -1,5 +1,10 @@
 import { StageRecord } from "../obj/stage";
 import { DEFAULT_PROGRESS, STAGE_DEFAULT_SIZE } from "./constants";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "./image-filter";
 
 export function getElementPosition(target: HTMLElement): {
   x: number;
@@ -97,7 +102,13 @@ export function normalizeStageRow(
     baseColor: safeColor,
     progress: safeProgress,
     imgPath: typeof row.imgPath === "string" ? row.imgPath : "",
+    imgHue: normalizeImageHue(row.imgHue),
+    imgBrightness: normalizeImageBrightness(row.imgBrightness),
+    imgContrast: normalizeImageContrast(row.imgContrast),
     mapImgPath: typeof row.mapImgPath === "string" ? row.mapImgPath : "",
+    mapImgHue: normalizeImageHue(row.mapImgHue),
+    mapImgBrightness: normalizeImageBrightness(row.mapImgBrightness),
+    mapImgContrast: normalizeImageContrast(row.mapImgContrast),
     spriteCol: safeSpriteCol,
     spriteRow: safeSpriteRow,
     spriteTone: safeSpriteTone,

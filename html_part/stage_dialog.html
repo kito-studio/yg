@@ -106,6 +106,51 @@
             <span data-i18n="current_file_label">現在</span>
             <span id="stageImageCurrent">-</span>
           </p>
+          <div class="stage-image-filter-grid">
+            <div class="stage-image-filter-field">
+              <label for="stageImageHueInput" data-i18n="image_filter_hue_label"
+                >色相回転 (deg)</label
+              >
+              <input
+                id="stageImageHueInput"
+                type="number"
+                min="-360"
+                max="360"
+                step="1"
+                value="0"
+              />
+            </div>
+            <div class="stage-image-filter-field">
+              <label
+                for="stageImageBrightnessInput"
+                data-i18n="image_filter_brightness_label"
+                >明度</label
+              >
+              <input
+                id="stageImageBrightnessInput"
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value="1"
+              />
+            </div>
+            <div class="stage-image-filter-field">
+              <label
+                for="stageImageContrastInput"
+                data-i18n="image_filter_contrast_label"
+                >コントラスト</label
+              >
+              <input
+                id="stageImageContrastInput"
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value="1"
+              />
+            </div>
+          </div>
           <label class="stage-sprite-toggle">
             <input id="stageSpriteToggle" type="checkbox" />
             <span>この画像をスプライトシートとして登録</span>
@@ -170,6 +215,51 @@
             <span data-i18n="current_file_label">現在</span>
             <span id="mapImageCurrent">-</span>
           </p>
+          <div class="stage-image-filter-grid">
+            <div class="stage-image-filter-field">
+              <label for="mapImageHueInput" data-i18n="image_filter_hue_label"
+                >色相回転 (deg)</label
+              >
+              <input
+                id="mapImageHueInput"
+                type="number"
+                min="-360"
+                max="360"
+                step="1"
+                value="0"
+              />
+            </div>
+            <div class="stage-image-filter-field">
+              <label
+                for="mapImageBrightnessInput"
+                data-i18n="image_filter_brightness_label"
+                >明度</label
+              >
+              <input
+                id="mapImageBrightnessInput"
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value="1"
+              />
+            </div>
+            <div class="stage-image-filter-field">
+              <label
+                for="mapImageContrastInput"
+                data-i18n="image_filter_contrast_label"
+                >コントラスト</label
+              >
+              <input
+                id="mapImageContrastInput"
+                type="number"
+                min="0.1"
+                max="3"
+                step="0.1"
+                value="1"
+              />
+            </div>
+          </div>
           <div class="stage-image-actions">
             <button
               class="stage-dialog-btn"

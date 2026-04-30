@@ -4,6 +4,11 @@ import {
   setAppStateText,
 } from "../data/yg-idb";
 import { openYGDatabase } from "../init-db";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "../map/image-filter";
 import { buildId } from "./common";
 
 export type WorldRecord = {
@@ -14,6 +19,9 @@ export type WorldRecord = {
   baseColor?: string;
   progress?: number;
   mapImgPath?: string;
+  mapImgHue?: number;
+  mapImgBrightness?: number;
+  mapImgContrast?: number;
 };
 
 export function buildWorldId(): string {
@@ -41,6 +49,9 @@ export async function loadWorlds(): Promise<WorldRecord[]> {
           ? Number(row.progress)
           : 100;
         const mapImgPath = String(row.mapImgPath || "").trim();
+        const mapImgHue = normalizeImageHue(row.mapImgHue);
+        const mapImgBrightness = normalizeImageBrightness(row.mapImgBrightness);
+        const mapImgContrast = normalizeImageContrast(row.mapImgContrast);
         return {
           wId,
           nm: nm || wId,
@@ -48,6 +59,9 @@ export async function loadWorlds(): Promise<WorldRecord[]> {
           baseColor,
           progress,
           mapImgPath,
+          mapImgHue,
+          mapImgBrightness,
+          mapImgContrast,
         };
       })
       .filter((row) => row.wId.length > 0);
@@ -69,6 +83,9 @@ export async function upsertWorld(record: WorldRecord): Promise<void> {
     ? Math.max(0, Math.min(100, Math.round(Number(record.progress))))
     : 100;
   const mapImgPath = String(record.mapImgPath || "").trim();
+  const mapImgHue = normalizeImageHue(record.mapImgHue);
+  const mapImgBrightness = normalizeImageBrightness(record.mapImgBrightness);
+  const mapImgContrast = normalizeImageContrast(record.mapImgContrast);
 
   const db = await openYGDatabase();
   try {
@@ -83,6 +100,9 @@ export async function upsertWorld(record: WorldRecord): Promise<void> {
         baseColor,
         progress,
         mapImgPath,
+        mapImgHue,
+        mapImgBrightness,
+        mapImgContrast,
       }),
     );
   } finally {

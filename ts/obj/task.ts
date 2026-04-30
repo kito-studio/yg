@@ -1,6 +1,11 @@
 import { requestToPromise, transactionDone } from "../data/yg-idb";
 import { openYGDatabase } from "../init-db";
 import { STAGE_DEFAULT_SIZE } from "../map/constants";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "../map/image-filter";
 import { buildId } from "./common";
 
 export type TaskRecord = {
@@ -23,6 +28,9 @@ export type TaskRecord = {
   iconFId: string;
   beforeFId: string;
   afterFId: string;
+  iconHue: number;
+  iconBrightness: number;
+  iconContrast: number;
   spriteCol: number;
   spriteRow: number;
   spriteTone: string;
@@ -63,6 +71,9 @@ export function createNewTaskRecord(ord: number): TaskRecord {
     dueD: 0,
     requiresApproval: 0,
     iconFId: "",
+    iconHue: 0,
+    iconBrightness: 1,
+    iconContrast: 1,
     beforeFId: "",
     afterFId: "",
     spriteCol: 0,
@@ -122,6 +133,9 @@ export async function loadTasks(): Promise<TaskRecord[]> {
             ? Number(row.requiresApproval)
             : 0,
           iconFId: String(row.iconFId || "").trim(),
+          iconHue: normalizeImageHue(row.iconHue),
+          iconBrightness: normalizeImageBrightness(row.iconBrightness),
+          iconContrast: normalizeImageContrast(row.iconContrast),
           beforeFId: String(row.beforeFId || "").trim(),
           afterFId: String(row.afterFId || "").trim(),
           spriteCol: Number.isFinite(Number(row.spriteCol))

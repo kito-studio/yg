@@ -5,6 +5,11 @@ import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
+import {
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "./image-filter";
 import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
 
 type WorldDialogElements = {
@@ -26,6 +31,9 @@ type WorldDialogElements = {
   mapImageClearButton: HTMLElement | null;
   mapImageSaveButton: HTMLElement | null;
   mapImageCurrent: HTMLElement | null;
+  mapImageHueInput: HTMLElement | null;
+  mapImageBrightnessInput: HTMLElement | null;
+  mapImageContrastInput: HTMLElement | null;
   cancelButton: HTMLElement | null;
   saveButton: HTMLElement | null;
 };
@@ -65,6 +73,9 @@ export function createWorldDialogController(
     mapImageClearButton,
     mapImageSaveButton,
     mapImageCurrent,
+    mapImageHueInput,
+    mapImageBrightnessInput,
+    mapImageContrastInput,
     cancelButton,
     saveButton,
   } = elements;
@@ -113,7 +124,20 @@ export function createWorldDialogController(
       return;
     }
     mapImageFileInput.value = "";
+    const mapImgHue = normalizeImageHue(world.mapImgHue);
+    const mapImgBrightness = normalizeImageBrightness(world.mapImgBrightness);
+    const mapImgContrast = normalizeImageContrast(world.mapImgContrast);
+
     mapImageCurrent.textContent = String(world.mapImgPath || "").trim() || "-";
+    if (mapImageHueInput instanceof HTMLInputElement) {
+      mapImageHueInput.value = String(mapImgHue);
+    }
+    if (mapImageBrightnessInput instanceof HTMLInputElement) {
+      mapImageBrightnessInput.value = String(mapImgBrightness);
+    }
+    if (mapImageContrastInput instanceof HTMLInputElement) {
+      mapImageContrastInput.value = String(mapImgContrast);
+    }
   }
 
   async function saveMapImageSelection(): Promise<void> {
@@ -141,6 +165,18 @@ export function createWorldDialogController(
     editingWorld = {
       ...editingWorld,
       mapImgPath: fId,
+      mapImgHue:
+        mapImageHueInput instanceof HTMLInputElement
+          ? normalizeImageHue(mapImageHueInput.value)
+          : normalizeImageHue(editingWorld.mapImgHue),
+      mapImgBrightness:
+        mapImageBrightnessInput instanceof HTMLInputElement
+          ? normalizeImageBrightness(mapImageBrightnessInput.value)
+          : normalizeImageBrightness(editingWorld.mapImgBrightness),
+      mapImgContrast:
+        mapImageContrastInput instanceof HTMLInputElement
+          ? normalizeImageContrast(mapImageContrastInput.value)
+          : normalizeImageContrast(editingWorld.mapImgContrast),
     };
     mapImageCurrent.textContent = fId;
     await saveWorld(editingWorld);
@@ -335,6 +371,18 @@ export function createWorldDialogController(
           editingWorld = {
             ...editingWorld,
             mapImgPath: row.fId,
+            mapImgHue:
+              mapImageHueInput instanceof HTMLInputElement
+                ? normalizeImageHue(mapImageHueInput.value)
+                : normalizeImageHue(editingWorld.mapImgHue),
+            mapImgBrightness:
+              mapImageBrightnessInput instanceof HTMLInputElement
+                ? normalizeImageBrightness(mapImageBrightnessInput.value)
+                : normalizeImageBrightness(editingWorld.mapImgBrightness),
+            mapImgContrast:
+              mapImageContrastInput instanceof HTMLInputElement
+                ? normalizeImageContrast(mapImageContrastInput.value)
+                : normalizeImageContrast(editingWorld.mapImgContrast),
           };
           if (mapImageCurrent instanceof HTMLElement) {
             mapImageCurrent.textContent = row.fId;
@@ -382,6 +430,18 @@ export function createWorldDialogController(
       desc: descInput.value.trim(),
       baseColor: normalizeHexColor(colorInput.value),
       progress: clampProgress(Number.parseInt(progressRange.value, 10)),
+      mapImgHue:
+        mapImageHueInput instanceof HTMLInputElement
+          ? normalizeImageHue(mapImageHueInput.value)
+          : normalizeImageHue(editingWorld.mapImgHue),
+      mapImgBrightness:
+        mapImageBrightnessInput instanceof HTMLInputElement
+          ? normalizeImageBrightness(mapImageBrightnessInput.value)
+          : normalizeImageBrightness(editingWorld.mapImgBrightness),
+      mapImgContrast:
+        mapImageContrastInput instanceof HTMLInputElement
+          ? normalizeImageContrast(mapImageContrastInput.value)
+          : normalizeImageContrast(editingWorld.mapImgContrast),
     };
 
     editingWorld = nextWorld;
@@ -420,6 +480,37 @@ export function createWorldDialogController(
     if (mapImageSaveButton instanceof HTMLButtonElement) {
       mapImageSaveButton.addEventListener("click", () => {
         void saveMapImageSelection();
+      });
+    }
+
+    if (mapImageHueInput instanceof HTMLInputElement) {
+      mapImageHueInput.addEventListener("input", () => {
+        if (!editingWorld) {
+          return;
+        }
+        editingWorld.mapImgHue = normalizeImageHue(mapImageHueInput.value);
+      });
+    }
+
+    if (mapImageBrightnessInput instanceof HTMLInputElement) {
+      mapImageBrightnessInput.addEventListener("input", () => {
+        if (!editingWorld) {
+          return;
+        }
+        editingWorld.mapImgBrightness = normalizeImageBrightness(
+          mapImageBrightnessInput.value,
+        );
+      });
+    }
+
+    if (mapImageContrastInput instanceof HTMLInputElement) {
+      mapImageContrastInput.addEventListener("input", () => {
+        if (!editingWorld) {
+          return;
+        }
+        editingWorld.mapImgContrast = normalizeImageContrast(
+          mapImageContrastInput.value,
+        );
       });
     }
 

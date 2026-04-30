@@ -22,6 +22,12 @@ import {
   MAPPAGE_SELECTOR,
   MapPageElements,
 } from "./map/dom";
+import {
+  buildImageFilterCss,
+  normalizeImageBrightness,
+  normalizeImageContrast,
+  normalizeImageHue,
+} from "./map/image-filter";
 import { intro, waitForMapRevealComplete } from "./map/reveal";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
@@ -602,6 +608,23 @@ async function applyCurrentMapBackground(cntx: MapPageContext): Promise<void> {
   const path = String(
     currentStage?.mapImgPath || cntx.world?.mapImgPath || "",
   ).trim();
+  const mapHue = normalizeImageHue(
+    currentStage?.mapImgHue ?? cntx.world?.mapImgHue,
+  );
+  const mapBrightness = normalizeImageBrightness(
+    currentStage?.mapImgBrightness ?? cntx.world?.mapImgBrightness,
+  );
+  const mapContrast = normalizeImageContrast(
+    currentStage?.mapImgContrast ?? cntx.world?.mapImgContrast,
+  );
+  image.style.filter = buildImageFilterCss(
+    {
+      hue: mapHue,
+      brightness: mapBrightness,
+      contrast: mapContrast,
+    },
+    "saturate(1.08) contrast(1.02)",
+  );
   if (!path) {
     image.src = "./img/world_map/fantasy1_e.jpg";
     return;
