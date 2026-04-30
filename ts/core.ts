@@ -7,29 +7,11 @@ const htmlPartsRaw = import.meta.glob("../html_part/*.html", {
   import: "default",
 }) as Record<string, string>;
 
-const staticAssetUrls = import.meta.glob(
-  ["../img/**/*.{png,jpg,jpeg,webp,gif,svg}", "../wav/**/*.{wav,mp3,ogg,m4a}"],
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, string>;
-
-function resolveBundledAssetPath(relativePath: string): string | null {
-  const normalized = relativePath.replace(/^\.\//, "");
-  const key = `../${normalized}`;
-  return staticAssetUrls[key] || null;
-}
-
 function rewriteBundledPartAssetPaths(html: string): string {
   return html.replace(
     /(src|href)=(["'])(\.\/(?:img|wav)\/[^"']+)\2/g,
-    (match, attr: string, quote: string, path: string) => {
-      const resolved = resolveBundledAssetPath(path);
-      if (!resolved) {
-        return match;
-      }
-      return `${attr}=${quote}${resolved}${quote}`;
+    (_match, attr: string, quote: string, path: string) => {
+      return `${attr}=${quote}/${path.replace(/^\.\//, "")}${quote}`;
     },
   );
 }

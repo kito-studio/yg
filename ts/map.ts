@@ -78,10 +78,7 @@ import {
 } from "./ui/task-interactions";
 import { lg } from "./util/log";
 
-const fallbackWorldMapImageUrl = new URL(
-  "../img/world_map/fantasy1_e.jpg",
-  import.meta.url,
-).toString();
+const fallbackWorldMapImageUrl = "/img/world_map/fantasy1_e.jpg";
 
 export let context: MapPageContext | null = null;
 
