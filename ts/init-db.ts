@@ -114,7 +114,7 @@ async function seedInitialWorldAndStateIfNeeded(
     wId,
     ord: 1,
     nm: "最初の世界",
-    mapImgPath: "/img/world_map/fantasy1_e.jpg",
+    mapImgPath: "img/world_map/fantasy1_e.jpg",
     mode: "edit",
     isLocked: 0,
     progress: 0,
