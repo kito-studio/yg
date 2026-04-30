@@ -4,7 +4,6 @@ import { applyStageImageVisual, applyStageVisuals } from "../obj/stage";
 import { playAudio } from "../sound/audio";
 import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import { createBasicImageDialogFrame } from "../ui/common-dialog";
-import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
 import {
   buildImageFilterCss,
@@ -14,7 +13,7 @@ import {
   renderSpriteCellDataUrl,
 } from "./image-filter";
 import { setMapObjectLabel } from "./object-view";
-import { clampProgress, getHpColor, normalizeHexColor } from "./stage-model";
+import { normalizeHexColor } from "./stage-model";
 
 type StageDialogElements = {
   dialog: HTMLElement | null;
@@ -24,9 +23,6 @@ type StageDialogElements = {
   tabImage: HTMLElement | null;
   panelBasic: HTMLElement | null;
   panelImage: HTMLElement | null;
-  progressRange: HTMLElement | null;
-  progressBarFill: HTMLElement | null;
-  progressValue: HTMLElement | null;
   nameInput: HTMLElement | null;
   descInput: HTMLElement | null;
   colorInput: HTMLElement | null;
@@ -87,9 +83,6 @@ export function createStageDialogController(
     tabImage,
     panelBasic,
     panelImage,
-    progressRange,
-    progressBarFill,
-    progressValue,
     nameInput,
     descInput,
     colorInput,
@@ -142,27 +135,6 @@ export function createStageDialogController(
       editingStage = null;
     },
   });
-
-  function updateProgressPreview(value: number): void {
-    const safeValue = clampProgress(value);
-    const hpColor = getHpColor(safeValue);
-
-    if (progressBarFill instanceof HTMLElement) {
-      progressBarFill.style.width = `${safeValue}%`;
-      progressBarFill.style.background = hpColor;
-    }
-
-    if (progressValue instanceof HTMLElement) {
-      progressValue.textContent = `${safeValue}%`;
-      progressValue.style.color = hpColor;
-    }
-
-    if (progressRange instanceof HTMLInputElement) {
-      const trackColor = "rgba(12, 8, 4, 0.9)";
-      const fillColor = "#9b60d0";
-      progressRange.style.background = `linear-gradient(to right, ${fillColor} ${safeValue}%, ${trackColor} ${safeValue}%)`;
-    }
-  }
 
   function syncFilterPair(
     textInput: HTMLInputElement | null,
@@ -848,7 +820,6 @@ export function createStageDialogController(
   async function onSave(): Promise<void> {
     if (
       !editingStage ||
-      !(progressRange instanceof HTMLInputElement) ||
       !(nameInput instanceof HTMLInputElement) ||
       !(descInput instanceof HTMLTextAreaElement) ||
       !(colorInput instanceof HTMLInputElement)
@@ -861,9 +832,6 @@ export function createStageDialogController(
       nameInput.value.trim() || editingStage.dataset.stageLabel || "ST";
     const nextDesc = descInput.value.trim();
     const nextColor = normalizeHexColor(colorInput.value);
-    const nextProgress = clampProgress(
-      Number.parseInt(progressRange.value, 10),
-    );
     const stageImgHue =
       stageImageHueInput instanceof HTMLInputElement
         ? normalizeImageHue(stageImageHueInput.value)
@@ -892,7 +860,6 @@ export function createStageDialogController(
     setMapObjectLabel(editingStage, nextName);
     editingStage.dataset.stageDesc = nextDesc;
     editingStage.dataset.stageColor = nextColor;
-    editingStage.dataset.stageProgress = String(nextProgress);
     editingStage.dataset.stageImgHue = String(stageImgHue);
     editingStage.dataset.stageImgBrightness = String(stageImgBrightness);
     editingStage.dataset.stageImgContrast = String(stageImgContrast);
@@ -912,12 +879,6 @@ export function createStageDialogController(
   }
 
   function bindEvents(): void {
-    if (progressRange instanceof HTMLInputElement) {
-      progressRange.addEventListener("input", () => {
-        updateProgressPreview(Number.parseInt(progressRange.value, 10));
-      });
-    }
-
     if (
       stageImageFileInput instanceof HTMLInputElement &&
       stageImageClearButton instanceof HTMLButtonElement
@@ -1307,7 +1268,6 @@ export function createStageDialogController(
 
   function open(target: HTMLButtonElement): void {
     if (
-      !(progressRange instanceof HTMLInputElement) ||
       !(nameInput instanceof HTMLInputElement) ||
       !(descInput instanceof HTMLTextAreaElement) ||
       !(colorInput instanceof HTMLInputElement)
@@ -1321,12 +1281,6 @@ export function createStageDialogController(
     const label = target.dataset.stageLabel || "ST";
     const desc = target.dataset.stageDesc || "";
     const color = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
-    const progress = clampProgress(
-      Number.parseInt(
-        target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
-        10,
-      ),
-    );
 
     // if (title instanceof HTMLElement) {
     //   title.textContent = `${label} ${t("stage_settings_suffix")}`;
@@ -1335,8 +1289,6 @@ export function createStageDialogController(
     nameInput.value = label;
     descInput.value = desc;
     colorInput.value = color;
-    progressRange.value = String(progress);
-    updateProgressPreview(progress);
     frame.setTab("basic");
     void syncImageTabFromStage(target);
     frame.open();
