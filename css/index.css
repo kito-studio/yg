@@ -870,6 +870,19 @@ body.view-mode .task-object {
   font-size: 13px;
 }
 
+/* ====================================================
+    地図遷移演出オーバーレイ
+  ==================================================== */
+.map-transition-overlay {
+  position: fixed;
+  inset: 0;
+  background: #120a05;
+  z-index: 500;
+  clip-path: circle(0% at 50% 50%);
+  pointer-events: none;
+  transition: clip-path 360ms ease-in-out;
+}
+
 .weight-total-row {
   margin: 10px 0 0;
   display: flex;

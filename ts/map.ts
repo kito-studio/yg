@@ -35,6 +35,7 @@ import { createTaskDialogController } from "./map/task-dialog";
 import { getTaskDialogElements } from "./map/task-dialog-elements";
 import { createTaskProgressDialogController } from "./map/task-progress-dialog";
 import { getTaskProgressDialogElements } from "./map/task-progress-dialog-elements";
+import { playMapTransition } from "./map/transition";
 import { createWeightDialogController } from "./map/weight-dialog";
 import { getWeightDialogElements } from "./map/weight-dialog-elements";
 import { createWorldDialogController } from "./map/world-dialog";
@@ -305,13 +306,13 @@ async function setupHeader(
         cntx.stage = null;
         await setAppStateText("worlds", nextId);
         await setAppStateText("stages", null);
-        await rerenderStagesFromDb();
+        await playMapTransition(() => rerenderStagesFromDb());
         return;
       }
 
       cntx.stage = cntx.stages.find((stage) => stage.stgId === nextId) || null;
       await setAppStateText("stages", cntx.stage?.stgId || null);
-      await rerenderStagesFromDb();
+      await playMapTransition(() => rerenderStagesFromDb());
     },
   });
 
@@ -791,5 +792,5 @@ async function stepOutSelection(): Promise<void> {
     context.stages.find((stage) => stage.stgId === currentStage.parentStgId) ||
     null;
   await setAppStateText("stages", context.stage?.stgId || null);
-  await rerenderStagesFromDb();
+  await playMapTransition(() => rerenderStagesFromDb());
 }

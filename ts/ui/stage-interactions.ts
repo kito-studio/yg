@@ -3,6 +3,7 @@ import { context, rerenderStagesFromDb } from "../map";
 import { MapPageContext } from "../map/constants";
 import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
+import { playMapTransition } from "../map/transition";
 import {
   applyStageVisuals,
   createStageObject,
@@ -203,9 +204,11 @@ export function createStageHandlers(): ReturnType<
       if (!context) {
         return;
       }
-      context.stage =
-        context.stages.find((stage) => stage.stgId === stgId) || null;
-      await rerenderStagesFromDb();
+      await playMapTransition(async () => {
+        context!.stage =
+          context!.stages.find((stage) => stage.stgId === stgId) || null;
+        await rerenderStagesFromDb();
+      });
     },
     saveStageFromElement: async (target) => {
       await saveStageFromElement(target);
