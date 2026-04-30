@@ -497,7 +497,23 @@ export function createTaskHandlers(): ReturnType<
     onAfterDragEnd: async () => {
       await rerenderStagesFromDb();
     },
-    // Task dialog is not implemented yet. Keep the hook for parity with stages.
+    onSelectTask: async (taskId) => {
+      if (!context) {
+        return;
+      }
+
+      const target = Array.from(
+        document.querySelectorAll(MAPPAGE_SELECTOR.taskObject),
+      ).find(
+        (el) =>
+          el instanceof HTMLButtonElement &&
+          String(el.dataset.taskId || "").trim() === taskId,
+      );
+
+      if (target instanceof HTMLButtonElement) {
+        context.taskProgressDialog.open(target);
+      }
+    },
     onOpenTaskEditor: async (target) => {
       if (!context) {
         return;

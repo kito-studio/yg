@@ -33,6 +33,8 @@ import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
 import { createTaskDialogController } from "./map/task-dialog";
 import { getTaskDialogElements } from "./map/task-dialog-elements";
+import { createTaskProgressDialogController } from "./map/task-progress-dialog";
+import { getTaskProgressDialogElements } from "./map/task-progress-dialog-elements";
 import { createWorldDialogController } from "./map/world-dialog";
 import { getWorldDialogElements } from "./map/world-dialog-elements";
 import {
@@ -87,6 +89,7 @@ async function initMapPage(): Promise<void> {
 
   cntx.stageDialog.bindEvents();
   cntx.taskDialog.bindEvents();
+  cntx.taskProgressDialog.bindEvents();
   cntx.worldDialog.bindEvents();
   cntx.contextMenu.bindEvents();
 
@@ -251,6 +254,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     mapViewport: createMapViewport(elements),
     stageDialog: createStageDialog(fileStore),
     taskDialog: createTaskDialog(fileStore),
+    taskProgressDialog: createTaskProgressDialog(fileStore),
     worldDialog: createWorldDialog(fileStore),
     contextMenu: createContextMenu(),
     stageHandlers: createStageHandlers(),
@@ -357,6 +361,24 @@ function createTaskDialog(
 ): ReturnType<typeof createTaskDialogController> {
   return createTaskDialogController({
     elements: getTaskDialogElements(),
+    fileStore,
+    saveTaskFromElement: async (target) => {
+      if (!context) {
+        return;
+      }
+      await saveTaskFromElement(target, context);
+    },
+    onAfterSave: async () => {
+      await rerenderStagesFromDb();
+    },
+  });
+}
+
+function createTaskProgressDialog(
+  fileStore: FileStoreGateway,
+): ReturnType<typeof createTaskProgressDialogController> {
+  return createTaskProgressDialogController({
+    elements: getTaskProgressDialogElements(),
     fileStore,
     saveTaskFromElement: async (target) => {
       if (!context) {

@@ -603,6 +603,21 @@ body.view-mode .task-object {
   resize: vertical;
 }
 
+.stage-readonly-value {
+  margin: 0;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(255, 215, 146, 0.32);
+  border-radius: 12px;
+  background: rgba(24, 16, 10, 0.9);
+  color: #fff3d9;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .stage-image-group {
   border: 1px solid rgba(255, 215, 146, 0.24);
   border-radius: 14px;

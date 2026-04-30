@@ -95,6 +95,19 @@ export const TASK_DIALOG_ID = {
   saveButton: "taskDialogSave",
 } as const;
 
+export const TASK_PROGRESS_DIALOG_ID = {
+  dialog: "taskProgressDialog",
+  dialogBackdrop: "taskProgressDialogBackdrop",
+  title: "taskProgressDialogTitle",
+  imagePreview: "taskProgressImagePreview",
+  nameText: "taskProgressNameText",
+  descText: "taskProgressDescText",
+  progressInput: "taskProgressInput",
+  progressRange: "taskProgressInputRange",
+  cancelButton: "taskProgressDialogCancel",
+  saveButton: "taskProgressDialogSave",
+} as const;
+
 export const WORLD_DIALOG_ID = {
   dialog: "worldSettingsDialog",
   dialogBackdrop: "worldDialogBackdrop",

@@ -262,3 +262,89 @@
     </div>
   </form>
 </dialog>
+
+<div class="stage-dialog-backdrop" id="taskProgressDialogBackdrop" hidden></div>
+
+<dialog class="stage-settings-dialog" id="taskProgressDialog">
+  <form method="dialog" class="task-progress-dialog-shell stage-dialog-shell">
+    <h2
+      class="stage-dialog-title"
+      id="taskProgressDialogTitle"
+      data-i18n="task_progress_title"
+    >
+      進捗入力
+    </h2>
+    <p class="stage-dialog-sub" data-i18n="task_progress_sub">
+      タスクの進捗を更新できます。
+    </p>
+
+    <div class="stage-dialog-body">
+      <section
+        class="stage-dialog-panel active"
+        id="taskProgressDialogPanelBasic"
+      >
+        <div class="stage-field">
+          <label data-i18n="task_image_label">タスク画像</label>
+          <img
+            class="dialog-image-preview dialog-image-preview-task"
+            id="taskProgressImagePreview"
+            alt="task progress preview"
+            hidden
+          />
+        </div>
+
+        <div class="stage-field">
+          <label data-i18n="stage_name_label">名称（nm）</label>
+          <p class="stage-readonly-value" id="taskProgressNameText">-</p>
+        </div>
+
+        <div class="stage-field">
+          <label data-i18n="stage_desc_label">説明（desc）</label>
+          <p class="stage-readonly-value" id="taskProgressDescText">-</p>
+        </div>
+
+        <div class="stage-field">
+          <label for="taskProgressInput" data-i18n="stage_progress_label"
+            >撃破状態（進捗）</label
+          >
+          <div class="stage-image-filter-inputs">
+            <input
+              id="taskProgressInput"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+            />
+            <input
+              class="stage-progress-range"
+              id="taskProgressInputRange"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="0"
+            />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="stage-dialog-footer">
+      <button
+        class="stage-dialog-btn cancel"
+        id="taskProgressDialogCancel"
+        type="button"
+      >
+        <span data-i18n="cancel">キャンセル</span>
+      </button>
+      <button
+        class="stage-dialog-btn save"
+        id="taskProgressDialogSave"
+        type="button"
+      >
+        <span data-i18n="task_progress_update">進捗更新！</span>
+      </button>
+    </div>
+  </form>
+</dialog>
