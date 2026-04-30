@@ -344,3 +344,15 @@ export async function upsertStage(record: StageRecord): Promise<void> {
     db.close();
   }
 }
+
+export async function deleteStage(stgId: string): Promise<void> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("stages", "readwrite");
+    const store = tx.objectStore("stages");
+    await requestToPromise(store.delete(stgId));
+    await transactionDone(tx);
+  } finally {
+    db.close();
+  }
+}

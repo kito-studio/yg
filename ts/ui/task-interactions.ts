@@ -40,6 +40,7 @@ type TaskInteractionOptions = {
   onAfterDragEnd?: (target: HTMLButtonElement) => Promise<void> | void;
   onSelectTask?: (taskId: string) => Promise<void> | void;
   onOpenTaskEditor?: (target: HTMLButtonElement) => Promise<void> | void;
+  onOpenContextMenu?: (tkId: string, x: number, y: number) => void;
 };
 
 export type TaskInteractionHandlers = {
@@ -47,6 +48,7 @@ export type TaskInteractionHandlers = {
   onTaskDoubleClick: (event: MouseEvent) => void;
   onPointerDown: (event: PointerEvent) => void;
   beginDrag: (target: HTMLButtonElement, startEvent?: PointerEvent) => void;
+  onContextMenu: (event: MouseEvent) => void;
 };
 
 export function createTaskInteractionHandlers(
@@ -58,6 +60,7 @@ export function createTaskInteractionHandlers(
     onAfterDragEnd,
     onSelectTask,
     onOpenTaskEditor,
+    onOpenContextMenu,
   } = options;
 
   function onTaskClick(event: MouseEvent): void {
@@ -138,11 +141,33 @@ export function createTaskInteractionHandlers(
     });
   }
 
+  function onContextMenu(event: MouseEvent): void {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    const tkId = String(target.dataset.taskId || "").trim();
+    if (!tkId || !onOpenContextMenu) {
+      return;
+    }
+
+    onOpenContextMenu(tkId, event.clientX, event.clientY);
+  }
+
   return {
     onTaskClick,
     onTaskDoubleClick,
     onPointerDown,
     beginDrag,
+    onContextMenu,
   };
 }
 export function createTaskButton(
@@ -175,6 +200,7 @@ export function createTaskButton(
   taskObject.addEventListener("pointerdown", cntx.taskHandlers.onPointerDown);
   taskObject.addEventListener("dblclick", cntx.taskHandlers.onTaskDoubleClick);
   taskObject.addEventListener("click", cntx.taskHandlers.onTaskClick);
+  taskObject.addEventListener("contextmenu", cntx.taskHandlers.onContextMenu);
   applyTaskVisuals(taskObject, task, cntx.fileStore);
   return taskObject;
 }
@@ -439,6 +465,12 @@ export function createTaskHandlers(): ReturnType<
         return;
       }
       context.taskDialog.open(target);
+    },
+    onOpenContextMenu: (tkId, x, y) => {
+      if (!context?.contextMenu) {
+        return;
+      }
+      context.contextMenu.open({ type: "task", tkId }, x, y);
     },
   });
 }

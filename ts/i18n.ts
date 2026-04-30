@@ -92,6 +92,15 @@ const JA: Record<string, string> = {
   task_edit_title: "タスク編集",
   task_state: "状態",
   no_world: "世界がありません",
+  ctx_duplicate: "複製",
+  ctx_duplicate_n: "数を指定して複製",
+  ctx_move_out: "地図外に移動",
+  ctx_delete: "削除",
+  ctx_confirm_title: "削除の確認",
+  ctx_delete_ok: "削除する",
+  ctx_confirm_delete_stage:
+    "「{nm}」を削除しますか？\n配下のステージとタスクもすべて削除されます。",
+  ctx_confirm_delete_task: "「{nm}」を削除しますか？",
 };
 
 const EN: Record<string, string> = {
@@ -183,6 +192,15 @@ const EN: Record<string, string> = {
   task_edit_title: "Task Edit",
   task_state: "State",
   no_world: "No world available",
+  ctx_duplicate: "Duplicate",
+  ctx_duplicate_n: "Duplicate N times",
+  ctx_move_out: "Move off-map",
+  ctx_delete: "Delete",
+  ctx_confirm_title: "Confirm Delete",
+  ctx_delete_ok: "Delete",
+  ctx_confirm_delete_stage:
+    "Delete \u201c{nm}\u201d?\nAll child stages and tasks will also be deleted.",
+  ctx_confirm_delete_task: "Delete \u201c{nm}\u201d?",
 };
 
 const LANG_PREF_KEY = "yg.lang";

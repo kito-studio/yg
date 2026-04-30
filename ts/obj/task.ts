@@ -182,3 +182,15 @@ export async function upsertTask(record: TaskRecord): Promise<void> {
     db.close();
   }
 }
+
+export async function deleteTask(tkId: string): Promise<void> {
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("tasks", "readwrite");
+    const store = tx.objectStore("tasks");
+    await requestToPromise(store.delete(tkId));
+    await transactionDone(tx);
+  } finally {
+    db.close();
+  }
+}

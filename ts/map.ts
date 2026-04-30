@@ -15,6 +15,7 @@ import {
   MIN_MAP_SCALE,
   STAGE_MAP_CONTENT_SIZE,
 } from "./map/constants";
+import { createContextMenuController } from "./map/context-menu";
 import {
   getMapPageElements,
   MAPPAGE_CLASS,
@@ -81,6 +82,7 @@ async function initMapPage(): Promise<void> {
   cntx.stageDialog.bindEvents();
   cntx.taskDialog.bindEvents();
   cntx.worldDialog.bindEvents();
+  cntx.contextMenu.bindEvents();
 
   setupToolbar({
     downloadButton: elements.dbDownloadButton,
@@ -219,6 +221,7 @@ async function mountMapPageParts(): Promise<void> {
     "stage_dialog",
     "task_dialog",
     "world_dialog",
+    "context_menu",
     "info",
   ];
 
@@ -243,6 +246,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     stageDialog: createStageDialog(fileStore),
     taskDialog: createTaskDialog(fileStore),
     worldDialog: createWorldDialog(fileStore),
+    contextMenu: createContextMenu(),
     stageHandlers: createStageHandlers(),
     taskHandlers: createTaskHandlers(),
     world: null,
@@ -380,6 +384,15 @@ function createWorldDialog(
         context.world;
     },
     onAfterSave: async () => {
+      await rerenderStagesFromDb();
+    },
+  });
+}
+
+function createContextMenu(): ReturnType<typeof createContextMenuController> {
+  return createContextMenuController({
+    getContext: () => context,
+    onAfterChange: async () => {
       await rerenderStagesFromDb();
     },
   });

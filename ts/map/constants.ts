@@ -5,6 +5,7 @@ import { WorldRecord } from "../obj/world";
 import { MapViewportController } from "../ui/map-viewport";
 import { createStageInteractionHandlers } from "../ui/stage-interactions";
 import { createTaskInteractionHandlers } from "../ui/task-interactions";
+import { createContextMenuController } from "./context-menu";
 import { MapPageElements } from "./dom";
 import { createStageDialogController } from "./stage-dialog";
 import { createTaskDialogController } from "./task-dialog";
@@ -32,6 +33,7 @@ export type MapPageContext = {
   stageDialog: ReturnType<typeof createStageDialogController>;
   taskDialog: ReturnType<typeof createTaskDialogController>;
   worldDialog: ReturnType<typeof createWorldDialogController>;
+  contextMenu: ReturnType<typeof createContextMenuController>;
   stageHandlers: ReturnType<typeof createStageInteractionHandlers>;
   taskHandlers: ReturnType<typeof createTaskInteractionHandlers>;
   worlds: WorldRecord[];

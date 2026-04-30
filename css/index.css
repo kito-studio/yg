@@ -760,6 +760,83 @@ body.view-mode .task-object {
   }
 }
 
+/* ─── コンテキストメニュー ─── */
+
+.map-context-menu {
+  position: fixed;
+  z-index: 60;
+  background: linear-gradient(160deg, #2a180b, #120d08 72%);
+  border: 1px solid rgba(255, 213, 142, 0.28);
+  border-radius: 12px;
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 222, 163, 0.1);
+  padding: 6px;
+  min-width: 190px;
+}
+
+.map-context-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: #ffe3b6;
+  font-size: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.map-context-menu-item:hover:not(:disabled) {
+  background: rgba(255, 215, 146, 0.14);
+}
+
+.map-context-menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.map-context-menu-item.danger {
+  color: #ff7070;
+}
+
+.map-context-menu-item.danger:hover:not(:disabled) {
+  background: rgba(255, 80, 80, 0.12);
+}
+
+.map-context-menu-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: rgba(255, 215, 146, 0.2);
+}
+
+/* 削除確認ダイアログ */
+
+.ctx-confirm-dialog {
+  width: min(88vw, 400px);
+}
+
+.ctx-confirm-shell {
+  padding: 22px 22px 18px;
+}
+
+.ctx-confirm-message {
+  margin: 12px 0 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 227, 182, 0.9);
+  white-space: pre-line;
+}
+
+.stage-dialog-btn.danger {
+  color: #fff;
+  background: linear-gradient(180deg, #e05050, #b83030);
+}
+
+/* ─── /コンテキストメニュー ─── */
+
 @media (max-width: 768px) {
   .control-stack {
     left: 12px;

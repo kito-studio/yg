@@ -1,0 +1,65 @@
+<!-- コンテキストメニュー -->
+<div class="map-context-menu" id="mapContextMenu" hidden>
+  <button
+    class="map-context-menu-item"
+    id="ctxMenuDuplicate"
+    type="button"
+    data-i18n="ctx_duplicate"
+  >
+    複製
+  </button>
+  <button
+    class="map-context-menu-item"
+    id="ctxMenuDuplicateN"
+    type="button"
+    disabled
+    data-i18n="ctx_duplicate_n"
+  >
+    数を指定して複製
+  </button>
+  <button
+    class="map-context-menu-item"
+    id="ctxMenuMoveOut"
+    type="button"
+    disabled
+    data-i18n="ctx_move_out"
+  >
+    地図外に移動
+  </button>
+  <div class="map-context-menu-separator"></div>
+  <button
+    class="map-context-menu-item danger"
+    id="ctxMenuDelete"
+    type="button"
+    data-i18n="ctx_delete"
+  >
+    削除
+  </button>
+</div>
+
+<!-- 削除確認ダイアログ -->
+<div class="stage-dialog-backdrop" id="ctxConfirmBackdrop" hidden></div>
+<dialog class="stage-settings-dialog ctx-confirm-dialog" id="ctxConfirmDialog">
+  <div class="stage-dialog-shell ctx-confirm-shell">
+    <h2 class="stage-dialog-title" data-i18n="ctx_confirm_title">削除の確認</h2>
+    <p class="ctx-confirm-message" id="ctxConfirmMessage"></p>
+    <div class="stage-dialog-footer">
+      <button
+        class="stage-dialog-btn cancel"
+        id="ctxConfirmCancel"
+        type="button"
+        data-i18n="cancel"
+      >
+        キャンセル
+      </button>
+      <button
+        class="stage-dialog-btn danger"
+        id="ctxConfirmOk"
+        type="button"
+        data-i18n="ctx_delete_ok"
+      >
+        削除する
+      </button>
+    </div>
+  </div>
+</dialog>

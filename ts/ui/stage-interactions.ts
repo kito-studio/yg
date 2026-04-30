@@ -37,6 +37,7 @@ type StageInteractionOptions = {
   saveSelectedStageId: (stgId: string) => Promise<void>;
   navigateToStage: (stgId: string) => Promise<void> | void;
   saveStageFromElement: (target: HTMLButtonElement) => Promise<void>;
+  onOpenContextMenu?: (stgId: string, x: number, y: number) => void;
 };
 
 export type StageInteractionHandlers = {
@@ -44,6 +45,7 @@ export type StageInteractionHandlers = {
   onStageDoubleClick: (event: MouseEvent) => void;
   onPointerDown: (event: PointerEvent) => void;
   beginDrag: (target: HTMLButtonElement, startEvent?: PointerEvent) => void;
+  onContextMenu: (event: MouseEvent) => void;
 };
 
 export function createStageInteractionHandlers(
@@ -54,6 +56,7 @@ export function createStageInteractionHandlers(
     saveSelectedStageId,
     navigateToStage,
     saveStageFromElement,
+    onOpenContextMenu,
   } = options;
 
   function onStageClick(event: MouseEvent): void {
@@ -135,11 +138,33 @@ export function createStageInteractionHandlers(
     });
   }
 
+  function onContextMenu(event: MouseEvent): void {
+    if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    const stgId = String(target.dataset.stageId || "").trim();
+    if (!stgId || !onOpenContextMenu) {
+      return;
+    }
+
+    onOpenContextMenu(stgId, event.clientX, event.clientY);
+  }
+
   return {
     onStageClick,
     onStageDoubleClick,
     onPointerDown,
     beginDrag,
+    onContextMenu,
   };
 }
 export function createStageButton(
@@ -151,6 +176,7 @@ export function createStageButton(
     onDoubleClick: cntx.stageHandlers.onStageDoubleClick,
     onClick: cntx.stageHandlers.onStageClick,
   });
+  stageObject.addEventListener("contextmenu", cntx.stageHandlers.onContextMenu);
   applyStageVisuals(stageObject, cntx.fileStore);
   return stageObject;
 }
@@ -183,6 +209,12 @@ export function createStageHandlers(): ReturnType<
     },
     saveStageFromElement: async (target) => {
       await saveStageFromElement(target);
+    },
+    onOpenContextMenu: (stgId, x, y) => {
+      if (!context?.contextMenu) {
+        return;
+      }
+      context.contextMenu.open({ type: "stage", stgId }, x, y);
     },
   });
 }
