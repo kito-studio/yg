@@ -1,5 +1,6 @@
 import { createAccessToken } from "./access";
 import { lg } from "./util/log";
+import { resolveStaticAssetUrl } from "./utils/asset-url";
 
 const htmlPartsRaw = import.meta.glob("../html_part/*.html", {
   eager: true,
@@ -11,7 +12,7 @@ function rewriteBundledPartAssetPaths(html: string): string {
   return html.replace(
     /(src|href)=(["'])(\.\/(?:img|wav)\/[^"']+)\2/g,
     (_match, attr: string, quote: string, path: string) => {
-      return `${attr}=${quote}/${path.replace(/^\.\//, "")}${quote}`;
+      return `${attr}=${quote}${resolveStaticAssetUrl(path.replace(/^\.\//, ""))}${quote}`;
     },
   );
 }

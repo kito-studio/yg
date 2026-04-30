@@ -77,8 +77,11 @@ import {
   saveTaskFromElement,
 } from "./ui/task-interactions";
 import { lg } from "./util/log";
+import { resolveStaticAssetUrl } from "./utils/asset-url";
 
-const fallbackWorldMapImageUrl = "/img/world_map/fantasy1_e.jpg";
+const fallbackWorldMapImageUrl = resolveStaticAssetUrl(
+  "/img/world_map/fantasy1_e.jpg",
+);
 
 export let context: MapPageContext | null = null;
 

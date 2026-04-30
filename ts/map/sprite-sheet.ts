@@ -1,8 +1,11 @@
+import { resolveStaticAssetUrl } from "../utils/asset-url";
 import { MAPPAGE_CLASS, MAPPAGE_SELECTOR } from "./dom";
 
 const SPRITE_COLUMNS = 12;
 const SPRITE_ROWS = 12;
-const SPRITE_SHEET_URL = "/img/world_map/sprite1536.webp";
+const SPRITE_SHEET_URL = resolveStaticAssetUrl(
+  "/img/world_map/sprite1536.webp",
+);
 
 export type SpriteTone = "none" | "red" | "dark";
 

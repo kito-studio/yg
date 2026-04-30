@@ -1,8 +1,10 @@
-const bgmWavUrl = "/wav/gound003.wav";
-const buttonClickWavUrl = "/wav/hyu.wav";
-const dialogOpenWavUrl = "/wav/pinyu.wav";
-const dialogCancelWavUrl = "/wav/pin.wav";
-const mapTransitionWavUrl = "/wav/Bihyororon.wav";
+import { resolveStaticAssetUrl } from "../utils/asset-url";
+
+const bgmWavUrl = resolveStaticAssetUrl("/wav/gound003.wav");
+const buttonClickWavUrl = resolveStaticAssetUrl("/wav/hyu.wav");
+const dialogOpenWavUrl = resolveStaticAssetUrl("/wav/pinyu.wav");
+const dialogCancelWavUrl = resolveStaticAssetUrl("/wav/pin.wav");
+const mapTransitionWavUrl = resolveStaticAssetUrl("/wav/Bihyororon.wav");
 
 export const ON_LABEL = "🔊";
 export const OFF_LABEL = "🔇";
