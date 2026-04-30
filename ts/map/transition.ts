@@ -1,3 +1,6 @@
+import { playAudio } from "../sound/audio";
+import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
+
 const OVERLAY_ID = "mapTransitionOverlay";
 
 function getOrCreateOverlay(): HTMLElement {
@@ -29,6 +32,7 @@ export async function playMapTransition(
   fn: () => Promise<void>,
 ): Promise<void> {
   const overlay = getOrCreateOverlay();
+  playAudio(TOP_PAGE_SOUND_SOURCE.mapTransition);
 
   // 遷移なしで円を最大サイズに設定（前回の残留状態をリセット）
   overlay.style.transition = "none";

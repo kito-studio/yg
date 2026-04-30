@@ -1,5 +1,7 @@
 import { FileStoreGateway } from "../data/file-store";
 import { t } from "../i18n";
+import { playAudio } from "../sound/audio";
+import { TOP_PAGE_SOUND_SOURCE } from "../sound/constants";
 import {
   buildImageFilterCss,
   normalizeImageBrightness,
@@ -156,9 +158,26 @@ export function createTaskProgressDialogController(
     imagePreview.hidden = false;
   }
 
-  function close(): void {
+  function close(closeSound?: string): void {
+    if (closeSound) {
+      playAudio(closeSound);
+    }
     closeDialog(dialog, backdrop);
     editingTask = null;
+  }
+
+  function readProgressInputValue(): number | null {
+    if (!(progressInput instanceof HTMLInputElement)) {
+      return null;
+    }
+
+    const rawValue = progressInput.value.trim();
+    if (!rawValue) {
+      return null;
+    }
+
+    const parsed = Number.parseInt(rawValue, 10);
+    return Number.isFinite(parsed) ? clampProgress(parsed) : null;
   }
 
   async function onSave(): Promise<void> {
@@ -167,13 +186,17 @@ export function createTaskProgressDialogController(
       return;
     }
 
-    const nextProgress = clampProgress(
-      Number.parseInt(progressInput.value, 10),
-    );
+    const nextProgress =
+      readProgressInputValue() ??
+      (progressRange instanceof HTMLInputElement
+        ? clampProgress(Number.parseInt(progressRange.value, 10))
+        : clampProgress(
+            Number.parseInt(editingTask.dataset.taskProgress || "0", 10),
+          ));
     editingTask.dataset.taskProgress = String(nextProgress);
 
     await saveTaskFromElement(editingTask);
-    close();
+    close(TOP_PAGE_SOUND_SOURCE.mapTransition);
     if (onAfterSave) {
       await onAfterSave();
     }
@@ -181,16 +204,24 @@ export function createTaskProgressDialogController(
 
   function bindEvents(): void {
     if (cancelButton instanceof HTMLButtonElement) {
-      cancelButton.addEventListener("click", close);
+      cancelButton.addEventListener("click", () => {
+        close(TOP_PAGE_SOUND_SOURCE.dialogCancel);
+      });
     }
 
     if (backdrop instanceof HTMLElement) {
-      backdrop.addEventListener("click", close);
+      backdrop.addEventListener("click", () => {
+        close(TOP_PAGE_SOUND_SOURCE.dialogCancel);
+      });
     }
 
     if (progressInput instanceof HTMLInputElement) {
       progressInput.addEventListener("input", () => {
-        const next = clampProgress(Number.parseInt(progressInput.value, 10));
+        const next = readProgressInputValue();
+        if (next === null) {
+          progressInput.value = "";
+          return;
+        }
         updateProgressPreview(next);
       });
     }
@@ -231,6 +262,7 @@ export function createTaskProgressDialogController(
     progressInput.value = String(progress);
     updateProgressPreview(progress);
     void updateTaskImagePreview(target);
+    playAudio(TOP_PAGE_SOUND_SOURCE.dialogOpen);
     openDialog(dialog, backdrop);
   }
 
