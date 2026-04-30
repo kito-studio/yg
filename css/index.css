@@ -395,6 +395,13 @@ body.world-active:not(.edit-mode) .add-task-btn {
   --sprite-cell-size: 128px;
 }
 
+.task-object .stage-object-side-image {
+  width: 96px;
+  height: 96px;
+  --sprite-cell-size: 96px;
+  top: 42px;
+}
+
 .stage-object-side-image-img {
   display: block;
   width: 100%;
