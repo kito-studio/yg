@@ -618,7 +618,7 @@ body.view-mode .task-object {
 
 .stage-image-filter-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -637,6 +637,36 @@ body.view-mode .task-object {
   width: 100%;
   padding: 8px 10px;
   font-size: 13px;
+}
+
+.stage-image-filter-inputs {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.dialog-image-preview {
+  display: block;
+  object-fit: cover;
+  border: 1px solid rgba(255, 215, 146, 0.36);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.dialog-image-preview-stage {
+  width: 128px;
+  height: 128px;
+}
+
+.dialog-image-preview-task {
+  width: 96px;
+  height: 96px;
+}
+
+.dialog-image-preview-map {
+  width: min(100%, 260px);
+  height: 146px;
 }
 
 .stage-sprite-toggle {

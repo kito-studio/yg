@@ -28,12 +28,20 @@ export function getWorldDialogElements() {
       WORLD_DIALOG_ID.mapImageSaveButton,
     ),
     mapImageCurrent: document.getElementById(WORLD_DIALOG_ID.mapImageCurrent),
+    mapImagePreview: document.getElementById(WORLD_DIALOG_ID.mapImagePreview),
     mapImageHueInput: document.getElementById(WORLD_DIALOG_ID.mapImageHueInput),
+    mapImageHueRange: document.getElementById(WORLD_DIALOG_ID.mapImageHueRange),
     mapImageBrightnessInput: document.getElementById(
       WORLD_DIALOG_ID.mapImageBrightnessInput,
     ),
+    mapImageBrightnessRange: document.getElementById(
+      WORLD_DIALOG_ID.mapImageBrightnessRange,
+    ),
     mapImageContrastInput: document.getElementById(
       WORLD_DIALOG_ID.mapImageContrastInput,
+    ),
+    mapImageContrastRange: document.getElementById(
+      WORLD_DIALOG_ID.mapImageContrastRange,
     ),
     cancelButton: document.getElementById(WORLD_DIALOG_ID.cancelButton),
     saveButton: document.getElementById(WORLD_DIALOG_ID.saveButton),

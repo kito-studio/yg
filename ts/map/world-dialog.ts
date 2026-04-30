@@ -6,6 +6,7 @@ import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
 import {
+  buildImageFilterCss,
   normalizeImageBrightness,
   normalizeImageContrast,
   normalizeImageHue,
@@ -31,9 +32,13 @@ type WorldDialogElements = {
   mapImageClearButton: HTMLElement | null;
   mapImageSaveButton: HTMLElement | null;
   mapImageCurrent: HTMLElement | null;
+  mapImagePreview: HTMLElement | null;
   mapImageHueInput: HTMLElement | null;
+  mapImageHueRange: HTMLElement | null;
   mapImageBrightnessInput: HTMLElement | null;
+  mapImageBrightnessRange: HTMLElement | null;
   mapImageContrastInput: HTMLElement | null;
+  mapImageContrastRange: HTMLElement | null;
   cancelButton: HTMLElement | null;
   saveButton: HTMLElement | null;
 };
@@ -73,9 +78,13 @@ export function createWorldDialogController(
     mapImageClearButton,
     mapImageSaveButton,
     mapImageCurrent,
+    mapImagePreview,
     mapImageHueInput,
+    mapImageHueRange,
     mapImageBrightnessInput,
+    mapImageBrightnessRange,
     mapImageContrastInput,
+    mapImageContrastRange,
     cancelButton,
     saveButton,
   } = elements;
@@ -116,6 +125,56 @@ export function createWorldDialogController(
     }
   }
 
+  function syncFilterPair(
+    textInput: HTMLInputElement | null,
+    rangeInput: HTMLInputElement | null,
+    value: number,
+  ): void {
+    const text = String(value);
+    if (textInput) {
+      textInput.value = text;
+    }
+    if (rangeInput) {
+      rangeInput.value = text;
+    }
+  }
+
+  async function updateMapPreview(world: WorldRecord | null): Promise<void> {
+    if (!(mapImagePreview instanceof HTMLImageElement)) {
+      return;
+    }
+
+    const path = String(world?.mapImgPath || "").trim();
+    if (!path) {
+      mapImagePreview.hidden = true;
+      mapImagePreview.removeAttribute("src");
+      mapImagePreview.style.removeProperty("filter");
+      return;
+    }
+
+    const hue =
+      mapImageHueInput instanceof HTMLInputElement
+        ? normalizeImageHue(mapImageHueInput.value)
+        : normalizeImageHue(world?.mapImgHue);
+    const brightness =
+      mapImageBrightnessInput instanceof HTMLInputElement
+        ? normalizeImageBrightness(mapImageBrightnessInput.value)
+        : normalizeImageBrightness(world?.mapImgBrightness);
+    const contrast =
+      mapImageContrastInput instanceof HTMLInputElement
+        ? normalizeImageContrast(mapImageContrastInput.value)
+        : normalizeImageContrast(world?.mapImgContrast);
+
+    const objectUrl = await fileStore.getObjectUrlForFile(path);
+    mapImagePreview.src = objectUrl || path;
+    mapImagePreview.style.filter = buildImageFilterCss({
+      hue,
+      brightness,
+      contrast,
+    });
+    mapImagePreview.hidden = false;
+  }
+
   async function syncImageTabFromWorld(world: WorldRecord): Promise<void> {
     if (
       !(mapImageCurrent instanceof HTMLElement) ||
@@ -129,15 +188,31 @@ export function createWorldDialogController(
     const mapImgContrast = normalizeImageContrast(world.mapImgContrast);
 
     mapImageCurrent.textContent = String(world.mapImgPath || "").trim() || "-";
-    if (mapImageHueInput instanceof HTMLInputElement) {
-      mapImageHueInput.value = String(mapImgHue);
-    }
-    if (mapImageBrightnessInput instanceof HTMLInputElement) {
-      mapImageBrightnessInput.value = String(mapImgBrightness);
-    }
-    if (mapImageContrastInput instanceof HTMLInputElement) {
-      mapImageContrastInput.value = String(mapImgContrast);
-    }
+    syncFilterPair(
+      mapImageHueInput instanceof HTMLInputElement ? mapImageHueInput : null,
+      mapImageHueRange instanceof HTMLInputElement ? mapImageHueRange : null,
+      mapImgHue,
+    );
+    syncFilterPair(
+      mapImageBrightnessInput instanceof HTMLInputElement
+        ? mapImageBrightnessInput
+        : null,
+      mapImageBrightnessRange instanceof HTMLInputElement
+        ? mapImageBrightnessRange
+        : null,
+      mapImgBrightness,
+    );
+    syncFilterPair(
+      mapImageContrastInput instanceof HTMLInputElement
+        ? mapImageContrastInput
+        : null,
+      mapImageContrastRange instanceof HTMLInputElement
+        ? mapImageContrastRange
+        : null,
+      mapImgContrast,
+    );
+
+    await updateMapPreview(world);
   }
 
   async function saveMapImageSelection(): Promise<void> {
@@ -179,6 +254,7 @@ export function createWorldDialogController(
           : normalizeImageContrast(editingWorld.mapImgContrast),
     };
     mapImageCurrent.textContent = fId;
+    await updateMapPreview(editingWorld);
     await saveWorld(editingWorld);
     if (onAfterSave) {
       await onAfterSave();
@@ -388,6 +464,8 @@ export function createWorldDialogController(
             mapImageCurrent.textContent = row.fId;
           }
 
+          await updateMapPreview(editingWorld);
+
           await saveWorld(editingWorld);
           if (onAfterSave) {
             await onAfterSave();
@@ -445,6 +523,7 @@ export function createWorldDialogController(
     };
 
     editingWorld = nextWorld;
+    await updateMapPreview(nextWorld);
     await saveWorld(nextWorld);
     frame.close();
     if (onAfterSave) {
@@ -488,7 +567,26 @@ export function createWorldDialogController(
         if (!editingWorld) {
           return;
         }
-        editingWorld.mapImgHue = normalizeImageHue(mapImageHueInput.value);
+        const next = normalizeImageHue(mapImageHueInput.value);
+        editingWorld.mapImgHue = next;
+        syncFilterPair(
+          mapImageHueInput,
+          mapImageHueRange instanceof HTMLInputElement
+            ? mapImageHueRange
+            : null,
+          next,
+        );
+        void updateMapPreview(editingWorld);
+      });
+    }
+
+    if (mapImageHueRange instanceof HTMLInputElement) {
+      mapImageHueRange.addEventListener("input", () => {
+        if (!(mapImageHueInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageHueInput.value = mapImageHueRange.value;
+        mapImageHueInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
     }
 
@@ -497,8 +595,27 @@ export function createWorldDialogController(
         if (!editingWorld) {
           return;
         }
-        editingWorld.mapImgBrightness = normalizeImageBrightness(
-          mapImageBrightnessInput.value,
+        const next = normalizeImageBrightness(mapImageBrightnessInput.value);
+        editingWorld.mapImgBrightness = next;
+        syncFilterPair(
+          mapImageBrightnessInput,
+          mapImageBrightnessRange instanceof HTMLInputElement
+            ? mapImageBrightnessRange
+            : null,
+          next,
+        );
+        void updateMapPreview(editingWorld);
+      });
+    }
+
+    if (mapImageBrightnessRange instanceof HTMLInputElement) {
+      mapImageBrightnessRange.addEventListener("input", () => {
+        if (!(mapImageBrightnessInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageBrightnessInput.value = mapImageBrightnessRange.value;
+        mapImageBrightnessInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }
@@ -508,8 +625,27 @@ export function createWorldDialogController(
         if (!editingWorld) {
           return;
         }
-        editingWorld.mapImgContrast = normalizeImageContrast(
-          mapImageContrastInput.value,
+        const next = normalizeImageContrast(mapImageContrastInput.value);
+        editingWorld.mapImgContrast = next;
+        syncFilterPair(
+          mapImageContrastInput,
+          mapImageContrastRange instanceof HTMLInputElement
+            ? mapImageContrastRange
+            : null,
+          next,
+        );
+        void updateMapPreview(editingWorld);
+      });
+    }
+
+    if (mapImageContrastRange instanceof HTMLInputElement) {
+      mapImageContrastRange.addEventListener("input", () => {
+        if (!(mapImageContrastInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageContrastInput.value = mapImageContrastRange.value;
+        mapImageContrastInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }

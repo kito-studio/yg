@@ -6,6 +6,7 @@ import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
 import {
+  buildImageFilterCss,
   normalizeImageBrightness,
   normalizeImageContrast,
   normalizeImageHue,
@@ -32,9 +33,13 @@ type TaskDialogElements = {
   taskImageClearButton: HTMLElement | null;
   taskImageSaveButton: HTMLElement | null;
   taskImageCurrent: HTMLElement | null;
+  taskImagePreview: HTMLElement | null;
   taskImageHueInput: HTMLElement | null;
+  taskImageHueRange: HTMLElement | null;
   taskImageBrightnessInput: HTMLElement | null;
+  taskImageBrightnessRange: HTMLElement | null;
   taskImageContrastInput: HTMLElement | null;
+  taskImageContrastRange: HTMLElement | null;
   taskSpriteToggle: HTMLElement | null;
   taskSpriteMetaInfo: HTMLElement | null;
   taskSpriteCoordGroup: HTMLElement | null;
@@ -79,9 +84,13 @@ export function createTaskDialogController(
     taskImageClearButton,
     taskImageSaveButton,
     taskImageCurrent,
+    taskImagePreview,
     taskImageHueInput,
+    taskImageHueRange,
     taskImageBrightnessInput,
+    taskImageBrightnessRange,
     taskImageContrastInput,
+    taskImageContrastRange,
     taskSpriteToggle,
     taskSpriteMetaInfo,
     taskSpriteCoordGroup,
@@ -126,6 +135,42 @@ export function createTaskDialogController(
       const fillColor = "#9b60d0";
       progressRange.style.background = `linear-gradient(to right, ${fillColor} ${safeValue}%, ${trackColor} ${safeValue}%)`;
     }
+  }
+
+  function syncFilterPair(
+    textInput: HTMLInputElement | null,
+    rangeInput: HTMLInputElement | null,
+    value: number,
+  ): void {
+    const text = String(value);
+    if (textInput) {
+      textInput.value = text;
+    }
+    if (rangeInput) {
+      rangeInput.value = text;
+    }
+  }
+
+  async function updateTaskImagePreview(
+    fId: string,
+    filterValues: { hue: number; brightness: number; contrast: number },
+  ): Promise<void> {
+    if (!(taskImagePreview instanceof HTMLImageElement)) {
+      return;
+    }
+
+    const path = String(fId || "").trim();
+    if (!path) {
+      taskImagePreview.hidden = true;
+      taskImagePreview.removeAttribute("src");
+      taskImagePreview.style.removeProperty("filter");
+      return;
+    }
+
+    const objectUrl = await fileStore.getObjectUrlForFile(path);
+    taskImagePreview.src = objectUrl || path;
+    taskImagePreview.style.filter = buildImageFilterCss(filterValues);
+    taskImagePreview.hidden = false;
   }
 
   function buildSpriteMetaText(meta: SpriteFileMeta | null): string {
@@ -265,15 +310,35 @@ export function createTaskDialogController(
     target.dataset.taskImgBrightness = String(imgBrightness);
     target.dataset.taskImgContrast = String(imgContrast);
 
-    if (taskImageHueInput instanceof HTMLInputElement) {
-      taskImageHueInput.value = String(imgHue);
-    }
-    if (taskImageBrightnessInput instanceof HTMLInputElement) {
-      taskImageBrightnessInput.value = String(imgBrightness);
-    }
-    if (taskImageContrastInput instanceof HTMLInputElement) {
-      taskImageContrastInput.value = String(imgContrast);
-    }
+    syncFilterPair(
+      taskImageHueInput instanceof HTMLInputElement ? taskImageHueInput : null,
+      taskImageHueRange instanceof HTMLInputElement ? taskImageHueRange : null,
+      imgHue,
+    );
+    syncFilterPair(
+      taskImageBrightnessInput instanceof HTMLInputElement
+        ? taskImageBrightnessInput
+        : null,
+      taskImageBrightnessRange instanceof HTMLInputElement
+        ? taskImageBrightnessRange
+        : null,
+      imgBrightness,
+    );
+    syncFilterPair(
+      taskImageContrastInput instanceof HTMLInputElement
+        ? taskImageContrastInput
+        : null,
+      taskImageContrastRange instanceof HTMLInputElement
+        ? taskImageContrastRange
+        : null,
+      imgContrast,
+    );
+
+    await updateTaskImagePreview(imgPath, {
+      hue: imgHue,
+      brightness: imgBrightness,
+      contrast: imgContrast,
+    });
 
     const spriteMeta = imgPath
       ? await fileStore.getSpriteMetaForFile(imgPath)
@@ -334,6 +399,13 @@ export function createTaskDialogController(
     updateSpriteCoordinateInputs(editingTask, spriteMeta);
     syncSpritePlacementFromInputs();
     taskImageCurrent.textContent = fId;
+    await updateTaskImagePreview(fId, {
+      hue: normalizeImageHue(editingTask.dataset.taskImgHue),
+      brightness: normalizeImageBrightness(
+        editingTask.dataset.taskImgBrightness,
+      ),
+      contrast: normalizeImageContrast(editingTask.dataset.taskImgContrast),
+    });
 
     await saveTaskFromElement(editingTask);
     taskImageFileInput.value = "";
@@ -552,6 +624,15 @@ export function createTaskDialogController(
           if (taskImageCurrent instanceof HTMLElement) {
             taskImageCurrent.textContent = row.fId;
           }
+          await updateTaskImagePreview(row.fId, {
+            hue: normalizeImageHue(editingTask.dataset.taskImgHue),
+            brightness: normalizeImageBrightness(
+              editingTask.dataset.taskImgBrightness,
+            ),
+            contrast: normalizeImageContrast(
+              editingTask.dataset.taskImgContrast,
+            ),
+          });
 
           await saveTaskFromElement(editingTask);
           close();
@@ -736,9 +817,32 @@ export function createTaskDialogController(
         if (!editingTask) {
           return;
         }
-        editingTask.dataset.taskImgHue = String(
-          normalizeImageHue(taskImageHueInput.value),
+        const next = normalizeImageHue(taskImageHueInput.value);
+        editingTask.dataset.taskImgHue = String(next);
+        syncFilterPair(
+          taskImageHueInput,
+          taskImageHueRange instanceof HTMLInputElement
+            ? taskImageHueRange
+            : null,
+          next,
         );
+        void updateTaskImagePreview(editingTask.dataset.taskImgPath || "", {
+          hue: next,
+          brightness: normalizeImageBrightness(
+            editingTask.dataset.taskImgBrightness,
+          ),
+          contrast: normalizeImageContrast(editingTask.dataset.taskImgContrast),
+        });
+      });
+    }
+
+    if (taskImageHueRange instanceof HTMLInputElement) {
+      taskImageHueRange.addEventListener("input", () => {
+        if (!(taskImageHueInput instanceof HTMLInputElement)) {
+          return;
+        }
+        taskImageHueInput.value = taskImageHueRange.value;
+        taskImageHueInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
     }
 
@@ -747,8 +851,31 @@ export function createTaskDialogController(
         if (!editingTask) {
           return;
         }
-        editingTask.dataset.taskImgBrightness = String(
-          normalizeImageBrightness(taskImageBrightnessInput.value),
+        const next = normalizeImageBrightness(taskImageBrightnessInput.value);
+        editingTask.dataset.taskImgBrightness = String(next);
+        syncFilterPair(
+          taskImageBrightnessInput,
+          taskImageBrightnessRange instanceof HTMLInputElement
+            ? taskImageBrightnessRange
+            : null,
+          next,
+        );
+        void updateTaskImagePreview(editingTask.dataset.taskImgPath || "", {
+          hue: normalizeImageHue(editingTask.dataset.taskImgHue),
+          brightness: next,
+          contrast: normalizeImageContrast(editingTask.dataset.taskImgContrast),
+        });
+      });
+    }
+
+    if (taskImageBrightnessRange instanceof HTMLInputElement) {
+      taskImageBrightnessRange.addEventListener("input", () => {
+        if (!(taskImageBrightnessInput instanceof HTMLInputElement)) {
+          return;
+        }
+        taskImageBrightnessInput.value = taskImageBrightnessRange.value;
+        taskImageBrightnessInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }
@@ -758,8 +885,33 @@ export function createTaskDialogController(
         if (!editingTask) {
           return;
         }
-        editingTask.dataset.taskImgContrast = String(
-          normalizeImageContrast(taskImageContrastInput.value),
+        const next = normalizeImageContrast(taskImageContrastInput.value);
+        editingTask.dataset.taskImgContrast = String(next);
+        syncFilterPair(
+          taskImageContrastInput,
+          taskImageContrastRange instanceof HTMLInputElement
+            ? taskImageContrastRange
+            : null,
+          next,
+        );
+        void updateTaskImagePreview(editingTask.dataset.taskImgPath || "", {
+          hue: normalizeImageHue(editingTask.dataset.taskImgHue),
+          brightness: normalizeImageBrightness(
+            editingTask.dataset.taskImgBrightness,
+          ),
+          contrast: next,
+        });
+      });
+    }
+
+    if (taskImageContrastRange instanceof HTMLInputElement) {
+      taskImageContrastRange.addEventListener("input", () => {
+        if (!(taskImageContrastInput instanceof HTMLInputElement)) {
+          return;
+        }
+        taskImageContrastInput.value = taskImageContrastRange.value;
+        taskImageContrastInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }

@@ -7,6 +7,7 @@ import { createBasicImageDialogFrame } from "../ui/common-dialog";
 import { DEFAULT_PROGRESS } from "./constants";
 import { MAPPAGE_SELECTOR } from "./dom";
 import {
+  buildImageFilterCss,
   normalizeImageBrightness,
   normalizeImageContrast,
   normalizeImageHue,
@@ -33,9 +34,13 @@ type StageDialogElements = {
   stageImageClearButton: HTMLElement | null;
   stageImageSaveButton: HTMLElement | null;
   stageImageCurrent: HTMLElement | null;
+  stageImagePreview: HTMLElement | null;
   stageImageHueInput: HTMLElement | null;
+  stageImageHueRange: HTMLElement | null;
   stageImageBrightnessInput: HTMLElement | null;
+  stageImageBrightnessRange: HTMLElement | null;
   stageImageContrastInput: HTMLElement | null;
+  stageImageContrastRange: HTMLElement | null;
   stageSpriteToggle: HTMLElement | null;
   stageSpriteMetaInfo: HTMLElement | null;
   stageSpriteCoordGroup: HTMLElement | null;
@@ -46,9 +51,13 @@ type StageDialogElements = {
   mapImageClearButton: HTMLElement | null;
   mapImageSaveButton: HTMLElement | null;
   mapImageCurrent: HTMLElement | null;
+  mapImagePreview: HTMLElement | null;
   mapImageHueInput: HTMLElement | null;
+  mapImageHueRange: HTMLElement | null;
   mapImageBrightnessInput: HTMLElement | null;
+  mapImageBrightnessRange: HTMLElement | null;
   mapImageContrastInput: HTMLElement | null;
+  mapImageContrastRange: HTMLElement | null;
   cancelButton: HTMLElement | null;
   saveButton: HTMLElement | null;
 };
@@ -88,9 +97,13 @@ export function createStageDialogController(
     stageImageClearButton,
     stageImageSaveButton,
     stageImageCurrent,
+    stageImagePreview,
     stageImageHueInput,
+    stageImageHueRange,
     stageImageBrightnessInput,
+    stageImageBrightnessRange,
     stageImageContrastInput,
+    stageImageContrastRange,
     stageSpriteToggle,
     stageSpriteMetaInfo,
     stageSpriteCoordGroup,
@@ -101,9 +114,13 @@ export function createStageDialogController(
     mapImageClearButton,
     mapImageSaveButton,
     mapImageCurrent,
+    mapImagePreview,
     mapImageHueInput,
+    mapImageHueRange,
     mapImageBrightnessInput,
+    mapImageBrightnessRange,
     mapImageContrastInput,
+    mapImageContrastRange,
     cancelButton,
     saveButton,
   } = elements;
@@ -143,6 +160,43 @@ export function createStageDialogController(
       const fillColor = "#9b60d0";
       progressRange.style.background = `linear-gradient(to right, ${fillColor} ${safeValue}%, ${trackColor} ${safeValue}%)`;
     }
+  }
+
+  function syncFilterPair(
+    textInput: HTMLInputElement | null,
+    rangeInput: HTMLInputElement | null,
+    value: number,
+  ): void {
+    const text = String(value);
+    if (textInput) {
+      textInput.value = text;
+    }
+    if (rangeInput) {
+      rangeInput.value = text;
+    }
+  }
+
+  async function updateImagePreview(
+    previewElement: HTMLElement | null,
+    fId: string,
+    filterValues: { hue: number; brightness: number; contrast: number },
+  ): Promise<void> {
+    if (!(previewElement instanceof HTMLImageElement)) {
+      return;
+    }
+
+    const path = String(fId || "").trim();
+    if (!path) {
+      previewElement.hidden = true;
+      previewElement.removeAttribute("src");
+      previewElement.style.removeProperty("filter");
+      return;
+    }
+
+    const objectUrl = await fileStore.getObjectUrlForFile(path);
+    previewElement.src = objectUrl || path;
+    previewElement.style.filter = buildImageFilterCss(filterValues);
+    previewElement.hidden = false;
   }
 
   function buildSpriteMetaText(meta: SpriteFileMeta | null): string {
@@ -299,24 +353,67 @@ export function createStageDialogController(
     target.dataset.stageMapImgBrightness = String(mapImgBrightness);
     target.dataset.stageMapImgContrast = String(mapImgContrast);
 
-    if (stageImageHueInput instanceof HTMLInputElement) {
-      stageImageHueInput.value = String(stageImgHue);
-    }
-    if (stageImageBrightnessInput instanceof HTMLInputElement) {
-      stageImageBrightnessInput.value = String(stageImgBrightness);
-    }
-    if (stageImageContrastInput instanceof HTMLInputElement) {
-      stageImageContrastInput.value = String(stageImgContrast);
-    }
-    if (mapImageHueInput instanceof HTMLInputElement) {
-      mapImageHueInput.value = String(mapImgHue);
-    }
-    if (mapImageBrightnessInput instanceof HTMLInputElement) {
-      mapImageBrightnessInput.value = String(mapImgBrightness);
-    }
-    if (mapImageContrastInput instanceof HTMLInputElement) {
-      mapImageContrastInput.value = String(mapImgContrast);
-    }
+    syncFilterPair(
+      stageImageHueInput instanceof HTMLInputElement
+        ? stageImageHueInput
+        : null,
+      stageImageHueRange instanceof HTMLInputElement
+        ? stageImageHueRange
+        : null,
+      stageImgHue,
+    );
+    syncFilterPair(
+      stageImageBrightnessInput instanceof HTMLInputElement
+        ? stageImageBrightnessInput
+        : null,
+      stageImageBrightnessRange instanceof HTMLInputElement
+        ? stageImageBrightnessRange
+        : null,
+      stageImgBrightness,
+    );
+    syncFilterPair(
+      stageImageContrastInput instanceof HTMLInputElement
+        ? stageImageContrastInput
+        : null,
+      stageImageContrastRange instanceof HTMLInputElement
+        ? stageImageContrastRange
+        : null,
+      stageImgContrast,
+    );
+    syncFilterPair(
+      mapImageHueInput instanceof HTMLInputElement ? mapImageHueInput : null,
+      mapImageHueRange instanceof HTMLInputElement ? mapImageHueRange : null,
+      mapImgHue,
+    );
+    syncFilterPair(
+      mapImageBrightnessInput instanceof HTMLInputElement
+        ? mapImageBrightnessInput
+        : null,
+      mapImageBrightnessRange instanceof HTMLInputElement
+        ? mapImageBrightnessRange
+        : null,
+      mapImgBrightness,
+    );
+    syncFilterPair(
+      mapImageContrastInput instanceof HTMLInputElement
+        ? mapImageContrastInput
+        : null,
+      mapImageContrastRange instanceof HTMLInputElement
+        ? mapImageContrastRange
+        : null,
+      mapImgContrast,
+    );
+
+    await updateImagePreview(stageImagePreview, stageImgPath, {
+      hue: stageImgHue,
+      brightness: stageImgBrightness,
+      contrast: stageImgContrast,
+    });
+    await updateImagePreview(mapImagePreview, mapImgPath, {
+      hue: mapImgHue,
+      brightness: mapImgBrightness,
+      contrast: mapImgContrast,
+    });
 
     const spriteMeta = stageImgPath
       ? await fileStore.getSpriteMetaForFile(stageImgPath)
@@ -382,6 +479,13 @@ export function createStageDialogController(
       syncSpritePlacementFromInputs();
       stageImageCurrent.textContent = fId;
       await applyStageImageVisual(editingStage, fileStore);
+      await updateImagePreview(stageImagePreview, fId, {
+        hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+        brightness: normalizeImageBrightness(
+          editingStage.dataset.stageImgBrightness,
+        ),
+        contrast: normalizeImageContrast(editingStage.dataset.stageImgContrast),
+      });
     } else {
       editingStage.dataset.stageMapImgPath = fId;
       if (mapImageHueInput instanceof HTMLInputElement) {
@@ -400,6 +504,15 @@ export function createStageDialogController(
         );
       }
       mapImageCurrent.textContent = fId;
+      await updateImagePreview(mapImagePreview, fId, {
+        hue: normalizeImageHue(editingStage.dataset.stageMapImgHue),
+        brightness: normalizeImageBrightness(
+          editingStage.dataset.stageMapImgBrightness,
+        ),
+        contrast: normalizeImageContrast(
+          editingStage.dataset.stageMapImgContrast,
+        ),
+      });
     }
 
     await saveStageFromElement(editingStage);
@@ -624,6 +737,15 @@ export function createStageDialogController(
               stageImageCurrent.textContent = row.fId;
             }
             await applyStageImageVisual(editingStage, fileStore);
+            await updateImagePreview(stageImagePreview, row.fId, {
+              hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+              brightness: normalizeImageBrightness(
+                editingStage.dataset.stageImgBrightness,
+              ),
+              contrast: normalizeImageContrast(
+                editingStage.dataset.stageImgContrast,
+              ),
+            });
           } else {
             editingStage.dataset.stageMapImgPath = row.fId;
             if (mapImageHueInput instanceof HTMLInputElement) {
@@ -644,6 +766,15 @@ export function createStageDialogController(
             if (mapImageCurrent instanceof HTMLElement) {
               mapImageCurrent.textContent = row.fId;
             }
+            await updateImagePreview(mapImagePreview, row.fId, {
+              hue: normalizeImageHue(editingStage.dataset.stageMapImgHue),
+              brightness: normalizeImageBrightness(
+                editingStage.dataset.stageMapImgBrightness,
+              ),
+              contrast: normalizeImageContrast(
+                editingStage.dataset.stageMapImgContrast,
+              ),
+            });
           }
 
           await saveStageFromElement(editingStage);
@@ -859,10 +990,39 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageImgHue = String(
-          normalizeImageHue(stageImageHueInput.value),
+        const next = normalizeImageHue(stageImageHueInput.value);
+        editingStage.dataset.stageImgHue = String(next);
+        syncFilterPair(
+          stageImageHueInput,
+          stageImageHueRange instanceof HTMLInputElement
+            ? stageImageHueRange
+            : null,
+          next,
         );
         void applyStageImageVisual(editingStage, fileStore);
+        void updateImagePreview(
+          stageImagePreview,
+          editingStage.dataset.stageImgPath || "",
+          {
+            hue: next,
+            brightness: normalizeImageBrightness(
+              editingStage.dataset.stageImgBrightness,
+            ),
+            contrast: normalizeImageContrast(
+              editingStage.dataset.stageImgContrast,
+            ),
+          },
+        );
+      });
+    }
+
+    if (stageImageHueRange instanceof HTMLInputElement) {
+      stageImageHueRange.addEventListener("input", () => {
+        if (!(stageImageHueInput instanceof HTMLInputElement)) {
+          return;
+        }
+        stageImageHueInput.value = stageImageHueRange.value;
+        stageImageHueInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
     }
 
@@ -871,10 +1031,39 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageImgBrightness = String(
-          normalizeImageBrightness(stageImageBrightnessInput.value),
+        const next = normalizeImageBrightness(stageImageBrightnessInput.value);
+        editingStage.dataset.stageImgBrightness = String(next);
+        syncFilterPair(
+          stageImageBrightnessInput,
+          stageImageBrightnessRange instanceof HTMLInputElement
+            ? stageImageBrightnessRange
+            : null,
+          next,
         );
         void applyStageImageVisual(editingStage, fileStore);
+        void updateImagePreview(
+          stageImagePreview,
+          editingStage.dataset.stageImgPath || "",
+          {
+            hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+            brightness: next,
+            contrast: normalizeImageContrast(
+              editingStage.dataset.stageImgContrast,
+            ),
+          },
+        );
+      });
+    }
+
+    if (stageImageBrightnessRange instanceof HTMLInputElement) {
+      stageImageBrightnessRange.addEventListener("input", () => {
+        if (!(stageImageBrightnessInput instanceof HTMLInputElement)) {
+          return;
+        }
+        stageImageBrightnessInput.value = stageImageBrightnessRange.value;
+        stageImageBrightnessInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
+        );
       });
     }
 
@@ -883,10 +1072,39 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageImgContrast = String(
-          normalizeImageContrast(stageImageContrastInput.value),
+        const next = normalizeImageContrast(stageImageContrastInput.value);
+        editingStage.dataset.stageImgContrast = String(next);
+        syncFilterPair(
+          stageImageContrastInput,
+          stageImageContrastRange instanceof HTMLInputElement
+            ? stageImageContrastRange
+            : null,
+          next,
         );
         void applyStageImageVisual(editingStage, fileStore);
+        void updateImagePreview(
+          stageImagePreview,
+          editingStage.dataset.stageImgPath || "",
+          {
+            hue: normalizeImageHue(editingStage.dataset.stageImgHue),
+            brightness: normalizeImageBrightness(
+              editingStage.dataset.stageImgBrightness,
+            ),
+            contrast: next,
+          },
+        );
+      });
+    }
+
+    if (stageImageContrastRange instanceof HTMLInputElement) {
+      stageImageContrastRange.addEventListener("input", () => {
+        if (!(stageImageContrastInput instanceof HTMLInputElement)) {
+          return;
+        }
+        stageImageContrastInput.value = stageImageContrastRange.value;
+        stageImageContrastInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
+        );
       });
     }
 
@@ -901,9 +1119,38 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageMapImgHue = String(
-          normalizeImageHue(mapImageHueInput.value),
+        const next = normalizeImageHue(mapImageHueInput.value);
+        editingStage.dataset.stageMapImgHue = String(next);
+        syncFilterPair(
+          mapImageHueInput,
+          mapImageHueRange instanceof HTMLInputElement
+            ? mapImageHueRange
+            : null,
+          next,
         );
+        void updateImagePreview(
+          mapImagePreview,
+          editingStage.dataset.stageMapImgPath || "",
+          {
+            hue: next,
+            brightness: normalizeImageBrightness(
+              editingStage.dataset.stageMapImgBrightness,
+            ),
+            contrast: normalizeImageContrast(
+              editingStage.dataset.stageMapImgContrast,
+            ),
+          },
+        );
+      });
+    }
+
+    if (mapImageHueRange instanceof HTMLInputElement) {
+      mapImageHueRange.addEventListener("input", () => {
+        if (!(mapImageHueInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageHueInput.value = mapImageHueRange.value;
+        mapImageHueInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
     }
 
@@ -912,8 +1159,37 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageMapImgBrightness = String(
-          normalizeImageBrightness(mapImageBrightnessInput.value),
+        const next = normalizeImageBrightness(mapImageBrightnessInput.value);
+        editingStage.dataset.stageMapImgBrightness = String(next);
+        syncFilterPair(
+          mapImageBrightnessInput,
+          mapImageBrightnessRange instanceof HTMLInputElement
+            ? mapImageBrightnessRange
+            : null,
+          next,
+        );
+        void updateImagePreview(
+          mapImagePreview,
+          editingStage.dataset.stageMapImgPath || "",
+          {
+            hue: normalizeImageHue(editingStage.dataset.stageMapImgHue),
+            brightness: next,
+            contrast: normalizeImageContrast(
+              editingStage.dataset.stageMapImgContrast,
+            ),
+          },
+        );
+      });
+    }
+
+    if (mapImageBrightnessRange instanceof HTMLInputElement) {
+      mapImageBrightnessRange.addEventListener("input", () => {
+        if (!(mapImageBrightnessInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageBrightnessInput.value = mapImageBrightnessRange.value;
+        mapImageBrightnessInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }
@@ -923,8 +1199,37 @@ export function createStageDialogController(
         if (!editingStage) {
           return;
         }
-        editingStage.dataset.stageMapImgContrast = String(
-          normalizeImageContrast(mapImageContrastInput.value),
+        const next = normalizeImageContrast(mapImageContrastInput.value);
+        editingStage.dataset.stageMapImgContrast = String(next);
+        syncFilterPair(
+          mapImageContrastInput,
+          mapImageContrastRange instanceof HTMLInputElement
+            ? mapImageContrastRange
+            : null,
+          next,
+        );
+        void updateImagePreview(
+          mapImagePreview,
+          editingStage.dataset.stageMapImgPath || "",
+          {
+            hue: normalizeImageHue(editingStage.dataset.stageMapImgHue),
+            brightness: normalizeImageBrightness(
+              editingStage.dataset.stageMapImgBrightness,
+            ),
+            contrast: next,
+          },
+        );
+      });
+    }
+
+    if (mapImageContrastRange instanceof HTMLInputElement) {
+      mapImageContrastRange.addEventListener("input", () => {
+        if (!(mapImageContrastInput instanceof HTMLInputElement)) {
+          return;
+        }
+        mapImageContrastInput.value = mapImageContrastRange.value;
+        mapImageContrastInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
         );
       });
     }

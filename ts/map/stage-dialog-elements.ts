@@ -29,12 +29,20 @@ export function getStageDialogElements() {
       MAP_PAGE_ID.stageImageSaveButton,
     ),
     stageImageCurrent: document.getElementById(MAP_PAGE_ID.stageImageCurrent),
+    stageImagePreview: document.getElementById(MAP_PAGE_ID.stageImagePreview),
     stageImageHueInput: document.getElementById(MAP_PAGE_ID.stageImageHueInput),
+    stageImageHueRange: document.getElementById(MAP_PAGE_ID.stageImageHueRange),
     stageImageBrightnessInput: document.getElementById(
       MAP_PAGE_ID.stageImageBrightnessInput,
     ),
+    stageImageBrightnessRange: document.getElementById(
+      MAP_PAGE_ID.stageImageBrightnessRange,
+    ),
     stageImageContrastInput: document.getElementById(
       MAP_PAGE_ID.stageImageContrastInput,
+    ),
+    stageImageContrastRange: document.getElementById(
+      MAP_PAGE_ID.stageImageContrastRange,
     ),
     stageSpriteToggle: document.getElementById(MAP_PAGE_ID.stageSpriteToggle),
     stageSpriteMetaInfo: document.getElementById(
@@ -56,12 +64,20 @@ export function getStageDialogElements() {
     ),
     mapImageSaveButton: document.getElementById(MAP_PAGE_ID.mapImageSaveButton),
     mapImageCurrent: document.getElementById(MAP_PAGE_ID.mapImageCurrent),
+    mapImagePreview: document.getElementById(MAP_PAGE_ID.mapImagePreview),
     mapImageHueInput: document.getElementById(MAP_PAGE_ID.mapImageHueInput),
+    mapImageHueRange: document.getElementById(MAP_PAGE_ID.mapImageHueRange),
     mapImageBrightnessInput: document.getElementById(
       MAP_PAGE_ID.mapImageBrightnessInput,
     ),
+    mapImageBrightnessRange: document.getElementById(
+      MAP_PAGE_ID.mapImageBrightnessRange,
+    ),
     mapImageContrastInput: document.getElementById(
       MAP_PAGE_ID.mapImageContrastInput,
+    ),
+    mapImageContrastRange: document.getElementById(
+      MAP_PAGE_ID.mapImageContrastRange,
     ),
     cancelButton: document.getElementById(MAP_PAGE_ID.cancelButton),
     saveButton: document.getElementById(MAP_PAGE_ID.saveButton),

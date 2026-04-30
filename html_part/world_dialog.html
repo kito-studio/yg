@@ -102,6 +102,12 @@
             <span data-i18n="current_file_label">現在</span>
             <span id="worldMapImageCurrent">-</span>
           </p>
+          <img
+            class="dialog-image-preview dialog-image-preview-map"
+            id="worldMapImagePreview"
+            alt="world map preview"
+            hidden
+          />
           <div class="stage-image-filter-grid">
             <div class="stage-image-filter-field">
               <label
@@ -109,14 +115,24 @@
                 data-i18n="image_filter_hue_label"
                 >色相回転 (deg)</label
               >
-              <input
-                id="worldMapImageHueInput"
-                type="number"
-                min="-360"
-                max="360"
-                step="1"
-                value="0"
-              />
+              <div class="stage-image-filter-inputs">
+                <input
+                  id="worldMapImageHueInput"
+                  type="number"
+                  min="-360"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+                <input
+                  id="worldMapImageHueRange"
+                  type="range"
+                  min="-360"
+                  max="360"
+                  step="1"
+                  value="0"
+                />
+              </div>
             </div>
             <div class="stage-image-filter-field">
               <label
@@ -124,14 +140,24 @@
                 data-i18n="image_filter_brightness_label"
                 >明度</label
               >
-              <input
-                id="worldMapImageBrightnessInput"
-                type="number"
-                min="0.1"
-                max="3"
-                step="0.1"
-                value="1"
-              />
+              <div class="stage-image-filter-inputs">
+                <input
+                  id="worldMapImageBrightnessInput"
+                  type="number"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value="1"
+                />
+                <input
+                  id="worldMapImageBrightnessRange"
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
             </div>
             <div class="stage-image-filter-field">
               <label
@@ -139,14 +165,24 @@
                 data-i18n="image_filter_contrast_label"
                 >コントラスト</label
               >
-              <input
-                id="worldMapImageContrastInput"
-                type="number"
-                min="0.1"
-                max="3"
-                step="0.1"
-                value="1"
-              />
+              <div class="stage-image-filter-inputs">
+                <input
+                  id="worldMapImageContrastInput"
+                  type="number"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value="1"
+                />
+                <input
+                  id="worldMapImageContrastRange"
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value="1"
+                />
+              </div>
             </div>
           </div>
           <div class="stage-image-actions">
