@@ -149,7 +149,7 @@ export function createTaskButton(
   cntx: MapPageContext,
 ): HTMLButtonElement {
   const taskObject = createMapObjectElement({
-    className: `${MAPPAGE_CLASS.stageObject} ${MAPPAGE_CLASS.taskObject}`,
+    className: MAPPAGE_CLASS.taskObject,
     label: task.nm,
     ariaLabel: task.nm || t("add_task"),
     baseColor: task.clr || "#6fd3ff",

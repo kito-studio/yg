@@ -357,22 +357,30 @@ body.world-active:not(.edit-mode) .add-task-btn {
   transform: translateY(1px);
 }
 
-.stage-object {
+.stage-object,
+.task-object {
   position: absolute;
   width: 156px;
   height: 188px;
-  border: 5px double rgba(128, 128, 0, 0.35);
   box-shadow:
     0 12px 20px rgba(0, 0, 0, 0.35),
     inset 0 0 0 2px rgba(230, 248, 255, 0.2);
-  background: transparent;
-  opacity: 1;
   box-shadow: none;
   cursor: grab;
   touch-action: none;
   overflow: visible;
   z-index: 8;
   filter: drop-shadow(0 0 12px rgba(32, 0, 64, 0.9));
+}
+.stage-object {
+  border: 5px double rgba(128, 128, 0, 0.35);
+  border-radius: 12%;
+  background: rgba(0, 0, 0, 0.28);
+}
+.task-object {
+  border: none;
+  background: transparent;
+  opacity: 1;
 }
 
 .stage-object-side-image {
@@ -416,7 +424,8 @@ body.world-active:not(.edit-mode) .add-task-btn {
   --sprite-tone-filter: brightness(0.5) contrast(1.2);
 }
 
-body.view-mode .stage-object {
+body.view-mode .stage-object,
+body.view-mode .task-object {
   cursor: default;
 }
 
@@ -449,7 +458,8 @@ body.view-mode .stage-object {
     inset 0 0 0 2px rgba(230, 248, 255, 0.22);
 } */
 
-.stage-object.dragging {
+.stage-object.dragging,
+.task-object.dragging {
   cursor: grabbing;
   box-shadow: none;
 }

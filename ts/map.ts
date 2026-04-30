@@ -306,7 +306,9 @@ function createMapViewport(elements: MapPageElements): MapViewportController {
 
       return (
         document.body.classList.contains(MAPPAGE_CLASS.editMode) &&
-        !!event.target.closest(MAPPAGE_SELECTOR.stageObject)
+        !!event.target.closest(
+          `${MAPPAGE_SELECTOR.stageObject}, ${MAPPAGE_SELECTOR.taskObject}`,
+        )
       );
     },
   });
