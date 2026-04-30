@@ -30,6 +30,7 @@ export type StageRecord = {
   wId: string;
   parentStgId: string | null;
   ord: number;
+  weight: number;
   nm: string;
   desc: string;
   baseColor: string;
@@ -81,6 +82,7 @@ export function createStageObject(
       stageWorldId: stage.wId,
       parentStageId: stage.parentStgId || "",
       stageOrd: String(stage.ord),
+      stageWeight: String(Number.isFinite(stage.weight) ? stage.weight : 1),
       stageDesc: stage.desc,
       stageColor: normalizeHexColor(stage.baseColor),
       stageProgress: String(stage.progress),
@@ -257,6 +259,7 @@ export function createNewStageRecord(ord: number): StageRecord {
     wId: "",
     parentStgId: null,
     ord,
+    weight: 1,
     nm: `ST${ord}`,
     desc: "",
     baseColor: "#ffc96b",
@@ -310,6 +313,7 @@ export async function saveStageFromElement(
   const parentStgId = parentStgIdText || null;
   const stageName = target.dataset.stageLabel;
   const stageDesc = target.dataset.stageDesc || "";
+  const stageWeight = Number.parseFloat(target.dataset.stageWeight || "1");
   const stageColor = normalizeHexColor(target.dataset.stageColor || "#ffc96b");
   const stageProgress = Number.parseInt(
     target.dataset.stageProgress || `${DEFAULT_PROGRESS}`,
@@ -363,6 +367,7 @@ export async function saveStageFromElement(
     wId,
     parentStgId,
     ord,
+    weight: Number.isFinite(stageWeight) ? Math.max(0, stageWeight) : 1,
     nm: stageName,
     desc: stageDesc,
     baseColor: stageColor,

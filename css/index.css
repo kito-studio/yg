@@ -347,6 +347,14 @@ body.world-active:not(.edit-mode) .add-task-btn {
   pointer-events: none;
 }
 
+body.world-active #weightAdjustBtn {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  background: linear-gradient(180deg, #e9d8ff, #c29cff);
+  color: #2f174e;
+}
+
 .add-stage-btn:hover,
 .add-task-btn:hover {
   filter: brightness(1.05);
@@ -821,6 +829,54 @@ body.view-mode .task-object {
 .stage-dialog-btn.save {
   color: #2d1806;
   background: linear-gradient(180deg, #ffd889, #f4b752);
+}
+
+.weight-table-wrap {
+  border: 1px solid rgba(255, 215, 146, 0.24);
+  border-radius: 12px;
+  background: rgba(20, 12, 6, 0.55);
+  max-height: min(48vh, 420px);
+  overflow: auto;
+}
+
+.weight-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.weight-table th,
+.weight-table td {
+  border-bottom: 1px solid rgba(255, 215, 146, 0.2);
+  padding: 8px 10px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.weight-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(36, 21, 11, 0.95);
+  color: rgba(255, 227, 182, 0.9);
+}
+
+.weight-row-input {
+  width: 100%;
+  border: 1px solid rgba(255, 215, 146, 0.32);
+  border-radius: 8px;
+  background: rgba(24, 16, 10, 0.9);
+  color: #fff3d9;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.weight-total-row {
+  margin: 10px 0 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 227, 182, 0.86);
 }
 
 @keyframes float-in {

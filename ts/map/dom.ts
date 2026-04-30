@@ -1,6 +1,7 @@
 export const MAP_PAGE_ID = {
   addButton: "addStageBtn",
   addTaskButton: "addTaskBtn",
+  weightAdjustButton: "weightAdjustBtn",
   logoWrap: "logoWrap",
   modeSwitch: "modeSwitch",
   stageMap: "stageMap",
@@ -138,6 +139,17 @@ export const WORLD_DIALOG_ID = {
   saveButton: "worldDialogSave",
 } as const;
 
+export const WEIGHT_DIALOG_ID = {
+  dialog: "weightSettingsDialog",
+  dialogBackdrop: "weightDialogBackdrop",
+  title: "weightDialogTitle",
+  summary: "weightDialogSummary",
+  tableBody: "weightDialogTableBody",
+  totalWeightValue: "weightDialogTotalValue",
+  cancelButton: "weightDialogCancel",
+  saveButton: "weightDialogSave",
+} as const;
+
 export const MAPPAGE_CLASS = {
   worldActive: "world-active",
   logoExiting: "logo-exiting",
@@ -173,6 +185,7 @@ export const MAPPAGE_SELECTOR = {
 export type MapPageElements = {
   addButton: HTMLButtonElement | null;
   addTaskButton: HTMLButtonElement | null;
+  weightAdjustButton: HTMLButtonElement | null;
   logoWrap: HTMLElement | null;
   modeSwitch: HTMLInputElement | null;
   stageMap: HTMLElement | null;
@@ -194,6 +207,9 @@ export function getMapPageElements(): MapPageElements {
     ) as HTMLButtonElement | null,
     addTaskButton: document.getElementById(
       MAP_PAGE_ID.addTaskButton,
+    ) as HTMLButtonElement | null,
+    weightAdjustButton: document.getElementById(
+      MAP_PAGE_ID.weightAdjustButton,
     ) as HTMLButtonElement | null,
     logoWrap: document.getElementById(MAP_PAGE_ID.logoWrap),
     modeSwitch: document.getElementById(

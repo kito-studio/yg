@@ -190,6 +190,7 @@ export function createTaskButton(
       taskWorldId: task.wId,
       taskStageId: task.stgId || "",
       taskOrd: String(task.ord),
+      taskWeight: String(Number.isFinite(task.weight) ? task.weight : 1),
       taskColor: task.clr,
       taskState: task.state,
       taskDesc: task.desc,
@@ -426,6 +427,10 @@ export async function saveTaskFromElement(
     : Number.isFinite(ordFromData)
       ? ordFromData
       : 0;
+  const weightFromData = Number.parseFloat(target.dataset.taskWeight || "");
+  const weight = Number.isFinite(weightFromData)
+    ? Math.max(0, weightFromData)
+    : Math.max(0, current?.weight ?? 1);
   const spriteCol = Number.isFinite(
     Number.parseInt(target.dataset.taskSpriteCol || "", 10),
   )
@@ -454,6 +459,7 @@ export async function saveTaskFromElement(
   target.dataset.taskImgHue = String(iconHue);
   target.dataset.taskImgBrightness = String(iconBrightness);
   target.dataset.taskImgContrast = String(iconContrast);
+  target.dataset.taskWeight = String(weight);
   target.dataset.taskSpriteCol = String(spriteCol);
   target.dataset.taskSpriteRow = String(spriteRow);
   target.dataset.taskSpriteTone = spriteTone;
@@ -464,6 +470,7 @@ export async function saveTaskFromElement(
     wId,
     stgId,
     ord,
+    weight,
     nm,
     desc: String(target.dataset.taskDesc || current?.desc || ""),
     progress: clampProgress(

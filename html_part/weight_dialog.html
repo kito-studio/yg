@@ -1,0 +1,59 @@
+<div class="stage-dialog-backdrop" id="weightDialogBackdrop" hidden></div>
+
+<dialog class="stage-settings-dialog" id="weightSettingsDialog">
+  <form
+    method="dialog"
+    class="weight-dialog-shell stage-dialog-shell"
+    onsubmit="return false;"
+  >
+    <h2
+      class="stage-dialog-title"
+      id="weightDialogTitle"
+      data-i18n="weight_dialog_title"
+    >
+      ウエイト調整
+    </h2>
+    <p
+      class="stage-dialog-sub"
+      id="weightDialogSummary"
+      data-i18n="weight_dialog_sub"
+    >
+      現在の地図に表示中のステージ/タスクのウエイトを調整します。保存時に合計が1になるよう自動正規化されます。
+    </p>
+
+    <div class="stage-dialog-body">
+      <section class="stage-dialog-panel active" id="weightDialogPanelBasic">
+        <div class="weight-table-wrap">
+          <table class="weight-table">
+            <thead>
+              <tr>
+                <th data-i18n="weight_dialog_col_type">種別</th>
+                <th data-i18n="weight_dialog_col_name">名称</th>
+                <th data-i18n="weight_dialog_col_progress">進捗</th>
+                <th data-i18n="weight_dialog_col_weight">ウエイト</th>
+              </tr>
+            </thead>
+            <tbody id="weightDialogTableBody"></tbody>
+          </table>
+        </div>
+        <p class="weight-total-row">
+          <span data-i18n="weight_dialog_total_label">入力合計</span>
+          <strong id="weightDialogTotalValue">0</strong>
+        </p>
+      </section>
+    </div>
+
+    <div class="stage-dialog-footer">
+      <button
+        class="stage-dialog-btn cancel"
+        id="weightDialogCancel"
+        type="button"
+      >
+        <span data-i18n="cancel">キャンセル</span>
+      </button>
+      <button class="stage-dialog-btn save" id="weightDialogSave" type="button">
+        <span data-i18n="save">保存</span>
+      </button>
+    </div>
+  </form>
+</dialog>

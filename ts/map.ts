@@ -35,6 +35,8 @@ import { createTaskDialogController } from "./map/task-dialog";
 import { getTaskDialogElements } from "./map/task-dialog-elements";
 import { createTaskProgressDialogController } from "./map/task-progress-dialog";
 import { getTaskProgressDialogElements } from "./map/task-progress-dialog-elements";
+import { createWeightDialogController } from "./map/weight-dialog";
+import { getWeightDialogElements } from "./map/weight-dialog-elements";
 import { createWorldDialogController } from "./map/world-dialog";
 import { getWorldDialogElements } from "./map/world-dialog-elements";
 import {
@@ -42,8 +44,14 @@ import {
   loadStages,
   saveStageFromElement,
   StageRecord,
+  upsertStage,
 } from "./obj/stage";
-import { createNewTaskRecord, loadTasks, TaskRecord } from "./obj/task";
+import {
+  createNewTaskRecord,
+  loadTasks,
+  TaskRecord,
+  upsertTask,
+} from "./obj/task";
 import { loadSelectedWorld, loadWorlds, upsertWorld } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
@@ -90,6 +98,7 @@ async function initMapPage(): Promise<void> {
   cntx.stageDialog.bindEvents();
   cntx.taskDialog.bindEvents();
   cntx.taskProgressDialog.bindEvents();
+  cntx.weightDialog.bindEvents();
   cntx.worldDialog.bindEvents();
   cntx.contextMenu.bindEvents();
 
@@ -215,6 +224,13 @@ async function initMapPage(): Promise<void> {
       },
     });
   });
+
+  elements.weightAdjustButton?.addEventListener("click", () => {
+    if (!context) {
+      return;
+    }
+    context.weightDialog.open();
+  });
 }
 
 /**
@@ -230,6 +246,7 @@ async function mountMapPageParts(): Promise<void> {
     "stage_dialog",
     "task_dialog",
     "world_dialog",
+    "weight_dialog",
     "context_menu",
     "info",
   ];
@@ -255,6 +272,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     stageDialog: createStageDialog(fileStore),
     taskDialog: createTaskDialog(fileStore),
     taskProgressDialog: createTaskProgressDialog(fileStore),
+    weightDialog: createWeightDialog(),
     worldDialog: createWorldDialog(fileStore),
     contextMenu: createContextMenu(),
     stageHandlers: createStageHandlers(),
@@ -417,6 +435,54 @@ function createWorldDialog(
   });
 }
 
+function createWeightDialog(): ReturnType<typeof createWeightDialogController> {
+  return createWeightDialogController({
+    elements: getWeightDialogElements(),
+    resolveItems: () => {
+      if (!context) {
+        return [];
+      }
+      const stages = getVisibleStages(context).map((stage) => ({
+        type: "stage" as const,
+        id: stage.stgId,
+        label: stage.nm || stage.stgId,
+        progress: stage.progress,
+        weight: Number.isFinite(stage.weight) ? stage.weight : 1,
+      }));
+      const tasks = getVisibleTasks(context).map((task) => ({
+        type: "task" as const,
+        id: task.tkId,
+        label: task.nm || task.tkId,
+        progress: task.progress,
+        weight: Number.isFinite(task.weight) ? task.weight : 1,
+      }));
+      return [...stages, ...tasks];
+    },
+    saveWeights: async (next) => {
+      if (!context) {
+        return;
+      }
+
+      const stageRawById = new Map<string, number>();
+      const taskRawById = new Map<string, number>();
+      for (const item of next) {
+        if (item.type === "stage") {
+          stageRawById.set(item.id, item.weight);
+        } else {
+          taskRawById.set(item.id, item.weight);
+        }
+      }
+
+      await normalizeAndPersistVisibleWeights(
+        context,
+        stageRawById,
+        taskRawById,
+      );
+      await rerenderStagesFromDb();
+    },
+  });
+}
+
 function createContextMenu(): ReturnType<typeof createContextMenuController> {
   return createContextMenuController({
     getContext: () => context,
@@ -521,6 +587,9 @@ export async function rerenderStagesFromDb(): Promise<void> {
     cntx.worlds[0] ||
     null;
 
+  await normalizeAndPersistVisibleWeights(cntx);
+  await persistAggregateProgressForCurrentMap(cntx);
+
   await applyCurrentMapBackground(cntx);
   renderCurrentHeaderLabel(
     cntx,
@@ -538,6 +607,156 @@ export async function rerenderStagesFromDb(): Promise<void> {
     const taskObject = createTaskButton(task, cntx);
     appendTaskObject(taskObject, cntx);
     cntx.mapViewport.placeElementWithinContent(taskObject, task.x, task.y);
+  }
+}
+
+function normalizeWeightValue(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, value);
+}
+
+function buildNormalizedWeights(raw: number[]): {
+  normalized: number[];
+  hasAny: boolean;
+} {
+  if (raw.length === 0) {
+    return { normalized: [], hasAny: false };
+  }
+
+  const safeRaw = raw.map((value) => normalizeWeightValue(value));
+  const sum = safeRaw.reduce((acc, value) => acc + value, 0);
+  if (sum <= 0) {
+    const equal = 1 / raw.length;
+    return {
+      normalized: raw.map(() => equal),
+      hasAny: true,
+    };
+  }
+
+  return {
+    normalized: safeRaw.map((value) => value / sum),
+    hasAny: true,
+  };
+}
+
+async function normalizeAndPersistVisibleWeights(
+  cntx: MapPageContext,
+  stageRawById?: Map<string, number>,
+  taskRawById?: Map<string, number>,
+): Promise<void> {
+  const stages = getVisibleStages(cntx);
+  const tasks = getVisibleTasks(cntx);
+  const all = [
+    ...stages.map((stage) => ({ type: "stage" as const, id: stage.stgId })),
+    ...tasks.map((task) => ({ type: "task" as const, id: task.tkId })),
+  ];
+  if (all.length === 0) {
+    return;
+  }
+
+  const rawWeights = all.map((item) => {
+    if (item.type === "stage") {
+      const stage = stages.find((target) => target.stgId === item.id);
+      const nextRaw = stageRawById?.get(item.id);
+      return Number.isFinite(nextRaw)
+        ? Number(nextRaw)
+        : Number(stage?.weight ?? 1);
+    }
+    const task = tasks.find((target) => target.tkId === item.id);
+    const nextRaw = taskRawById?.get(item.id);
+    return Number.isFinite(nextRaw)
+      ? Number(nextRaw)
+      : Number(task?.weight ?? 1);
+  });
+
+  const normalized = buildNormalizedWeights(rawWeights).normalized;
+  const stageUpdates: Promise<void>[] = [];
+  const taskUpdates: Promise<void>[] = [];
+  let index = 0;
+  for (const item of all) {
+    const nextWeight = normalized[index] ?? 0;
+    index += 1;
+
+    if (item.type === "stage") {
+      const stage = stages.find((target) => target.stgId === item.id);
+      if (!stage) {
+        continue;
+      }
+      if (Math.abs((stage.weight ?? 0) - nextWeight) > 1e-9) {
+        const updated: StageRecord = { ...stage, weight: nextWeight };
+        stage.weight = nextWeight;
+        stageUpdates.push(upsertStage(updated));
+      }
+      continue;
+    }
+
+    const task = tasks.find((target) => target.tkId === item.id);
+    if (!task) {
+      continue;
+    }
+    if (Math.abs((task.weight ?? 0) - nextWeight) > 1e-9) {
+      const updated: TaskRecord = { ...task, weight: nextWeight };
+      task.weight = nextWeight;
+      taskUpdates.push(upsertTask(updated));
+    }
+  }
+
+  await Promise.all([...stageUpdates, ...taskUpdates]);
+}
+
+async function persistAggregateProgressForCurrentMap(
+  cntx: MapPageContext,
+): Promise<void> {
+  const stages = getVisibleStages(cntx);
+  const tasks = getVisibleTasks(cntx);
+  const items = [
+    ...stages.map((stage) => ({
+      progress: stage.progress,
+      weight: Number.isFinite(stage.weight) ? stage.weight : 1,
+    })),
+    ...tasks.map((task) => ({
+      progress: task.progress,
+      weight: Number.isFinite(task.weight) ? task.weight : 1,
+    })),
+  ];
+  if (items.length === 0) {
+    return;
+  }
+
+  const { normalized, hasAny } = buildNormalizedWeights(
+    items.map((item) => item.weight),
+  );
+  if (!hasAny) {
+    return;
+  }
+
+  const weighted = items.reduce((sum, item, index) => {
+    const safeProgress = Math.max(0, Math.min(100, Math.round(item.progress)));
+    return sum + (normalized[index] ?? 0) * safeProgress;
+  }, 0);
+  const totalProgress = Math.max(0, Math.min(100, Math.round(weighted)));
+
+  if (!cntx.stage && cntx.world) {
+    if ((cntx.world.progress ?? 0) !== totalProgress) {
+      cntx.world.progress = totalProgress;
+      await upsertWorld({ ...cntx.world, progress: totalProgress });
+    }
+    return;
+  }
+
+  if (cntx.stage) {
+    const parent = cntx.stages.find(
+      (stage) => stage.stgId === cntx.stage?.stgId,
+    );
+    if (!parent) {
+      return;
+    }
+    if (parent.progress !== totalProgress) {
+      parent.progress = totalProgress;
+      await upsertStage({ ...parent, progress: totalProgress });
+    }
   }
 }
 

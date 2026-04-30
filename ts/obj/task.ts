@@ -13,6 +13,7 @@ export type TaskRecord = {
   wId: string;
   stgId: string | null;
   ord: number;
+  weight: number;
   cat: string;
   nm: string;
   desc: string;
@@ -58,6 +59,7 @@ export function createNewTaskRecord(ord: number): TaskRecord {
     wId: "",
     stgId: null,
     ord,
+    weight: 1,
     cat: "",
     nm: `TK${ord}`,
     desc: "",
@@ -116,6 +118,9 @@ export async function loadTasks(): Promise<TaskRecord[]> {
                 ? null
                 : "",
           ord: Number.isFinite(Number(row.ord)) ? Number(row.ord) : index + 1,
+          weight: Number.isFinite(Number(row.weight))
+            ? Math.max(0, Number(row.weight))
+            : 1,
           cat: String(row.cat || "").trim(),
           nm: String(row.nm || `TK${index + 1}`).trim(),
           desc: String(row.desc || "").trim(),

@@ -10,6 +10,7 @@ import { MapPageElements } from "./dom";
 import { createStageDialogController } from "./stage-dialog";
 import { createTaskDialogController } from "./task-dialog";
 import { createTaskProgressDialogController } from "./task-progress-dialog";
+import { createWeightDialogController } from "./weight-dialog";
 import { createWorldDialogController } from "./world-dialog";
 
 export const STAGE_DEFAULT_SIZE = 74;
@@ -34,6 +35,7 @@ export type MapPageContext = {
   stageDialog: ReturnType<typeof createStageDialogController>;
   taskDialog: ReturnType<typeof createTaskDialogController>;
   taskProgressDialog: ReturnType<typeof createTaskProgressDialogController>;
+  weightDialog: ReturnType<typeof createWeightDialogController>;
   worldDialog: ReturnType<typeof createWorldDialogController>;
   contextMenu: ReturnType<typeof createContextMenuController>;
   stageHandlers: ReturnType<typeof createStageInteractionHandlers>;

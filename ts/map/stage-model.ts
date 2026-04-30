@@ -66,6 +66,9 @@ export function normalizeStageRow(
   index: number,
 ): StageRecord {
   const safeOrd = Number.isFinite(row.ord) ? Number(row.ord) : index + 1;
+  const safeWeight = Number.isFinite(row.weight)
+    ? Math.max(0, Number(row.weight))
+    : 1;
   const safeName =
     typeof row.nm === "string" && row.nm.length > 0 ? row.nm : `ST${safeOrd}`;
   const safeDesc = typeof row.desc === "string" ? row.desc : "";
@@ -97,6 +100,7 @@ export function normalizeStageRow(
           ? null
           : "",
     ord: safeOrd,
+    weight: safeWeight,
     nm: safeName,
     desc: safeDesc,
     baseColor: safeColor,
