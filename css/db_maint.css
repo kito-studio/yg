@@ -1,24 +1,303 @@
-html,
-body {
-  margin: 0;
-  height: 100%;
+/* body_pane の高さを確定させ、flex を下まで伝播させる（#result_table と同じパターン） */
+div#body_pane:has(#db_maint) {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-body {
-  background: #111;
-  color: #ddd;
-  font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+div#body_pane:has(#db_table_list) {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-#db_maint_toolbar a {
-  color: #9fd2ff;
+#db_maint {
+  padding: 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
+#db_table_list {
+  padding: 12px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+#db_maint_toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+#db_table_list_toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#db_table_list_toolbar button {
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#db_table_list_selected_count {
+  color: #9aa;
+  font-size: 12px;
+}
+
+#db_maint_selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+#db_table_select {
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+#db_record_count {
+  color: #888;
+  font-size: 12px;
+}
+
+#db_table_usage {
+  color: #9aa;
+  font-size: 12px;
+}
+
+#db_maint_toolbar button,
+#db_maint_selector button {
+  padding: 4px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#db_clear_table_btn {
+  color: #c00;
+}
+
+#db_bulk_delete_btn {
+  color: #c00;
+}
+
+#db_maint_grid {
+  width: 100%;
+  max-width: 100%;
+  height: calc(100dvh - 170px);
+  max-height: calc(100dvh - 170px);
+  min-height: 180px;
+  min-width: 0;
+  overflow: scroll;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+#db_table_list_grid {
+  width: 100%;
+  max-width: 100%;
+  height: calc(100dvh - 120px);
+  max-height: calc(100dvh - 120px);
+  min-height: 180px;
+  min-width: 0;
+  overflow: scroll;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.db_table_list_table {
+  width: 100%;
+  min-width: 520px;
+}
+
+.db_maint_table {
+  border-collapse: collapse;
+  font-size: 12px;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.db_maint_table thead {
+  position: sticky;
+  top: 0;
+  background: #2a2a2a;
+  color: #eee;
+  z-index: 1;
+}
+
+.db_maint_table th,
 .db_maint_table td {
-  max-width: 300px;
+  border: 1px solid #444;
+  padding: 3px 8px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.db_cell_display {
+.db_maint_table th.db_sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.db_maint_table th.db_sortable:hover {
+  background: #3a3a3a;
+}
+
+.db_maint_table th.db_sort_asc::after,
+.db_maint_table th.db_sort_desc::after {
+  margin-left: 6px;
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.db_maint_table th.db_sort_asc::after {
+  content: "▲";
+}
+
+.db_maint_table th.db_sort_desc::after {
+  content: "▼";
+}
+
+.db_maint_table tbody tr:hover {
+  background: #7e7e9e;
+}
+
+.db_del_col {
+  width: 32px;
+  text-align: center;
+  padding: 2px 4px !important;
+}
+
+.db_select_col {
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+  padding: 2px 4px !important;
+}
+
+.db_select_col input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.db_del_col button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.db_del_col button:hover {
+  opacity: 1;
+}
+
+.db_cell_input {
+  width: min(420px, 90vw);
+  min-width: 120px;
+  min-height: 72px;
+  font-size: 12px;
+  font-family: inherit;
+  padding: 1px 4px;
+  box-sizing: border-box;
+  background: #1a1a2e;
+  color: #eee;
+  border: 1px solid #7af;
+  outline: none;
+  resize: both;
+}
+
+.db_maint_table th.db_preview_col,
+.db_maint_table td.db_preview_col {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  text-align: center;
+  padding: 2px 4px;
+}
+
+.db_maint_table th.db_size_col,
+.db_maint_table td.db_size_col {
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
+  text-align: right;
+}
+
+.db_maint_table th.db_table_enabled_col,
+.db_maint_table td.db_table_enabled_col {
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
+  text-align: center;
+}
+
+.db_preview_img {
+  display: inline-block;
+  width: 32px;
+  height: auto;
+  max-height: 32px;
+  object-fit: contain;
+  vertical-align: middle;
+  cursor: zoom-in;
+}
+
+.db_preview_overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.db_preview_panel {
+  position: relative;
+  max-width: min(92vw, 1200px);
+  max-height: 90vh;
+}
+
+.db_preview_large_img {
   display: block;
-  min-width: 80px;
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+.db_preview_close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #666;
+  border-radius: 14px;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
 }
