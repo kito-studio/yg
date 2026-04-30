@@ -24,6 +24,8 @@ import {
 import { intro, waitForMapRevealComplete } from "./map/reveal";
 import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
+import { createTaskDialogController } from "./map/task-dialog";
+import { getTaskDialogElements } from "./map/task-dialog-elements";
 import {
   createNewStageRecord,
   loadStages,
@@ -76,6 +78,7 @@ async function initMapPage(): Promise<void> {
   document.body.classList.add(MAPPAGE_CLASS.viewMode);
 
   cntx.stageDialog.bindEvents();
+  cntx.taskDialog.bindEvents();
 
   setupToolbar({
     downloadButton: elements.dbDownloadButton,
@@ -212,6 +215,7 @@ async function mountMapPageParts(): Promise<void> {
     "toolbox",
     "map",
     "stage_dialog",
+    "task_dialog",
     "info",
   ];
 
@@ -234,6 +238,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     elements,
     mapViewport: createMapViewport(elements),
     stageDialog: createStageDialog(fileStore),
+    taskDialog: createTaskDialog(fileStore),
     stageHandlers: createStageHandlers(),
     taskHandlers: createTaskHandlers(),
     world: null,
@@ -315,6 +320,24 @@ function createStageDialog(
     fileStore,
     saveStageFromElement: async (target) => {
       await saveStageFromElement(target);
+    },
+  });
+}
+
+function createTaskDialog(
+  fileStore: FileStoreGateway,
+): ReturnType<typeof createTaskDialogController> {
+  return createTaskDialogController({
+    elements: getTaskDialogElements(),
+    fileStore,
+    saveTaskFromElement: async (target) => {
+      if (!context) {
+        return;
+      }
+      await saveTaskFromElement(target, context);
+    },
+    onAfterSave: async () => {
+      await rerenderStagesFromDb();
     },
   });
 }

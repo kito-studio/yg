@@ -1,0 +1,183 @@
+<div class="stage-dialog-backdrop" id="taskDialogBackdrop" hidden></div>
+
+<dialog class="stage-settings-dialog" id="taskSettingsDialog">
+  <form
+    method="dialog"
+    class="task-dialog-shell stage-dialog-shell"
+    onsubmit="return false;"
+  >
+    <h2
+      class="stage-dialog-title"
+      id="taskDialogTitle"
+      data-i18n="task_settings_title"
+    >
+      タスク設定
+    </h2>
+    <p class="stage-dialog-sub" data-i18n="task_settings_sub">
+      タスクの状態と基本情報を編集できます。
+    </p>
+
+    <div class="stage-dialog-tabs" role="tablist" aria-label="タスク設定タブ">
+      <button
+        class="stage-dialog-tab active"
+        id="taskDialogTabBasic"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="taskDialogPanelBasic"
+        data-tab-target="taskDialogPanelBasic"
+        data-i18n="stage_tab_basic"
+      >
+        基本
+      </button>
+      <button
+        class="stage-dialog-tab"
+        id="taskDialogTabImage"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="taskDialogPanelImage"
+        data-tab-target="taskDialogPanelImage"
+        data-i18n="stage_tab_image"
+      >
+        画像
+      </button>
+    </div>
+
+    <div class="stage-dialog-body">
+      <section
+        class="stage-dialog-panel active"
+        id="taskDialogPanelBasic"
+        role="tabpanel"
+        aria-labelledby="taskDialogTabBasic"
+      >
+        <div class="stage-field">
+          <label for="taskProgressRange" data-i18n="stage_progress_label"
+            >撃破状態（進捗）</label
+          >
+          <div class="hp-gauge" aria-hidden="true">
+            <div class="hp-gauge-fill" id="taskProgressBarFill"></div>
+          </div>
+          <div class="hp-meta">
+            <span data-i18n="hp_label">HP</span>
+            <span class="hp-value" id="taskProgressValue">100%</span>
+          </div>
+          <input
+            class="stage-progress-range"
+            id="taskProgressRange"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="100"
+          />
+        </div>
+
+        <div class="stage-field">
+          <label for="taskNameInput" data-i18n="stage_name_label"
+            >名称（nm）</label
+          >
+          <input id="taskNameInput" type="text" maxlength="40" />
+        </div>
+
+        <div class="stage-field">
+          <label for="taskColorInput" data-i18n="stage_color_label"
+            >基本色</label
+          >
+          <input id="taskColorInput" type="color" value="#6fd3ff" />
+        </div>
+
+        <div class="stage-field">
+          <label for="taskDescInput" data-i18n="stage_desc_label"
+            >説明（desc）</label
+          >
+          <textarea id="taskDescInput"></textarea>
+        </div>
+      </section>
+
+      <section
+        class="stage-dialog-panel"
+        id="taskDialogPanelImage"
+        role="tabpanel"
+        aria-labelledby="taskDialogTabImage"
+      >
+        <div class="stage-field stage-image-group">
+          <label for="taskImageFileInput" data-i18n="task_image_label"
+            >タスク画像</label
+          >
+          <input id="taskImageFileInput" type="file" accept="image/*" />
+          <p class="stage-image-current">
+            <span data-i18n="current_file_label">現在</span>
+            <span id="taskImageCurrent">-</span>
+          </p>
+          <label class="stage-sprite-toggle">
+            <input id="taskSpriteToggle" type="checkbox" />
+            <span>この画像をスプライトシートとして登録</span>
+          </label>
+          <p class="stage-image-current" id="taskSpriteMetaInfo">通常画像</p>
+          <div class="stage-sprite-coord" id="taskSpriteCoordGroup" hidden>
+            <div class="stage-sprite-coord-field">
+              <label for="taskSpriteRowInput">行番号</label>
+              <input
+                id="taskSpriteRowInput"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+              />
+            </div>
+            <div class="stage-sprite-coord-field">
+              <label for="taskSpriteColInput">列番号</label>
+              <input
+                id="taskSpriteColInput"
+                type="number"
+                min="1"
+                step="1"
+                value="1"
+              />
+            </div>
+          </div>
+          <div class="stage-image-actions">
+            <button
+              class="stage-dialog-btn"
+              id="taskImagePickBtn"
+              type="button"
+              data-i18n="pick_registered_image"
+            >
+              登録済みから選択
+            </button>
+            <button
+              class="stage-dialog-btn cancel"
+              id="taskImageClearBtn"
+              type="button"
+              data-i18n="upload_cancel"
+            >
+              キャンセル
+            </button>
+            <button
+              class="stage-dialog-btn save"
+              id="taskImageSaveBtn"
+              type="button"
+              data-i18n="upload_save"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="stage-dialog-footer">
+      <button
+        class="stage-dialog-btn cancel"
+        id="taskDialogCancel"
+        type="button"
+      >
+        <span data-i18n="cancel">キャンセル</span>
+      </button>
+      <button class="stage-dialog-btn save" id="taskDialogSave" type="button">
+        <span data-i18n="save">保存</span>
+      </button>
+    </div>
+  </form>
+</dialog>

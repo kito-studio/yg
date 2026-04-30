@@ -5,7 +5,7 @@ import { MAPPAGE_CLASS } from "../map/dom";
 import { beginStageDrag } from "../map/drag";
 import { createMapObjectElement } from "../map/object-view";
 import { applySpriteCellVisual } from "../map/sprite-sheet";
-import { getElementPosition } from "../map/stage-model";
+import { clampProgress, getElementPosition } from "../map/stage-model";
 import { createNewTaskRecord, TaskRecord, upsertTask } from "../obj/task";
 
 type TaskMapViewport = {
@@ -152,6 +152,9 @@ export function createTaskButton(
       taskOrd: String(task.ord),
       taskColor: task.clr,
       taskState: task.state,
+      taskDesc: task.desc,
+      taskProgress: String(task.progress),
+      taskImgPath: task.iconFId,
       taskSpriteCol: String(task.spriteCol),
       taskSpriteRow: String(task.spriteRow),
       taskSpriteTone: task.spriteTone,
@@ -276,6 +279,13 @@ export async function saveTaskFromElement(
     stgId,
     ord,
     nm,
+    desc: String(target.dataset.taskDesc || current?.desc || ""),
+    progress: clampProgress(
+      Number.isFinite(Number.parseInt(target.dataset.taskProgress || "", 10))
+        ? Number.parseInt(target.dataset.taskProgress || "0", 10)
+        : (current?.progress ?? 0),
+    ),
+    iconFId: String(target.dataset.taskImgPath || current?.iconFId || ""),
     clr: String(target.dataset.taskColor || current?.clr || "#6fd3ff"),
     spriteCol,
     spriteRow,
@@ -299,6 +309,11 @@ export function createTaskHandlers(): ReturnType<
       await rerenderStagesFromDb();
     },
     // Task dialog is not implemented yet. Keep the hook for parity with stages.
-    onOpenTaskEditor: async () => {},
+    onOpenTaskEditor: async (target) => {
+      if (!context) {
+        return;
+      }
+      context.taskDialog.open(target);
+    },
   });
 }

@@ -45,6 +45,34 @@ export const MAP_PAGE_ID = {
   bgmButton: "bgmBtn",
 } as const;
 
+export const TASK_DIALOG_ID = {
+  dialog: "taskSettingsDialog",
+  dialogBackdrop: "taskDialogBackdrop",
+  dialogTitle: "taskDialogTitle",
+  dialogTabBasic: "taskDialogTabBasic",
+  dialogTabImage: "taskDialogTabImage",
+  dialogPanelBasic: "taskDialogPanelBasic",
+  dialogPanelImage: "taskDialogPanelImage",
+  progressRange: "taskProgressRange",
+  progressBarFill: "taskProgressBarFill",
+  progressValue: "taskProgressValue",
+  nameInput: "taskNameInput",
+  descInput: "taskDescInput",
+  colorInput: "taskColorInput",
+  taskImageFileInput: "taskImageFileInput",
+  taskImagePickButton: "taskImagePickBtn",
+  taskImageClearButton: "taskImageClearBtn",
+  taskImageSaveButton: "taskImageSaveBtn",
+  taskImageCurrent: "taskImageCurrent",
+  taskSpriteToggle: "taskSpriteToggle",
+  taskSpriteMetaInfo: "taskSpriteMetaInfo",
+  taskSpriteCoordGroup: "taskSpriteCoordGroup",
+  taskSpriteRowInput: "taskSpriteRowInput",
+  taskSpriteColInput: "taskSpriteColInput",
+  cancelButton: "taskDialogCancel",
+  saveButton: "taskDialogSave",
+} as const;
+
 export const MAPPAGE_CLASS = {
   worldActive: "world-active",
   logoExiting: "logo-exiting",
@@ -61,6 +89,7 @@ export const MAPPAGE_CLASS = {
   stageObjectHp: "stage-object-hp",
   stageObjectHpFill: "stage-object-hp-fill",
   stageDialogShell: "stage-dialog-shell",
+  taskDialogShell: "task-dialog-shell",
 } as const;
 
 export const MAPPAGE_SELECTOR = {
@@ -71,6 +100,7 @@ export const MAPPAGE_SELECTOR = {
   stageObjectSideImage: `.${MAPPAGE_CLASS.stageObjectSideImage}`,
   stageObjectSideImageImg: `.${MAPPAGE_CLASS.stageObjectSideImageImg}`,
   stageDialogShell: `.${MAPPAGE_CLASS.stageDialogShell}`,
+  taskDialogShell: `.${MAPPAGE_CLASS.taskDialogShell}`,
 } as const;
 
 export type MapPageElements = {
