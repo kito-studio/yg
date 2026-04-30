@@ -33,17 +33,11 @@ export type WeightDialogController = {
   close: () => void;
 };
 
-function normalizeWeight(value: number): number {
+function clampWeightInt(value: number): number {
   if (!Number.isFinite(value)) {
-    return 0;
+    return 1;
   }
-  return Math.max(0, value);
-}
-
-function formatWeight(value: number): string {
-  return normalizeWeight(value)
-    .toFixed(4)
-    .replace(/\.?0+$/, "");
+  return Math.max(1, Math.min(100, Math.round(value)));
 }
 
 function openDialog(
@@ -103,9 +97,9 @@ export function createWeightDialogController(
       tableBody.querySelectorAll<HTMLInputElement>(".weight-row-input"),
     );
     const total = inputs.reduce((sum, input) => {
-      return sum + normalizeWeight(Number.parseFloat(input.value));
+      return sum + clampWeightInt(Number.parseFloat(input.value));
     }, 0);
-    totalWeightValue.textContent = total.toFixed(4);
+    totalWeightValue.textContent = String(total);
   }
 
   function close(): void {
@@ -132,7 +126,7 @@ export function createWeightDialogController(
         return {
           type: typeText,
           id,
-          weight: normalizeWeight(Number.parseFloat(input.value)),
+          weight: clampWeightInt(Number.parseFloat(input.value)),
         };
       })
       .filter(
@@ -204,9 +198,10 @@ export function createWeightDialogController(
       const weightInput = document.createElement("input");
       weightInput.className = "weight-row-input";
       weightInput.type = "number";
-      weightInput.min = "0";
-      weightInput.step = "0.0001";
-      weightInput.value = formatWeight(item.weight);
+      weightInput.min = "1";
+      weightInput.max = "100";
+      weightInput.step = "1";
+      weightInput.value = String(clampWeightInt(item.weight));
       weightCell.append(weightInput);
 
       row.append(typeCell, labelCell, progressCell, weightCell);

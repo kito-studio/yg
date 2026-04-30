@@ -21,7 +21,7 @@ const JA: Record<string, string> = {
   task_progress_sub: "タスクの進捗を更新できます。",
   weight_dialog_title: "ウエイト調整",
   weight_dialog_sub:
-    "現在の地図に表示中のステージ/タスクのウエイトを調整します。保存時に合計が1になるよう自動正規化されます。",
+    "現在の地図に表示中のステージ/タスクのウエイトを調整します（1〜100の整数）。",
   weight_dialog_col_type: "種別",
   weight_dialog_col_name: "名称",
   weight_dialog_col_progress: "進捗",
@@ -136,7 +136,7 @@ const EN: Record<string, string> = {
   task_progress_sub: "Update task progress.",
   weight_dialog_title: "Weight Adjustment",
   weight_dialog_sub:
-    "Adjust weights for visible stages/tasks on this map. Saved values are automatically normalized so the total becomes 1.",
+    "Adjust weights (integers 1–100) for visible stages/tasks on this map.",
   weight_dialog_col_type: "Type",
   weight_dialog_col_name: "Name",
   weight_dialog_col_progress: "Progress",

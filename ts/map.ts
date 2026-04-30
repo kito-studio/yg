@@ -463,21 +463,25 @@ function createWeightDialog(): ReturnType<typeof createWeightDialogController> {
         return;
       }
 
-      const stageRawById = new Map<string, number>();
-      const taskRawById = new Map<string, number>();
+      const stageUpdates: Promise<void>[] = [];
+      const taskUpdates: Promise<void>[] = [];
       for (const item of next) {
+        const w = Math.max(1, Math.min(100, Math.round(item.weight)));
         if (item.type === "stage") {
-          stageRawById.set(item.id, item.weight);
+          const stage = context.stages.find((s) => s.stgId === item.id);
+          if (stage && stage.weight !== w) {
+            stage.weight = w;
+            stageUpdates.push(upsertStage({ ...stage, weight: w }));
+          }
         } else {
-          taskRawById.set(item.id, item.weight);
+          const task = context.tasks.find((tk) => tk.tkId === item.id);
+          if (task && task.weight !== w) {
+            task.weight = w;
+            taskUpdates.push(upsertTask({ ...task, weight: w }));
+          }
         }
       }
-
-      await normalizeAndPersistVisibleWeights(
-        context,
-        stageRawById,
-        taskRawById,
-      );
+      await Promise.all([...stageUpdates, ...taskUpdates]);
       await rerenderStagesFromDb();
     },
   });
@@ -587,7 +591,6 @@ export async function rerenderStagesFromDb(): Promise<void> {
     cntx.worlds[0] ||
     null;
 
-  await normalizeAndPersistVisibleWeights(cntx);
   await persistAggregateProgressForCurrentMap(cntx);
 
   await applyCurrentMapBackground(cntx);
@@ -610,102 +613,6 @@ export async function rerenderStagesFromDb(): Promise<void> {
   }
 }
 
-function normalizeWeightValue(value: number): number {
-  if (!Number.isFinite(value)) {
-    return 0;
-  }
-  return Math.max(0, value);
-}
-
-function buildNormalizedWeights(raw: number[]): {
-  normalized: number[];
-  hasAny: boolean;
-} {
-  if (raw.length === 0) {
-    return { normalized: [], hasAny: false };
-  }
-
-  const safeRaw = raw.map((value) => normalizeWeightValue(value));
-  const sum = safeRaw.reduce((acc, value) => acc + value, 0);
-  if (sum <= 0) {
-    const equal = 1 / raw.length;
-    return {
-      normalized: raw.map(() => equal),
-      hasAny: true,
-    };
-  }
-
-  return {
-    normalized: safeRaw.map((value) => value / sum),
-    hasAny: true,
-  };
-}
-
-async function normalizeAndPersistVisibleWeights(
-  cntx: MapPageContext,
-  stageRawById?: Map<string, number>,
-  taskRawById?: Map<string, number>,
-): Promise<void> {
-  const stages = getVisibleStages(cntx);
-  const tasks = getVisibleTasks(cntx);
-  const all = [
-    ...stages.map((stage) => ({ type: "stage" as const, id: stage.stgId })),
-    ...tasks.map((task) => ({ type: "task" as const, id: task.tkId })),
-  ];
-  if (all.length === 0) {
-    return;
-  }
-
-  const rawWeights = all.map((item) => {
-    if (item.type === "stage") {
-      const stage = stages.find((target) => target.stgId === item.id);
-      const nextRaw = stageRawById?.get(item.id);
-      return Number.isFinite(nextRaw)
-        ? Number(nextRaw)
-        : Number(stage?.weight ?? 1);
-    }
-    const task = tasks.find((target) => target.tkId === item.id);
-    const nextRaw = taskRawById?.get(item.id);
-    return Number.isFinite(nextRaw)
-      ? Number(nextRaw)
-      : Number(task?.weight ?? 1);
-  });
-
-  const normalized = buildNormalizedWeights(rawWeights).normalized;
-  const stageUpdates: Promise<void>[] = [];
-  const taskUpdates: Promise<void>[] = [];
-  let index = 0;
-  for (const item of all) {
-    const nextWeight = normalized[index] ?? 0;
-    index += 1;
-
-    if (item.type === "stage") {
-      const stage = stages.find((target) => target.stgId === item.id);
-      if (!stage) {
-        continue;
-      }
-      if (Math.abs((stage.weight ?? 0) - nextWeight) > 1e-9) {
-        const updated: StageRecord = { ...stage, weight: nextWeight };
-        stage.weight = nextWeight;
-        stageUpdates.push(upsertStage(updated));
-      }
-      continue;
-    }
-
-    const task = tasks.find((target) => target.tkId === item.id);
-    if (!task) {
-      continue;
-    }
-    if (Math.abs((task.weight ?? 0) - nextWeight) > 1e-9) {
-      const updated: TaskRecord = { ...task, weight: nextWeight };
-      task.weight = nextWeight;
-      taskUpdates.push(upsertTask(updated));
-    }
-  }
-
-  await Promise.all([...stageUpdates, ...taskUpdates]);
-}
-
 async function persistAggregateProgressForCurrentMap(
   cntx: MapPageContext,
 ): Promise<void> {
@@ -714,27 +621,22 @@ async function persistAggregateProgressForCurrentMap(
   const items = [
     ...stages.map((stage) => ({
       progress: stage.progress,
-      weight: Number.isFinite(stage.weight) ? stage.weight : 1,
+      weight:
+        Number.isFinite(stage.weight) && stage.weight > 0 ? stage.weight : 1,
     })),
     ...tasks.map((task) => ({
       progress: task.progress,
-      weight: Number.isFinite(task.weight) ? task.weight : 1,
+      weight: Number.isFinite(task.weight) && task.weight > 0 ? task.weight : 1,
     })),
   ];
   if (items.length === 0) {
     return;
   }
 
-  const { normalized, hasAny } = buildNormalizedWeights(
-    items.map((item) => item.weight),
-  );
-  if (!hasAny) {
-    return;
-  }
-
-  const weighted = items.reduce((sum, item, index) => {
+  const totalWeight = items.reduce((sum, item) => sum + item.weight, 0);
+  const weighted = items.reduce((sum, item) => {
     const safeProgress = Math.max(0, Math.min(100, Math.round(item.progress)));
-    return sum + (normalized[index] ?? 0) * safeProgress;
+    return sum + (item.weight / totalWeight) * safeProgress;
   }, 0);
   const totalProgress = Math.max(0, Math.min(100, Math.round(weighted)));
 
