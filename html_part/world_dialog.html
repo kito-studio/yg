@@ -1,0 +1,148 @@
+<div class="stage-dialog-backdrop" id="worldDialogBackdrop" hidden></div>
+
+<dialog class="stage-settings-dialog" id="worldSettingsDialog">
+  <form
+    method="dialog"
+    class="world-dialog-shell stage-dialog-shell"
+    onsubmit="return false;"
+  >
+    <h2 class="stage-dialog-title" id="worldDialogTitle">世界設定</h2>
+    <p class="stage-dialog-sub">世界の状態と基本情報を編集できます。</p>
+
+    <div class="stage-dialog-tabs" role="tablist" aria-label="世界設定タブ">
+      <button
+        class="stage-dialog-tab active"
+        id="worldDialogTabBasic"
+        type="button"
+        role="tab"
+        aria-selected="true"
+        aria-controls="worldDialogPanelBasic"
+        data-tab-target="worldDialogPanelBasic"
+        data-i18n="stage_tab_basic"
+      >
+        基本
+      </button>
+      <button
+        class="stage-dialog-tab"
+        id="worldDialogTabImage"
+        type="button"
+        role="tab"
+        aria-selected="false"
+        aria-controls="worldDialogPanelImage"
+        data-tab-target="worldDialogPanelImage"
+        data-i18n="stage_tab_image"
+      >
+        画像
+      </button>
+    </div>
+
+    <div class="stage-dialog-body">
+      <section
+        class="stage-dialog-panel active"
+        id="worldDialogPanelBasic"
+        role="tabpanel"
+        aria-labelledby="worldDialogTabBasic"
+      >
+        <div class="stage-field">
+          <label for="worldProgressRange" data-i18n="stage_progress_label"
+            >撃破状態（進捗）</label
+          >
+          <div class="hp-gauge" aria-hidden="true">
+            <div class="hp-gauge-fill" id="worldProgressBarFill"></div>
+          </div>
+          <div class="hp-meta">
+            <span data-i18n="hp_label">進捗</span>
+            <span class="hp-value" id="worldProgressValue">100%</span>
+          </div>
+          <input
+            class="stage-progress-range"
+            id="worldProgressRange"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="100"
+          />
+        </div>
+
+        <div class="stage-field">
+          <label for="worldNameInput" data-i18n="stage_name_label"
+            >名称（nm）</label
+          >
+          <input id="worldNameInput" type="text" maxlength="40" />
+        </div>
+
+        <div class="stage-field">
+          <label for="worldColorInput" data-i18n="stage_color_label"
+            >基本色</label
+          >
+          <input id="worldColorInput" type="color" value="#ffc96b" />
+        </div>
+
+        <div class="stage-field">
+          <label for="worldDescInput" data-i18n="stage_desc_label"
+            >説明（desc）</label
+          >
+          <textarea id="worldDescInput"></textarea>
+        </div>
+      </section>
+
+      <section
+        class="stage-dialog-panel"
+        id="worldDialogPanelImage"
+        role="tabpanel"
+        aria-labelledby="worldDialogTabImage"
+      >
+        <div class="stage-field stage-image-group">
+          <label for="worldMapImageFileInput" data-i18n="map_image_label"
+            >マップ画像</label
+          >
+          <input id="worldMapImageFileInput" type="file" accept="image/*" />
+          <p class="stage-image-current">
+            <span data-i18n="current_file_label">現在</span>
+            <span id="worldMapImageCurrent">-</span>
+          </p>
+          <div class="stage-image-actions">
+            <button
+              class="stage-dialog-btn"
+              id="worldMapImagePickBtn"
+              type="button"
+              data-i18n="pick_registered_image"
+            >
+              登録済みから選択
+            </button>
+            <button
+              class="stage-dialog-btn cancel"
+              id="worldMapImageClearBtn"
+              type="button"
+              data-i18n="upload_cancel"
+            >
+              キャンセル
+            </button>
+            <button
+              class="stage-dialog-btn save"
+              id="worldMapImageSaveBtn"
+              type="button"
+              data-i18n="upload_save"
+            >
+              保存
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="stage-dialog-footer">
+      <button
+        class="stage-dialog-btn cancel"
+        id="worldDialogCancel"
+        type="button"
+      >
+        <span data-i18n="cancel">キャンセル</span>
+      </button>
+      <button class="stage-dialog-btn save" id="worldDialogSave" type="button">
+        <span data-i18n="save">保存</span>
+      </button>
+    </div>
+  </form>
+</dialog>

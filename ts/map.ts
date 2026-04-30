@@ -26,6 +26,8 @@ import { createStageDialogController } from "./map/stage-dialog";
 import { getStageDialogElements } from "./map/stage-dialog-elements";
 import { createTaskDialogController } from "./map/task-dialog";
 import { getTaskDialogElements } from "./map/task-dialog-elements";
+import { createWorldDialogController } from "./map/world-dialog";
+import { getWorldDialogElements } from "./map/world-dialog-elements";
 import {
   createNewStageRecord,
   loadStages,
@@ -33,7 +35,7 @@ import {
   StageRecord,
 } from "./obj/stage";
 import { createNewTaskRecord, loadTasks, TaskRecord } from "./obj/task";
-import { loadSelectedWorld, loadWorlds } from "./obj/world";
+import { loadSelectedWorld, loadWorlds, upsertWorld } from "./obj/world";
 import { setupLoopAudioToggle } from "./sound/audio";
 import { createTopPageBgmAudio as createMapPageBgmAudio } from "./sound/top-page";
 import {
@@ -78,6 +80,7 @@ async function initMapPage(): Promise<void> {
 
   cntx.stageDialog.bindEvents();
   cntx.taskDialog.bindEvents();
+  cntx.worldDialog.bindEvents();
 
   setupToolbar({
     downloadButton: elements.dbDownloadButton,
@@ -215,6 +218,7 @@ async function mountMapPageParts(): Promise<void> {
     "map",
     "stage_dialog",
     "task_dialog",
+    "world_dialog",
     "info",
   ];
 
@@ -238,6 +242,7 @@ function createMapPageContext(elements: MapPageElements): MapPageContext {
     mapViewport: createMapViewport(elements),
     stageDialog: createStageDialog(fileStore),
     taskDialog: createTaskDialog(fileStore),
+    worldDialog: createWorldDialog(fileStore),
     stageHandlers: createStageHandlers(),
     taskHandlers: createTaskHandlers(),
     world: null,
@@ -281,7 +286,19 @@ async function setupHeader(
   if (elements.selectedWorldName instanceof HTMLElement) {
     elements.selectedWorldName.style.cursor = "pointer";
     elements.selectedWorldName.addEventListener("click", () => {
+      if (document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+        return;
+      }
       void stepOutSelection();
+    });
+    elements.selectedWorldName.addEventListener("dblclick", () => {
+      if (!context?.world) {
+        return;
+      }
+      if (!document.body.classList.contains(MAPPAGE_CLASS.editMode)) {
+        return;
+      }
+      context.worldDialog.open(context.world);
     });
   }
 }
@@ -336,6 +353,31 @@ function createTaskDialog(
         return;
       }
       await saveTaskFromElement(target, context);
+    },
+    onAfterSave: async () => {
+      await rerenderStagesFromDb();
+    },
+  });
+}
+
+function createWorldDialog(
+  fileStore: FileStoreGateway,
+): ReturnType<typeof createWorldDialogController> {
+  return createWorldDialogController({
+    elements: getWorldDialogElements(),
+    fileStore,
+    saveWorld: async (nextWorld) => {
+      await upsertWorld(nextWorld);
+      if (!context) {
+        return;
+      }
+
+      context.worlds = context.worlds.map((world) =>
+        world.wId === nextWorld.wId ? { ...world, ...nextWorld } : world,
+      );
+      context.world =
+        context.worlds.find((world) => world.wId === nextWorld.wId) ||
+        context.world;
     },
     onAfterSave: async () => {
       await rerenderStagesFromDb();

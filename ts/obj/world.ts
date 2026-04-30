@@ -10,6 +10,9 @@ export type WorldRecord = {
   wId: string;
   nm: string;
   ord?: number;
+  desc?: string;
+  baseColor?: string;
+  progress?: number;
   mapImgPath?: string;
 };
 
@@ -32,14 +35,61 @@ export async function loadWorlds(): Promise<WorldRecord[]> {
       .map((row) => {
         const wId = String(row.wId || "").trim();
         const nm = String(row.nm || wId || "").trim();
+        const desc = String(row.desc || "").trim();
+        const baseColor = String(row.baseColor || "#ffc96b").trim();
+        const progress = Number.isFinite(Number(row.progress))
+          ? Number(row.progress)
+          : 100;
         const mapImgPath = String(row.mapImgPath || "").trim();
-        return { wId, nm: nm || wId, mapImgPath };
+        return {
+          wId,
+          nm: nm || wId,
+          desc,
+          baseColor,
+          progress,
+          mapImgPath,
+        };
       })
       .filter((row) => row.wId.length > 0);
   } finally {
     db.close();
   }
 }
+
+export async function upsertWorld(record: WorldRecord): Promise<void> {
+  const wId = String(record.wId || "").trim();
+  if (!wId) {
+    return;
+  }
+
+  const nm = String(record.nm || wId).trim() || wId;
+  const desc = String(record.desc || "").trim();
+  const baseColor = String(record.baseColor || "#ffc96b").trim() || "#ffc96b";
+  const progress = Number.isFinite(Number(record.progress))
+    ? Math.max(0, Math.min(100, Math.round(Number(record.progress))))
+    : 100;
+  const mapImgPath = String(record.mapImgPath || "").trim();
+
+  const db = await openYGDatabase();
+  try {
+    const tx = db.transaction("worlds", "readwrite");
+    const worldsStore = tx.objectStore("worlds");
+    await requestToPromise(
+      worldsStore.put({
+        ...record,
+        wId,
+        nm,
+        desc,
+        baseColor,
+        progress,
+        mapImgPath,
+      }),
+    );
+  } finally {
+    db.close();
+  }
+}
+
 export async function loadSelectedWorld(): Promise<WorldRecord | null> {
   const selectedWId = String((await getAppStateText("worlds")) || "").trim();
   const worlds = await loadWorlds();

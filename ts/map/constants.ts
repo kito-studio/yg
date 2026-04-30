@@ -8,6 +8,7 @@ import { createTaskInteractionHandlers } from "../ui/task-interactions";
 import { MapPageElements } from "./dom";
 import { createStageDialogController } from "./stage-dialog";
 import { createTaskDialogController } from "./task-dialog";
+import { createWorldDialogController } from "./world-dialog";
 
 export const STAGE_DEFAULT_SIZE = 74;
 export const DEFAULT_PROGRESS = 100;
@@ -30,6 +31,7 @@ export type MapPageContext = {
   mapViewport: MapViewportController;
   stageDialog: ReturnType<typeof createStageDialogController>;
   taskDialog: ReturnType<typeof createTaskDialogController>;
+  worldDialog: ReturnType<typeof createWorldDialogController>;
   stageHandlers: ReturnType<typeof createStageInteractionHandlers>;
   taskHandlers: ReturnType<typeof createTaskInteractionHandlers>;
   worlds: WorldRecord[];

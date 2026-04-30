@@ -74,6 +74,29 @@ export const TASK_DIALOG_ID = {
   saveButton: "taskDialogSave",
 } as const;
 
+export const WORLD_DIALOG_ID = {
+  dialog: "worldSettingsDialog",
+  dialogBackdrop: "worldDialogBackdrop",
+  dialogTitle: "worldDialogTitle",
+  dialogTabBasic: "worldDialogTabBasic",
+  dialogTabImage: "worldDialogTabImage",
+  dialogPanelBasic: "worldDialogPanelBasic",
+  dialogPanelImage: "worldDialogPanelImage",
+  progressRange: "worldProgressRange",
+  progressBarFill: "worldProgressBarFill",
+  progressValue: "worldProgressValue",
+  nameInput: "worldNameInput",
+  descInput: "worldDescInput",
+  colorInput: "worldColorInput",
+  mapImageFileInput: "worldMapImageFileInput",
+  mapImagePickButton: "worldMapImagePickBtn",
+  mapImageClearButton: "worldMapImageClearBtn",
+  mapImageSaveButton: "worldMapImageSaveBtn",
+  mapImageCurrent: "worldMapImageCurrent",
+  cancelButton: "worldDialogCancel",
+  saveButton: "worldDialogSave",
+} as const;
+
 export const MAPPAGE_CLASS = {
   worldActive: "world-active",
   logoExiting: "logo-exiting",
@@ -91,6 +114,7 @@ export const MAPPAGE_CLASS = {
   stageObjectHpFill: "stage-object-hp-fill",
   stageDialogShell: "stage-dialog-shell",
   taskDialogShell: "task-dialog-shell",
+  worldDialogShell: "world-dialog-shell",
 } as const;
 
 export const MAPPAGE_SELECTOR = {
@@ -102,6 +126,7 @@ export const MAPPAGE_SELECTOR = {
   stageObjectSideImageImg: `.${MAPPAGE_CLASS.stageObjectSideImageImg}`,
   stageDialogShell: `.${MAPPAGE_CLASS.stageDialogShell}`,
   taskDialogShell: `.${MAPPAGE_CLASS.taskDialogShell}`,
+  worldDialogShell: `.${MAPPAGE_CLASS.worldDialogShell}`,
 } as const;
 
 export type MapPageElements = {
